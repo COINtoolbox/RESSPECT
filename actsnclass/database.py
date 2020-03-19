@@ -81,6 +81,8 @@ class DataBase:
         Separate train and test samples.
     classify(method: str)
         Apply a machine learning classifier.
+    classify_bootstrap(method: str)
+        Apply a machine learning classifier bootstrapping the classifier
     evaluate_classification(metric_label: str)
         Evaluate results from classification.
     identify_keywords()
@@ -773,7 +775,7 @@ class DataBase:
         method: str
             Chosen classifier.
             The current implementation accepts `RandomForest`,
-            'GradientBoostedTrees', 'KNN', 'MLP' and 'NB'.
+            'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
         kwargs: extra parameters
             Parameters required by the chosen classifier.
         """
@@ -814,14 +816,14 @@ class DataBase:
     def classify_bootstrap(self, method: str, **kwargs):
         """Apply a machine learning classifier bootstrapping the classifier.
 
-        Populate properties: predicted_class and class_prob
+        Populate properties: predicted_class, class_prob and ensemble_probs.
 
         Parameters
         ----------
         method: str
             Chosen classifier.
             The current implementation accepts `RandomForest`,
-            'GradientBoostedTrees', 'KNN', 'MLP' and 'NB'.
+            'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
         kwargs: extra parameters
             Parameters required by the chosen classifier.
         """
@@ -878,6 +880,11 @@ class DataBase:
             write to file. Default is False.
         filename: str (optional)
             Name of output file. Only used if to_file is True.
+
+        Returns
+        -------
+        pd.DataFrame
+            if to_file is False, otherwise write DataFrame to file.
         """
 
         # photo Ia flag
@@ -925,7 +932,9 @@ class DataBase:
         strategy: str (optional)
             Strategy used to choose the most informative object.
             Current implementation accepts 'UncSampling' and
-            'RandomSampling'. Default is `UncSampling`.
+            'RandomSampling', 'UncSamplingEntropy', 
+            'UncSamplingLeastConfident', 'UncSamplingMargin',
+            'QBDMI', 'QBDEntropy', . Default is `UncSampling`.
 
         batch: int (optional)
             Number of objects to be chosen in each batch query.
@@ -1009,9 +1018,7 @@ class DataBase:
             return query_indx
 
         else:
-            raise ValueError('Invalid strategy. Only "UncSampling" and '
-                             '"RandomSampling are implemented! \n '
-                             'Feel free to add other options. ')
+            raise ValueError('Invalid strategy.')
 
     def update_samples(self, query_indx: list, loop: int, epoch=0):
         """Add the queried obj(s) to training and remove them from test.
