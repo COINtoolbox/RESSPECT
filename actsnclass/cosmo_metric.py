@@ -18,7 +18,7 @@
 import numpy as np
 import pandas as pd
 import os
-from snana_hook import SNANAHook
+from .snanapipe.snana_hook import SNANAHook
 from io import StringIO
 
 __all__ = ['get_distances']
@@ -61,7 +61,6 @@ def get_distances(snid_file,data_folder=None,data_prefix=None,select_modelnum=No
         hook.run()    
         
     result_df = parse_salt2mu_output('{}.fitres'.format(salt2mu_prefix))
-    print(result_df.head())
     
     return result_df
 

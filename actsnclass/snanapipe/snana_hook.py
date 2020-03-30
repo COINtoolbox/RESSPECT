@@ -1,6 +1,8 @@
 import sys
-sys.path.append('/home/mi/mymedia/SALT3/salt3')
-from pipeline.pipeline import SALT3pipe
+import os
+# sys.path.append('/home/mi/mymedia/SALT3')
+sys.path.append(os.environ['SALT3_DIR'])
+from salt3.pipeline.pipeline import SALT3pipe
 import configparser
 
 class SNANAHook():
@@ -45,11 +47,14 @@ class SNANAHook():
             config.write(configfile)
         self.pipeinput = outfile
         
-    def _df_to_string(self,df,has_section=True):
+    def _df_to_string(self,df,has_section=True,has_label=True):
         outstring = '{}\n'.format(len(df.columns)) 
         for i,row in df.iterrows():
             if has_section:
-                outstring += '{} {} {}\n'.format(row['section'],row['key'],row['value'])
+                if not has_label:
+                    outstring += '{} {} {}\n'.format(row['section'],row['key'],row['value'])
+                else:
+                    outstring += '{} {} {} {}\n'.format(row['label'],row['section'],row['key'],row['value'])                    
             else:
                 outstring += '{} {}\n'.format(row['key'],row['value'])
         return outstring
