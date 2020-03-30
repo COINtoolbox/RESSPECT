@@ -84,7 +84,7 @@ def parse_snid_file(snid_file,outfolder='snid',select_modelnum=None,select_orig_
     for samplename in samplelist:
         for num in numlist:
             f = '{}/{}_{}_{}'.format(outfolder,os.path.split(snid_file)[1],samplename,num)
-            df_subsample = df.set_index(['orig_sample','modelnum']).loc[[samplename,num]]
+            df_subsample = df.set_index(['orig_sample','modelnum']).loc[(samplename,num)]
             df_subsample = df_subsample.sample(np.min([len(df_subsample),maxsnnum]))
             df_subsample['id'].to_csv(f,index=False)        
             snid_file_list.append(f)
