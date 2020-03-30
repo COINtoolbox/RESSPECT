@@ -13,4 +13,5 @@ data/SIMGEN_PUBLIC_DES/
 env.yml
 examples/
 venv2/
-
+.ipynb_checkpoints
+__pycache__
