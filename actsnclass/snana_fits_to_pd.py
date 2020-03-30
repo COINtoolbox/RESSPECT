@@ -21,7 +21,7 @@ import pandas as pd
 from pathlib import Path
 from astropy.table import Table
 
-__all__ = ['read_fits', 'save_fits']
+__all__ = ['read_fits']
 
 def read_fits(fname, drop_separators=False):
     """Load SNANA formatted data and cast it to a PANDAS dataframe.
@@ -76,24 +76,3 @@ def read_fits(fname, drop_separators=False):
 
     return df_header, df_phot
 
-
-def save_fits(df, fname):
-    """Save data frame as fits table.
-
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Data to be saved.
-    fname: str
-        Output file name (must end with .FITS).
-    """
-
-    keep_cols = df.keys()
-    df = df.reset_index()
-    df = df[keep_cols]
-
-    outtable = Table.from_pandas(df)
-
-    Path(fname).parent.mkdir(parents=True, exist_ok=True)
-
-    outtable.write(fname, format='fits', overwrite=True)
