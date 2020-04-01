@@ -129,7 +129,7 @@ class PLAsTiCCPhotometry(object):
             Codes for classes we wish to keep. 
 
         """
-        flist = ['plasticc_train_metadata.csv.gz', 
+        flist = ['plasticc_train_metadata.csv', 
                   'plasticc_test_metadata.csv.gz']
 
         # store classes information
