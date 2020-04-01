@@ -1,7 +1,7 @@
 # Copyright 2020 snactclass software
 # Author: Mi Dai
 #         
-# created on 19 March 2019
+# created on 30 March 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -21,69 +21,122 @@ import os
 from .snanapipe.snana_hook import SNANAHook
 from io import StringIO
 
-__all__ = ['get_distances']
+__all__ = ['get_distances', 'parse_salt2mu_output', 'parse_snid_file']
 
-def get_distances(snid_file,data_folder=None,data_prefix=None,select_modelnum=None,salt2mu_prefix='test_salt2mu',
-                  maxsnnum=1000,select_orig_sample=None,**kwargs):
+
+def get_distances(snid_file,data_folder: str, data_prefix: str,
+                  select_modelnum: list, select_orig_sample: str,
+                  salt2mu_prefix='test_salt2mu',
+                  maxsnnum=1000, **kwargs):
     """Calculates distances and erros for cosmology metric.
 
     Parameters
     ----------
-    snid_file (str): filename of file that contains information of input snids
-    data_folder (str): folder that contains the raw SNANA simulation files
-    data_prefix (str): prefix/genversion of SNANA sim
-    select_modelnum (list): SNANA model number (only one number is allowed for now)
-    select_orig_sample (list): 'train' or 'test' (only one sample is allowed for now)
-    salt2mu_prefix (str): filename prefix for SALT2mu output
-    maxsnnum:
+    snid_file: str 
+        Filename of file that contains information of input snids.
+    data_folde: str
+        Folder that contains the raw SNANA simulation files.
+    data_prefix: str
+        Prefix/genversion of SNANA sim.
+    select_modelnum: list
+        SNANA model number (only one number is allowed for now).
+    select_orig_sample: list
+        Original simulated sample. 
+        Options are ['train'] or ['test'] (only one sample is allowed for now).
+    salt2mu_prefix: str (optional)
+         Filename prefix for SALT2mu output.
+         Default is 'test_salt2mu'.
+    maxsnnum: int (optional)
+         XX. Default is 1000.
+    
 
     Returns
     -------
-    result_df (pd.DataFrame): columns=['id','z','mu','mu_err','fitprob']
+    result_df: pd.DataFrame
+        Keywords: ['id','z','mu','mu_err','fitprob']
     
     
     Example
     -------
-    from actsnclass.cosmo_metric import get_distances
-    get_distances('results/photo_ids/test_photoids_loop_0.dat',
+    >>> from actsnclass.cosmo_metric import get_distances
+    
+    >>> get_distances('results/photo_ids/test_photoids_loop_0.dat',
                   data_prefix='RESSPECT_LSST_TRAIN_DDF_PLASTICC',
-                  data_folder='/media/RESSPECT/data/RESSPECT_NONPERFECT_SIM/SNDATA_SIM_TMP/SNDATA_SIM_NEW_RATES',
+                  data_folder='~/SNDATA_SIM_NEW_RATES/',
                   select_modelnum=[90],
                   salt2mu_prefix='test_salt2mu_res',
                   maxsnnum=10,
                   select_orig_sample=['train'])
     """
 
-    result_dict = parse_snid_file(snid_file,select_modelnum=select_modelnum,maxsnnum=maxsnnum,select_orig_sample=select_orig_sample)
-    for f,modelnum,sntype in zip(result_dict['snid'],result_dict['modelnum'],result_dict['sntype']):
+    result_dict = parse_snid_file(snid_file, select_modelnum=select_modelnum,
+                                  maxsnnum=maxsnnum, 
+                                  select_orig_sample=select_orig_sample)
+
+    for f,modelnum,sntype in zip(result_dict['snid'],
+                                 result_dict['modelnum'],
+                                 result_dict['sntype']):
+
         phot_version = '{}_MODEL{}_SN{}'.format(data_prefix,modelnum,sntype)
-        hook = SNANAHook(snid_file=f,data_folder=data_folder,phot_version=phot_version,salt2mu_prefix=salt2mu_prefix)
+        hook = SNANAHook(snid_file=f, data_folder=data_folder, 
+                         phot_version=phot_version, salt2mu_prefix=salt2mu_prefix)
         hook.run()    
         
     result_df = parse_salt2mu_output('{}.fitres'.format(salt2mu_prefix))
     
     return result_df
 
-def parse_snid_file(snid_file,outfolder='snid',select_modelnum=None,select_orig_sample=None,maxsnnum=1000):
+
+def parse_snid_file(select_modelnum: list, select_orig_sample: list,
+                    snid_file: str,
+                    outfolder='snid',
+                    maxsnnum=1000):
+    """Do something.
+
+    Parameters
+    ----------
+    select_modelnum: list
+        SNANA model number (only one number is allowed for now).
+    select_orig_sample: list
+        Original simulated sample. 
+        Options are ['train'] or ['test'] (only one sample is allowed for now).
+    snid_file: str
+        XXX
+    maxsnnum: int (optional)
+        XXX. Default is 1000.
+    outfolder: str (optional)
+        XXX . Default is 'snid'.
+    
+    Returns
+    -------
+    dict
+        Keywords: ['snid', 'modelnum', 'sntype', 'orig_sample']
+    """
+
     df = pd.read_csv(snid_file)
     df['modelnum'] = [int(str(x)[:2]) for x in df['code']]
     snid_file_list = []
     modelnum_list = []
     sntype_list = []
     orig_sample_list = []
+    
     if not os.path.isdir(outfolder):
         os.makedirs(outfolder)
+    
     if select_modelnum is None:
         numlist = df['modelnum'].unique()
     else:
         numlist = select_modelnum
+    
     if select_orig_sample is None:
         samplelist = df['orig_sample'].unique()
     else:
         samplelist = select_orig_sample
+    
     for samplename in samplelist:
         for num in numlist:
-            f = '{}/{}_{}_{}'.format(outfolder,os.path.split(snid_file)[1],samplename,num)
+            f = '{}/{}_{}_{}'.format(outfolder, os.path.split(snid_file)[1],
+                                     samplename,num)
             df_subsample = df.set_index(['orig_sample','modelnum']).loc[(samplename,num)]
             df_subsample = df_subsample.sample(np.min([len(df_subsample),maxsnnum]))
             df_subsample['id'].to_csv(f,index=False)        
@@ -91,12 +144,31 @@ def parse_snid_file(snid_file,outfolder='snid',select_modelnum=None,select_orig_
             modelnum_list.append(num)
             orig_sample_list.append(samplename)
             sntype = df_subsample.drop_duplicates('type')['type'].values[0]
+
             if sntype == 'Ia':
                 sntype = 'Ia-SALT2'
             sntype_list.append(sntype)
-    return {'snid':snid_file_list,'modelnum':modelnum_list,'sntype':sntype_list,'orig_sample':orig_sample_list}
 
-def parse_salt2mu_output(fitres_file,timeout=50):
+    return {'snid':snid_file_list, 'modelnum':modelnum_list,
+            'sntype':sntype_list, 'orig_sample':orig_sample_list}
+
+
+def parse_salt2mu_output(fitres_file: str, timeout=50):
+    """Do something.
+
+    Parameters
+    ----------
+    fitres_file: str
+        XXXX
+    timeout: int (optional)
+        XXX. Default is 50.
+
+    Returns
+    -------
+    df: pd.DataFrame
+        Keywords: [XXX]
+    """
+
     timetot = 0
     while not os.path.isfile(fitres_file) and timetot<timeout:
         time.sleep(5)
@@ -110,18 +182,25 @@ def parse_salt2mu_output(fitres_file,timeout=50):
                  'mu':'MU',
                  'mu_err':'MUERR',
                  'fitprob':'FITPROB'}
+
     with open(fitres_file,'r') as f:
         lines = f.readlines()
+
     newlines = []
+
     for line in lines:
-        if (not line.strip().startswith('SN:')) and (not line.strip().startswith('VARNAMES:')):
+        if (not line.strip().startswith('SN:')) and \
+             (not line.strip().startswith('VARNAMES:')):
             continue
         newlines.append(line)
+
     string_to_read = StringIO('\n'.join(newlines))
     fitres = pd.read_csv(string_to_read,sep='\s+',comment='#')
     cols = [value for key, value in cname_map.items()]
     df = fitres[cols]
+
     df.columns = [key for key, value in cname_map.items()]
+
     return df
 
 def main():
