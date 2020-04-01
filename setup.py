@@ -26,6 +26,7 @@ setuptools.setup(
     py_modules=['actsnclass/bazin',
                 'actsnclass/build_snpcc_canonical',
                 'actsnclass/classifiers',
+                'actsnclass/cosmo_metric',
                 'actsnclass/database',
                 'actsnclass/fit_lightcurves',
                 'actsnclass/learn_loop',
