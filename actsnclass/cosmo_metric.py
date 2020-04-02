@@ -132,6 +132,14 @@ def parse_snid_file(snid_file: str,
         samplelist = df['orig_sample'].unique()
     else:
         samplelist = select_orig_sample
+
+    # get object identifier
+    if 'id' in df.keys():
+        id_name = 'id'
+    elif 'object_id' in df.keys():
+        id_name = 'object_id'
+    elif 'objid' in df.keys():
+        id_name = 'objid'
     
     for samplename in samplelist:
         for num in numlist:
@@ -139,7 +147,7 @@ def parse_snid_file(snid_file: str,
                                      samplename,num)
             df_subsample = df.set_index(['orig_sample','modelnum']).loc[(samplename,num)]
             df_subsample = df_subsample.sample(np.min([len(df_subsample),maxsnnum]))
-            df_subsample['id'].to_csv(f,index=False)        
+            df_subsample[id_name].to_csv(f,index=False)        
             snid_file_list.append(f)
             modelnum_list.append(num)
             orig_sample_list.append(samplename)
