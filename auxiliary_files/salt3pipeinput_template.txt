@@ -5,7 +5,7 @@ n_lcfit = 1
 n_biascorlcfit = 1
 
 [data]
-snlist=/home/midai/salt3_local/SALT3/examples/pipelinetest/training/data/SALT3TEST_SIMPLE.LIST
+snlist=/media/RESSPECT/SALT3/examples/pipelinetest/training/data/SALT3TEST_SIMPLE.LIST
 
 [byosed]
 baseinput=byosed/BYOSED_base.params
