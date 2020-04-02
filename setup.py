@@ -35,7 +35,7 @@ setuptools.setup(
                 'actsnclass/query_strategies',
                 'actsnclass/snana_fits_to_pd',
                 'actsnclass/time_domain',
-                'actsnclass/time_domain_PLAsTiC'],
+                'actsnclass/time_domain_PLAsTiCC'],
     scripts=['actsnclass/scripts/build_canonical.py',
              'actsnclass/scripts/build_time_domain.py',
              'actsnclass/scripts/fit_dataset.py',
