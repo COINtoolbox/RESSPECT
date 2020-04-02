@@ -866,7 +866,7 @@ class DataBase:
                              "\n Feel free to add other options.")
 
     def output_photo_Ia(self, threshold: float, to_file=True, 
-                        filename=' '):
+                        filename=' ', screen=False):
         """Returns the metadata for  photometrically classified SN Ia.
 
         Parameters
@@ -878,6 +878,9 @@ class DataBase:
             write to file. Default is False.
         filename: str (optional)
             Name of output file. Only used if to_file is True.
+        screen: bool (optional)
+            Print number of photometrically classified Ia to screen.
+            Default is False.
         """
 
         # photo Ia flag
@@ -890,7 +893,9 @@ class DataBase:
 
         # get ids
         photo_Ia_metadata = self.test_metadata[photo_flag]
-        
+
+        if screen:
+            print('Number of photo-Ia: ', sum(photo_flag))
 
         if to_file:
             photo_Ia_metadata.to_csv(filename, index=False)

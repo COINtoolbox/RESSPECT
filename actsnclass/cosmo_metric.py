@@ -24,7 +24,7 @@ from io import StringIO
 __all__ = ['get_distances', 'parse_salt2mu_output', 'parse_snid_file']
 
 
-def get_distances(snid_file,data_folder: str, data_prefix: str,
+def get_distances(snid_file: str, data_folder: str, data_prefix: str,
                   select_modelnum: list, select_orig_sample: str,
                   salt2mu_prefix='test_salt2mu',
                   maxsnnum=1000, **kwargs):
@@ -69,7 +69,7 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                   select_orig_sample=['train'])
     """
 
-    result_dict = parse_snid_file(snid_file, select_modelnum=select_modelnum,
+    result_dict = parse_snid_file(snid_file=snid_file, select_modelnum=select_modelnum,
                                   maxsnnum=maxsnnum, 
                                   select_orig_sample=select_orig_sample)
 
@@ -132,14 +132,24 @@ def parse_snid_file(select_modelnum: list, select_orig_sample: list,
         samplelist = df['orig_sample'].unique()
     else:
         samplelist = select_orig_sample
-    
+
+    # get correct id identifier
+    if 'id' in df.keys():
+        id_name = 'id'
+    elif 'object_id' in df.keys():
+        id_name = 'object_id'
+    elif 'objid' in df.keys():
+        id_name = 'objid'
+
+
+    print(df.keys())
     for samplename in samplelist:
         for num in numlist:
             f = '{}/{}_{}_{}'.format(outfolder, os.path.split(snid_file)[1],
                                      samplename,num)
             df_subsample = df.set_index(['orig_sample','modelnum']).loc[(samplename,num)]
             df_subsample = df_subsample.sample(np.min([len(df_subsample),maxsnnum]))
-            df_subsample['id'].to_csv(f,index=False)        
+            df_subsample[id_name].to_csv(f,index=False)        
             snid_file_list.append(f)
             modelnum_list.append(num)
             orig_sample_list.append(samplename)

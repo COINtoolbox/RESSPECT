@@ -123,9 +123,9 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         if photo_ids and photo_ids_tofile:
             fname = photo_ids_froot + '_' + str(loop) + '.dat'
             data.output_photo_Ia(photo_class_thr, to_file=photo_ids_tofile,
-                                 filename=fname)
+                                 filename=fname, screen=screen)
         elif photo_ids:
-            data.output_photo_Ia(photo_class_thr, to_file=False)
+            data.output_photo_Ia(photo_class_thr, to_file=False, screen=screen)
 
         # choose object to query
         indx = data.make_query(strategy=strategy, batch=batch)
