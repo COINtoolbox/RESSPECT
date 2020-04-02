@@ -41,7 +41,7 @@ set_key=trainparams waverange 2000,9200
 
 [lcfitting]
 pro=snlc_fit.exe
-baseinput=baseinputs/perfect_sim_v1.nml
+baseinput=$ACTSNCLASS_DIR/auxiliary_files/baseinputs/perfect_sim_v1.nml
 outinput=pipelineinputs/snfit_TEST.nml
 batch=False
 validplots=False
@@ -53,7 +53,7 @@ set_key=4
 
 [getmu]
 pro=SALT2mu.exe
-baseinput=baseinputs/SALT2mu.default
+baseinput=$ACTSNCLASS_DIR/auxiliary_files/baseinputs/SALT2mu.default
 outinput=pipelineinputs/test_salt2mu.input
 batch=False
 validplots=False

@@ -24,8 +24,8 @@ from io import StringIO
 __all__ = ['get_distances', 'parse_salt2mu_output', 'parse_snid_file']
 
 
-def get_distances(snid_file: str, data_folder: str, data_prefix: str,
-                  select_modelnum: list, select_orig_sample: str,
+def get_distances(snid_file,data_folder: str, data_prefix: str,
+                  select_modelnum: list, select_orig_sample: list,
                   salt2mu_prefix='test_salt2mu',
                   maxsnnum=1000, **kwargs):
     """Calculates distances and erros for cosmology metric.
@@ -34,7 +34,7 @@ def get_distances(snid_file: str, data_folder: str, data_prefix: str,
     ----------
     snid_file: str 
         Filename of file that contains information of input snids.
-    data_folde: str
+    data_folder: str
         Folder that contains the raw SNANA simulation files.
     data_prefix: str
         Prefix/genversion of SNANA sim.
@@ -69,9 +69,9 @@ def get_distances(snid_file: str, data_folder: str, data_prefix: str,
                   select_orig_sample=['train'])
     """
 
-    result_dict = parse_snid_file(snid_file=snid_file, select_modelnum=select_modelnum,
-                                  maxsnnum=maxsnnum, 
-                                  select_orig_sample=select_orig_sample)
+    result_dict = parse_snid_file(snid_file, select_modelnum=select_modelnum,
+                                  select_orig_sample=select_orig_sample,
+                                  maxsnnum=maxsnnum)
 
     for f,modelnum,sntype in zip(result_dict['snid'],
                                  result_dict['modelnum'],
@@ -79,7 +79,7 @@ def get_distances(snid_file: str, data_folder: str, data_prefix: str,
 
         phot_version = '{}_MODEL{}_SN{}'.format(data_prefix,modelnum,sntype)
         hook = SNANAHook(snid_file=f, data_folder=data_folder, 
-                         phot_version=phot_version, salt2mu_prefix=salt2mu_prefix)
+                         phot_version=phot_version, salt2mu_prefix=salt2mu_prefix,**kwargs)
         hook.run()    
         
     result_df = parse_salt2mu_output('{}.fitres'.format(salt2mu_prefix))
@@ -87,8 +87,8 @@ def get_distances(snid_file: str, data_folder: str, data_prefix: str,
     return result_df
 
 
-def parse_snid_file(select_modelnum: list, select_orig_sample: list,
-                    snid_file: str,
+def parse_snid_file(snid_file: str,
+                    select_modelnum: list, select_orig_sample: list,
                     outfolder='snid',
                     maxsnnum=1000):
     """Parse the snid file that is output from the pipeline.
@@ -132,22 +132,14 @@ def parse_snid_file(select_modelnum: list, select_orig_sample: list,
         samplelist = df['orig_sample'].unique()
     else:
         samplelist = select_orig_sample
-
-    # get correct id identifier
-    if 'id' in df.keys():
-        id_name = 'id'
-    elif 'object_id' in df.keys():
-        id_name = 'object_id'
-    elif 'objid' in df.keys():
-        id_name = 'objid'
-
+    
     for samplename in samplelist:
         for num in numlist:
             f = '{}/{}_{}_{}'.format(outfolder, os.path.split(snid_file)[1],
                                      samplename,num)
             df_subsample = df.set_index(['orig_sample','modelnum']).loc[(samplename,num)]
             df_subsample = df_subsample.sample(np.min([len(df_subsample),maxsnnum]))
-            df_subsample[id_name].to_csv(f,index=False)        
+            df_subsample['id'].to_csv(f,index=False)        
             snid_file_list.append(f)
             modelnum_list.append(num)
             orig_sample_list.append(samplename)

@@ -23,7 +23,7 @@ class SNANAHook():
     
     def gen_input(self,data_folder=None,phot_version=None,snid_file=None,salt2mu_prefix=None,
                   outfile='salt3pipeinput.txt',tempfile='salt3pipeinput_template.txt'):
-        salt3pipe = SALT3pipe(finput='salt3pipeinput_template.txt')
+        salt3pipe = SALT3pipe(finput=tempfile)
         config = configparser.ConfigParser()
         config.read(salt3pipe.finput)
         m2df = salt3pipe._multivalues_to_df
@@ -46,6 +46,13 @@ class SNANAHook():
         with open(outfile, 'w') as configfile:
             config.write(configfile)
         self.pipeinput = outfile
+        
+        #check if output folder exists
+        for sec in ['lcfitting','getmu']:
+            outname = config[sec]['outinput']
+            folder = os.path.split(outname)[0]
+            if not os.path.isdir(folder):
+                os.mkdir(folder)
         
     def _df_to_string(self,df,has_section=True,has_label=True):
         outstring = '{}\n'.format(len(df.columns)) 
