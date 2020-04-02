@@ -47,7 +47,7 @@ def get_distances(snid_file: str, data_folder: str, data_prefix: str,
          Filename prefix for SALT2mu output.
          Default is 'test_salt2mu'.
     maxsnnum: int (optional)
-         XX. Default is 1000.
+         max number of objects to fit. Default is 1000.
     
 
     Returns
@@ -91,7 +91,7 @@ def parse_snid_file(select_modelnum: list, select_orig_sample: list,
                     snid_file: str,
                     outfolder='snid',
                     maxsnnum=1000):
-    """Do something.
+    """Parse the snid file that is output from the pipeline.
 
     Parameters
     ----------
@@ -101,11 +101,11 @@ def parse_snid_file(select_modelnum: list, select_orig_sample: list,
         Original simulated sample. 
         Options are ['train'] or ['test'] (only one sample is allowed for now).
     snid_file: str
-        XXX
+        snid file that is output from the pipeline
     maxsnnum: int (optional)
-        XXX. Default is 1000.
+        maximum of number of sn to return. Default is 1000. If smaller than the total number in snid_file, a random sample is drawn.
     outfolder: str (optional)
-        XXX . Default is 'snid'.
+        output folder that stores the parsed snid files for each type and sample. Default is 'snid'.
     
     Returns
     -------
@@ -164,19 +164,20 @@ def parse_snid_file(select_modelnum: list, select_orig_sample: list,
 
 
 def parse_salt2mu_output(fitres_file: str, timeout=50):
-    """Do something.
+    """Parse the salt2mu output and return useful columns as a pd.DataFrame.
 
     Parameters
     ----------
     fitres_file: str
-        XXXX
+        The salt2mu output
     timeout: int (optional)
-        XXX. Default is 50.
+        Max waiting time for determining if the file exists. Default is 50 (seconds). 
+        This is used to avoid error caused by a delay in the salt2mu output being written out.
 
     Returns
     -------
     df: pd.DataFrame
-        Keywords: [XXX]
+        Keywords: ['id','z','mu','mu_err','fitprob']
     """
 
     timetot = 0
