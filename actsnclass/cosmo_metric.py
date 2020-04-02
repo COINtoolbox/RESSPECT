@@ -141,8 +141,6 @@ def parse_snid_file(select_modelnum: list, select_orig_sample: list,
     elif 'objid' in df.keys():
         id_name = 'objid'
 
-
-    print(df.keys())
     for samplename in samplelist:
         for num in numlist:
             f = '{}/{}_{}_{}'.format(outfolder, os.path.split(snid_file)[1],
