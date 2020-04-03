@@ -71,7 +71,7 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
 
     result_dict = parse_snid_file(snid_file, select_modelnum=select_modelnum,
                                   select_orig_sample=select_orig_sample,
-                                  maxsnnum=maxsnnum)
+                                  maxsnnum=maxsnnum,**kwargs)
 
     for f,modelnum,sntype in zip(result_dict['snid'],
                                  result_dict['modelnum'],
@@ -90,7 +90,9 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
 def parse_snid_file(snid_file: str,
                     select_modelnum: list, select_orig_sample: list,
                     outfolder='snid',
-                    maxsnnum=1000):
+                    maxsnnum=1000,
+                    random_state=None,
+                    **kwargs):
     """Parse the snid file that is output from the pipeline.
 
     Parameters
@@ -106,6 +108,8 @@ def parse_snid_file(snid_file: str,
         maximum of number of sn to return. Default is 1000. If smaller than the total number in snid_file, a random sample is drawn.
     outfolder: str (optional)
         output folder that stores the parsed snid files for each type and sample. Default is 'snid'.
+    random_state: int or numpy.random.RandomState, optional
+        random_state in pd.DataFrame.sample() for sampling maxsnnum of objects    
     
     Returns
     -------
@@ -146,7 +150,7 @@ def parse_snid_file(snid_file: str,
             f = '{}/{}_{}_{}'.format(outfolder, os.path.split(snid_file)[1],
                                      samplename,num)
             df_subsample = df.set_index(['orig_sample','modelnum']).loc[(samplename,num)]
-            df_subsample = df_subsample.sample(np.min([len(df_subsample),maxsnnum]))
+            df_subsample = df_subsample.sample(np.min([len(df_subsample),maxsnnum]),random_state=random_state)
             df_subsample[id_name].to_csv(f,index=False)        
             snid_file_list.append(f)
             modelnum_list.append(num)

@@ -22,7 +22,7 @@ class SNANAHook():
         return pipe
     
     def gen_input(self,data_folder=None,phot_version=None,snid_file=None,salt2mu_prefix=None,
-                  outfile='salt3pipeinput.txt',tempfile='salt3pipeinput_template.txt'):
+                  outfile='salt3pipeinput.txt',tempfile='salt3pipeinput_template.txt',**kwargs):
         salt3pipe = SALT3pipe(finput=os.path.expandvars(tempfile))
         config = configparser.ConfigParser()
         config.read(salt3pipe.finput)
