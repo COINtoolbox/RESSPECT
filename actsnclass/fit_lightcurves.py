@@ -252,8 +252,10 @@ class LightCurve(object):
         else:    
             all_photo = pd.read_csv(photo_file, index_col=False)
 
-            if ' ' in all_photo.keys()[0]:
+            if ' ' in all_photo.keys()[0] and all_photo.keys()[0] != 'Unnamed: 0':
                 all_photo = pd.read_csv(photo_file, sep=' ', index_col=False)
+            elif all_photo.keys()[0] == 'Unnamed: 0':
+                all_photo = pd.read_csv(photo_file)
 
         if 'SNID' in all_photo.keys():
             flag = all_photo['SNID'] == snid
