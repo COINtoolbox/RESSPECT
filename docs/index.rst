@@ -85,7 +85,7 @@ chosen working directory and unpack the data.
     >>> tar -xzvf SIMGEN_PUBLIC_DES.tar.gz
 
 This data was provided by Rick Kessler, after the publication of results from the
-`SuperNova Photometric Classification Challenge <https://arxiv.org/abs/1008.1024>`_.
+`SuperNova Photometric Classification Challenge <https://arxiv.org/abs/1008.1024>`_ (SNPCC).
 It allows you to run tests and validate your installation.
 
 
@@ -126,11 +126,12 @@ before any machine learning application is used.
 Details of the tools available to evaluate different steps on feature extraction can be found in the
 :ref:`Feature extraction page <preprocessing>`.
 
-Alternatively, you can also perform the full light curve fit for the entire sample from the command line:
+Alternatively, you can also perform the full light curve fit for the entire sample from the command line.
+
+If you are only interested in testing your installation you should work with the SNPCC data:  
 
 .. code-block:: bash
-
-    >>> fit_dataset.py -s RESSPECT -p <path_to_photo_file> -hd <path_to_header_file> -o <output_file> 
+    >>> fit_dataset.py -s SNPCC -dd <path_to_data_dir> -o <output_file>
 
 Once the data has been processed you can apply the full Active Learning loop according to your needs.
 A detail description on how to use this tool is provided in the :ref:`Learning Loop page <learnloop>`.

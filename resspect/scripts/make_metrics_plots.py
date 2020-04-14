@@ -1,8 +1,7 @@
-# Copyright 2019 snactclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
 #
-# created on 10 August 2019
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -18,7 +17,7 @@
 
 import argparse
 
-from actsnclass.plot_results import Canvas
+from resspect.plot_results import Canvas
 
 __all__ = ['main']
 
@@ -69,7 +68,7 @@ def main(user_input):
 if __name__ == '__main__':
 
     # get input directory and output file name from user
-    parser = argparse.ArgumentParser(description='actsnclass - '
+    parser = argparse.ArgumentParser(description='resspect - '
                                                  'Learn loop module')
     parser.add_argument('-m', '--metrics-files-list', dest='metrics',
                         required=True, type=str,
