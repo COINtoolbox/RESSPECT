@@ -20,12 +20,12 @@ It was constructed using the following steps:
 This will allow you to construct a Canonical sample holding the same characteristics and size of the original training sample
 but composed of different objects.
 
-``actsnclass`` allows you to perform this task using the py:mod:`actsnclass.build_snpcc_canonical` module:
+``resspect`` allows you to perform this task using the py:mod:`resspect.build_snpcc_canonical` module:
 
 .. code-block:: python
    :linenos:
 
-   >>> from snactclass import build_snpcc_canonical
+   >>> from resspect import build_snpcc_canonical
 
    >>> # define variables
    >>> data_dir = 'data/SIMGEN_PUBLIC_DES/'
@@ -43,7 +43,7 @@ Once the samples is constructed you can compare the distribution in ``[z, g_pkma
 .. code-block:: python
    :linenos:
 
-   >>> from actsnclass import plot_snpcc_train_canonical
+   >>> from resspect import plot_snpcc_train_canonical
 
    >>> plot_snpcc_train_canonical(sample, output_plot_file='plots/compare_canonical_train.png')
 
@@ -71,7 +71,7 @@ The only difference is that now a few of the ``sample`` variables are set to ``q
 .. literalinclude:: images/sample_canonical.dat
  :lines: 1-2, 9-14
 
-This means that you can use the :py:mod:`actsnclass.learn_loop` module in combination with a ``RandomSampling`` strategy but
+This means that you can use the :py:mod:`resspect.learn_loop` module in combination with a ``RandomSampling`` strategy but
 reading data from the canonical sample. In this way, at each iteration the code will select a random object from the test sample
 but a query will only be made is the selected object belongs to the canonical sample.
 
