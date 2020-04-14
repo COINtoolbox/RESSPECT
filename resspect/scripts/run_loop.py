@@ -95,7 +95,7 @@ if __name__ == '__main__':
                              'algorithm.', required=False, default='RandomForest',
                         type=str)
     parser.add_argument('-m', '--metrics', dest='metrics',
-                        help='Path to output metrics file.', required=True,
+                        help='Path to output metrics file.', required=False,
                         type=str)
     parser.add_argument('-i', '--input', dest='input',
                         help='Path to features file.', required=True, type=str)
