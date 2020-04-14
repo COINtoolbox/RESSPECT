@@ -1,4 +1,3 @@
-# Copyright 2019 snactclass software
 # Author: Anais Moller
 #         Taken from https://github.com/anaismoller/reformatting_snippets
 #
