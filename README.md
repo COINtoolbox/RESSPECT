@@ -1,4 +1,4 @@
-[![resspect](https://img.shields.io/badge/Focus-RESSPECT-red)](http://cosmostatistics-initiative.org/resspect/)
+[![resspect](https://img.shields.io/badge/COIN--Focus-RESSPECT-red)](http://cosmostatistics-initiative.org/resspect/)
 
 # <img align="right" src="docs/images/logo_small.png" width="350"> RESSPECT
 
