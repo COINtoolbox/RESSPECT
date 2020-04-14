@@ -4,7 +4,7 @@ Prepare data for time domain
 ============================
 
 In order to mimic the realistic situation where only a limited number of observed epochs is available at each
-day, it is necessary to prepare our simulate data resemble this scenario. In ``actsnclass`` this is done in
+day, it is necessary to prepare our simulate data resemble this scenario. In ``resspect`` this is done in
 5 steps:
 
 1. Determine minimum and maximum MJD for the entire SNPCC sample;
@@ -18,12 +18,12 @@ day, it is necessary to prepare our simulate data resemble this scenario. In ``a
 5. Join all information in a standard features file.
 
 
-You can perform the entire analysis for one day of the survey using the :py:mod:`actsnclass.time_domain` module:
+You can perform the entire analysis for one day of the survey using the :py:mod:`resspect.time_domain` module:
 
 .. code-block:: python
    :linenos:
 
-   >>> from actsnclass.time_domain import SNPCCPhotometry
+   >>> from resspect.time_domain import SNPCCPhotometry
 
    >>> path_to_data = 'data/SIMGEN_PUBLIC_DES/'
    >>> output_dir = 'results/time_domain/'
