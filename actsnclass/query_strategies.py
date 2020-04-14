@@ -1,8 +1,7 @@
-# Copyright 2019 snactclass software
-# Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
+# Copyright 2020 resspect software
+# Author: The RESSPECT team
 #
-# created on 10 August 2019
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
