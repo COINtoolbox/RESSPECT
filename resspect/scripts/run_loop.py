@@ -27,10 +27,10 @@ def main(args):
 
     Parameters
     ----------
-    -d: str
-        Full path to output file to store diagnostics of each loop.
     -i: str
         Complete path to input features file.
+    -m: str
+        Path to output metrics file.
     -n: int
         Number of active learning loops to run.
     -q: str
@@ -40,9 +40,10 @@ def main(args):
     -b: int (optional)
        Size of batch to be queried in each loop. Default is 1.
     -c: str (optional)
-        Machine Learning algorithm.
-        Currently 'RandomForest','GradientBoostedTrees','K-NNclassifier' and 'MLPclassifier' are implemented.
-    -m: str (optional)
+        Classifier algorithm.
+        Currently 'RandomForest','GradientBoostedTrees','K-NNclassifier' 
+        and 'MLPclassifier' are implemented.
+    -mt: str (optional)
         Feature extraction method. Currently only 'Bazin' is implemented.
     -t: str or int (optional)
        Choice of initial training sample.
@@ -95,7 +96,7 @@ if __name__ == '__main__':
                              'algorithm.', required=False, default='RandomForest',
                         type=str)
     parser.add_argument('-m', '--metrics', dest='metrics',
-                        help='Path to output metrics file.', required=False,
+                        help='Path to output metrics file.', required=True,
                         type=str)
     parser.add_argument('-i', '--input', dest='input',
                         help='Path to features file.', required=True, type=str)
