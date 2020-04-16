@@ -128,7 +128,7 @@ In the example shown above, when reading the data from the features file there w
 .. code-block:: python
    :linenos:
 
-   >>> data.metadata['sample'].unique()
+   >>> data.metadata['orig_sample'].unique()
    array(['test', 'train'], dtype=object)
 
 This corresponds to an unrealistic scenario where we are able to obtain spectra for any object at any time.
