@@ -947,7 +947,7 @@ class DataBase:
         screen: bool (optional)
             If true, display on screen information about the
             displacement in order and classificaion probability due to
-            constraints on queryable sample.
+            constraints on queryable sample. Default is False.
 
         Returns
         -------

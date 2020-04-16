@@ -94,7 +94,7 @@ class Canonical(object):
     def snpcc_get_canonical_info(self, path_to_rawdata_dir: str,
                                  canonical_output_file: str,
                                  compute=True, save=True,
-                                 canonical_input_file=''):
+                                 canonical_input_file='', scree=False):
         """
         Load SNPCC metada data required to characterize objects.
 
@@ -106,14 +106,16 @@ class Canonical(object):
             Complete path to directory holding raw data files.
         canonical_output_file: str
             Complete path to output canonical sample file.
+        canonical_input_file: str (optional)
+            Path to input file if required metadata was previously calculated.
+            If name is give, 'compute' must be False.
         compute: bool (optional)
             Compute required metada from raw data files.
             Default is True.
         save: bool (optional)
             Save metadata to file. Default is True.
-        canonical_input_file: str (optional)
-            Path to input file if required metadata was previously calculated.
-            If name is give, 'compute' must be False.
+        screen: bool (optional)
+            If true, display steps info on screen. Default is False.  
         """
 
         if compute:
@@ -125,7 +127,8 @@ class Canonical(object):
 
             for fname in lc_list:
 
-                print('Processed for canonical: ', str(lc_list.index(fname)))
+                if screen:
+                    print('Processed for canonical: ', str(lc_list.index(fname)))
 
                 # fit individual light curves
                 lc = LightCurve()
@@ -210,10 +213,15 @@ class Canonical(object):
         self.test_ii_id = \
             self.meta_data['snid'].values[np.logical_and(~train_flag, ii_flag)]
 
-    def find_neighbors(self):
+    def find_neighbors(self, screen=False):
         """Identify 1 nearest neighbor for each object in training.
 
         Populates attribute: canonical_ids.
+
+        Parameters
+        ----------
+        screen: bool (optional)
+            If true, display steps info on screen. Default is False.
         """
 
         # gather samples by type
@@ -229,7 +237,8 @@ class Canonical(object):
 
         # find nearest neighbor
         for i in range(len(test_samples)):
-            print('Scanning ', types[i], ' . . . ')
+            if screen:
+                print('Scanning ', types[i], ' . . . ')
 
             # find 10 neighbors in case there are repetitions
             nbrs = NearestNeighbors(n_neighbors=10, algorithm='auto')
@@ -252,7 +261,8 @@ class Canonical(object):
                     else:
                         count = count + 1
 
-            print('Processed: ', len(vault))
+            if screen:
+                print('Processed: ', len(vault))
 
 
 def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,

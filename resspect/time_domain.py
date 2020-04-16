@@ -129,7 +129,7 @@ class SNPCCPhotometry(object):
 
     def build_one_epoch(self, raw_data_dir: str, day_of_survey: int,
                         time_domain_dir: str, feature_method='Bazin',
-                        dataset='SNPCC'):
+                        dataset='SNPCC', screen=False):
         """Fit bazin for all objects with enough points in a given day.
 
         Generate 1 file containing best-fit Bazin parameters for a given
@@ -149,7 +149,8 @@ class SNPCCPhotometry(object):
         dataset: str (optional)
             Name of the data set. 
             Only possibility is 'SNPCC'.
-        
+        screen: bool (optional)
+            If true, display steps info on screen. Default is False.       
         """
 
         # read file names
@@ -163,7 +164,9 @@ class SNPCCPhotometry(object):
         count_surv = 0
         
         for i in range(len(lc_list)):
-            print('Processed : ', i)
+
+            if screen:
+                print('Processed : ', i)
 
             lc = LightCurve()  # create light curve instance
 

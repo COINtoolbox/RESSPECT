@@ -33,7 +33,7 @@ but composed of different objects.
    >>> output_metadata_file = 'results/Bazin_metadata.dat'
    >>> features_file = 'results/Bazin.dat'
 
-   >>> sample = build_snpcc_canonical(path_to_raw_data: data_dir, path_to_features=features_file,
+   >>> sample = build_snpcc_canonical(path_to_raw_data=data_dir, path_to_features=features_file,
    >>>                               output_canonical_file=output_sample_file,
    >>>                               output_info_file=output_metadata_file,
    >>>                               compute=True, save=True)
