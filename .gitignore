@@ -1,0 +1,17 @@
+resspect.egg-info/
+build/
+build/lib/
+dist/
+work/
+venv/
+resspect/__init__.pyc
+resspect/__pycache__/
+resspect/scripts/__pycache__/
+resspect/actConfig/
+resspect/analysis_functions/
+resspect/data_functions/
+data/SIMGEN_PUBLIC_DES/
+env.yml
+examples/
+venv2/
+
