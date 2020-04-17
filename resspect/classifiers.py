@@ -233,7 +233,7 @@ def svm(train_features: np.array, train_labels: np.array,
     """
 
     #create classifier instance
-    clf = SVC(**kwargs)
+    clf = SVC(probability=True, **kwargs)
 
     clf.fit(train_features, train_labels)          # train
     predictions = clf.predict(test_features)       # predict
