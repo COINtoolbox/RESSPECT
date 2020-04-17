@@ -2,7 +2,7 @@
 Reference / API
 ***************
 
-.. currentmodule:: actsnclass
+.. currentmodule:: resspect
 
 Pre-processing
 ==============

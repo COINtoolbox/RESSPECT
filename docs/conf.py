@@ -17,9 +17,9 @@ sys.path.insert(0, os.path.abspath('../'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'actsnclass'
-copyright = '2019, Emille E. O. Ishida'
-author = 'Emille E. O. Ishida'
+project = 'resspect'
+copyright = '2020, The RESSPECT team'
+author = 'The RESSPECT team'
 
 
 # -- General configuration ---------------------------------------------------

@@ -6,7 +6,7 @@ Feature Extraction
 The first stage in consists in transforming the raw data into a uniform data matrix which will subsequently be given
 as input to the learning algorithm.
 
-The original implementation of ``actsnclass`` can handle text-like data from the SuperNova Photometric Classification Challenge
+The original implementation of ``resspect`` can handle text-like data from the SuperNova Photometric Classification Challenge
 (SNPCC) which is described in `Kessler et al., 2010 <https://arxiv.org/abs/1008.1024>`_.
 
 This version is equiped to input ``RESSPECT`` simulatons made with the `SNANA simulator <http://snana.uchicago.edu/>`_.
@@ -57,12 +57,12 @@ In order to fit a single light curve from the RESSPECT simulations you need to h
     >> snid = header['objid'].values[4]
 
 
-Now that you have selected on object, you can fit its light curve using the `LightCurve class <https://actsnclass.readthedocs.io/en/resspect/api/actsnclass.LightCurve.html#actsnclass.LightCurve>`_ :
+Now that you have selected on object, you can fit its light curve using the `LightCurve class <https://resspect.readthedocs.io/en/resspect/api/resspect.LightCurve.html#resspect.LightCurve>`_ :
 
 .. code-block:: python
     :linenos:
 
-    >>> from actsnclass.fit_lightcurves import LightCurve
+    >>> from resspect.fit_lightcurves import LightCurve
 
     >>> path_to_lightcurves = '~/RESSPECT_PERFECT_V2_TRAIN_LIGHTCURVES.tar.gz'
 
@@ -89,7 +89,7 @@ Similar to the case presented below, reading only 1 light curve from PLAsTiCC re
 .. code-block:: python
     :linenos:
 
-    >>> from actsnclass.fit_lightcurves import LightCurve
+    >>> from resspect.fit_lightcurves import LightCurve
     >>> import pandas as pd
 
     >>> path_to_metadata = '~/plasticc_train_metadata.csv.gz'
@@ -129,7 +129,7 @@ You can load this data using:
 .. code-block:: python
    :linenos:
 
-   >>> from actsnclass.fit_lightcurves import LightCurve
+   >>> from resspect.fit_lightcurves import LightCurve
 
    >>> path_to_lc = 'data/SIMGEN_PUBLIC_DES/DES_SN848233.DAT'
 
@@ -199,7 +199,7 @@ There are 2 way to perform the Bazin fits for the entire SNPCC data set. Using a
 .. code-block:: python
    :linenos:
 
-   >>> from actsnclass import fit_snpcc_bazin
+   >>> from resspect import fit_snpcc_bazin
 
    >>> path_to_data_dir = 'data/SIMGEN_PUBLIC_DES/'            # raw data directory
    >>> output_file = 'results/Bazin.dat'                              # output file
