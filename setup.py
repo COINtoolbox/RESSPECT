@@ -20,7 +20,7 @@ import setuptools
 
 setuptools.setup(
     name='resspect',
-    version='1.2',
+    version='0.1',
     packages=setuptools.find_packages(),
     py_modules=['resspect/bazin',
                 'resspect/build_snpcc_canonical',

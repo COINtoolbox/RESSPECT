@@ -80,7 +80,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         Must be true if using disagreement based strategy
     kwargs: extra parameters
         All keywords required by the classifier function.
-    """
+    """    
     if 'QBD' in strategy and not classifier_bootstrap:
         raise ValueError('bootstrap must be true when using disagreement strategy')
 

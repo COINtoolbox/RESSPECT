@@ -208,7 +208,8 @@ class Canvas(object):
         # determine number of lines and columns in plot
         self.nmetrics = len(self.metrics_names)
         self.ncolumns = self.nmetrics // self.nlines + self.nmetrics % self.nlines
-        self.fig_size = (10 * self.ncolumns, 7 * self.nlines)
+
+        self.fig_size = (10 * self.ncolumns, 9 * self.nlines)
 
     def plot_metrics(self,  output_plot_file: str, strategies_list: list,
                          lim_queries=None):
