@@ -1,8 +1,7 @@
-# Copyright 2019 snactclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
 #
-# created on 10 August 2019
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -20,7 +19,7 @@ __all__ = ['main']
 
 import argparse
 
-from actsnclass.time_domain_loop import time_domain_loop
+from resspect.time_domain_loop import time_domain_loop
 
 
 def main(user_choice):
@@ -114,7 +113,7 @@ def str2bool(v):
 if __name__ == '__main__':
 
     # get input directory and output file name from user
-    parser = argparse.ArgumentParser(description='actsnclass - '
+    parser = argparse.ArgumentParser(description='resspect - '
                                                  'Time Domain loop module')
     parser.add_argument('-d', '--days', dest='days', required=True,
                         help='First and last day of survey.',

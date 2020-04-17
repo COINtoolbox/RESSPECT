@@ -1,8 +1,7 @@
-# Copyright 2019 snactclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
 #
-# created on 10 August 2019
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -18,7 +17,7 @@
 
 __all__ = ['learn_loop', 'main']
 
-from actsnclass.learn_loop import learn_loop
+from resspect.learn_loop import learn_loop
 
 import argparse
 
@@ -28,10 +27,10 @@ def main(args):
 
     Parameters
     ----------
-    -d: str
-        Full path to output file to store diagnostics of each loop.
     -i: str
         Complete path to input features file.
+    -m: str
+        Path to output metrics file.
     -n: int
         Number of active learning loops to run.
     -q: str
@@ -41,9 +40,10 @@ def main(args):
     -b: int (optional)
        Size of batch to be queried in each loop. Default is 1.
     -c: str (optional)
-        Machine Learning algorithm.
-        Currently 'RandomForest','GradientBoostedTrees','K-NNclassifier' and 'MLPclassifier' are implemented.
-    -m: str (optional)
+        Classifier algorithm.
+        Currently 'RandomForest','GradientBoostedTrees','KNN' 
+        and 'MLPclassifier' are implemented.
+    -mt: str (optional)
         Feature extraction method. Currently only 'Bazin' is implemented.
     -t: str or int (optional)
        Choice of initial training sample.
@@ -84,16 +84,16 @@ def main(args):
 if __name__ == '__main__':
 
     # get input directory and output file name from user
-    parser = argparse.ArgumentParser(description='actsnclass - '
+    parser = argparse.ArgumentParser(description='resspect - '
                                                  'Learn loop module')
     parser.add_argument('-b', '--batch', dest='batch', required=True,
                         help='Number of samples to query in each loop.',
                         type=int)
     parser.add_argument('-c', '--classifier', dest='classifier',
                         help='Choice of machine learning classification.'
-                             ' "RandomForest", "GradientBoosetedTrees","K-NNclassifier", "MLPclassifier"'
-                             ' "SVMclassifier" and "NBclassifier" are implemented.'
-                             'algorithm.', required=False, default='RandomForest',
+                             ' "RandomForest", "GradientBoosetedTrees","KNN",'
+                             '"MLP", "SVM" and "NB" are implemented.',
+                             required=False, default='RandomForest',
                         type=str)
     parser.add_argument('-m', '--metrics', dest='metrics',
                         help='Path to output metrics file.', required=True,

@@ -1,8 +1,7 @@
-# Copyright 2019 snactclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
 #
-# created on 12 August 2019
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -18,7 +17,7 @@
 
 import argparse
 
-from actsnclass.time_domain import SNPCCPhotometry
+from resspect.time_domain import SNPCCPhotometry
 
 __all__ = ['main']
 
@@ -54,7 +53,7 @@ def main(user_choice):
 
 if __name__ == '__main__':
     # get input directory and output file name from user
-    parser = argparse.ArgumentParser(description='actsnclass - '
+    parser = argparse.ArgumentParser(description='resspect - '
                                                  'Prepare Time Domain module')
 
     parser.add_argument('-d', '--day', dest='day_of_survey', required=True,
