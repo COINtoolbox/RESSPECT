@@ -1,8 +1,7 @@
-# Copyright 2019 actsnclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
-#
-# created on 8 August 2019
+#      
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -61,7 +60,6 @@ __all__ = ['accuracy',
            'make_metrics_plots',
            'plot_snpcc_train_canonical',
            'purity',
-           'save_fits',
            'random_forest',           
            'random_sampling',
            'read_fits',

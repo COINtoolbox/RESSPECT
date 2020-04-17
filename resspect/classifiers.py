@@ -1,8 +1,7 @@
-# Copyright 2019 snactclass software
-# Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
+# Copyright 2020 resspect software
+# Author: The RESSPECT team
 #
-# created on 10 August 2019
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -31,6 +30,34 @@ from sklearn.utils import resample
 
 def bootstrap_clf(clf_function, n_ensembles, train_features,
                   train_labels, test_features, **kwargs):
+    """
+    Train an ensemble of classifiers using bootstrap.
+
+    Parameters
+    ----------
+    clf_function: function
+        function to train classifier
+    n_ensembles: int
+        number of classifiers in the ensemble
+    train_features: np.array
+        Training sample features.
+    train_labels: np.array
+        Training sample classes.
+    test_features: np.array
+        Test sample features.
+    kwargs: extra parameters
+        All keywords required by
+        sklearn.ensemble.RandomForestClassifier function.
+
+    Returns
+    -------
+    predictions: np.array
+        Prediction of the ensemble
+    class_prob: np.array
+        Average distribution of ensemble members
+    ensemble_probs: np.array
+        Probability output of each member of the ensemble
+    """
     n_labels = np.unique(train_labels).size
     num_test_data = test_features.shape[0]
     ensemble_probs = np.zeros((num_test_data, n_ensembles, n_labels))
@@ -73,10 +100,11 @@ def random_forest(train_features:  np.array, train_labels: np.array,
 
     # create classifier instance
     clf = RandomForestClassifier(**kwargs)
+
     clf.fit(train_features, train_labels)                     # train
     predictions = clf.predict(test_features)                # predict
     prob = clf.predict_proba(test_features)       # get probabilities
-    
+
     return predictions, prob
 
 
@@ -205,7 +233,7 @@ def svm(train_features: np.array, train_labels: np.array,
     """
 
     #create classifier instance
-    clf = SVC(kwargs)
+    clf = SVC(**kwargs)
 
     clf.fit(train_features, train_labels)          # train
     predictions = clf.predict(test_features)       # predict

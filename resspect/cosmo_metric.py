@@ -58,7 +58,7 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
     
     Example
     -------
-    >>> from actsnclass.cosmo_metric import get_distances
+    >>> from resspect.cosmo_metric import get_distances
     
     >>> get_distances('results/photo_ids/test_photoids_loop_0.dat',
                   data_prefix='RESSPECT_LSST_TRAIN_DDF_PLASTICC',
