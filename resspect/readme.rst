@@ -9,6 +9,7 @@ List of modules:
 :bazin.py: functions to find best-fit parameters to the Bazin function
 :build_snpcc_canonical: constructs the canonical sample
 :classifiers.py: machine learning classifiers
+:cosmo_metric.py: cosmology metric
 :database.py: DataBase object upon which the learning is updated
 :fit_lightcurves.py: LightCurve object, perform fit on all samples
 :learn_loop.py: active learning loop for the full light curve analysis
