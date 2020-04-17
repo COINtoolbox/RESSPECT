@@ -11,12 +11,12 @@ evolution of the metrics:
  - Purity: fraction of correct Ia classifications;
  - Figure of merit: efficiency x purity with a penalty factor of 3 for false positives (contamination).
 
-The class `Canvas <https://actsnclass.readthedocs.io/en/latest/api/actsnclass.Canvas.html#actsnclass.Canvas>_` enables you do to it using:
+The class `Canvas <https://resspect.readthedocs.io/en/latest/api/resspect.Canvas.html#resspect.Canvas>_` enables you do to it using:
 
 .. code-block:: python
    :linenos:
 
-   >>> from actsnclass.plot_results import Canvas
+   >>> from resspect.plot_results import Canvas
 
    >>> # define parameters
    >>> path_to_files = ['results/metrics_canonical.dat',

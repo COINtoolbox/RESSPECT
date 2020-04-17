@@ -1,8 +1,7 @@
-# Copyright 2019 snactclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
 #
-# created on 9 August 2019
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -16,8 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from actsnclass.bazin import bazin, fit_scipy
-from actsnclass.snana_fits_to_pd import read_fits
+from resspect.bazin import bazin, fit_scipy
+from resspect.snana_fits_to_pd import read_fits
 
 import io
 import matplotlib.pylab as plt
@@ -90,7 +89,7 @@ class LightCurve(object):
     >>> import pandas as pd
     >>> import tarfile
 
-    >>> from actsnclass import LightCurve
+    >>> from resspect import LightCurve
 
     # path to header file
     >>> path_to_header = '~/RESSPECT_PERFECT_V2_TRAIN_HEADER.tar.gz'

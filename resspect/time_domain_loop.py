@@ -1,8 +1,7 @@
-# Copyright 2019 snactclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
-#
-# created on 10 August 2019
+#      
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -20,7 +19,7 @@ __all__ = ['time_domain_loop']
 
 import numpy as np
 
-from actsnclass import DataBase
+from resspect import DataBase
 
 def time_domain_loop(days: list,  output_metrics_file: str,
                      output_queried_file: str,

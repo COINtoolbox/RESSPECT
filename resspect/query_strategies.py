@@ -1,8 +1,7 @@
-# Copyright 2019 snactclass software
-# Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
+# Copyright 2020 resspect software
+# Author: The RESSPECT team
 #
-# created on 10 August 2019
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -27,11 +26,42 @@ __all__ = ['uncertainty_sampling',
 import numpy as np
 
 
-def compute_entropy(ps):
+def compute_entropy(ps: np.array):
+    """
+    Calcualte the entropy for discrete distributoons assuming the events are
+    indexed by the last dimension.
+
+    Parameters
+    ----------
+    ps: np.array
+        Probability disburtions to compute entropy of.
+
+    Returns
+    -------
+    entropy: np.array
+        Predicted classes.
+    """
     return -1*np.sum(ps*np.log(ps + 1e-12), axis=-1)
 
 
-def compute_qbd_mi_entropy(ensemble_probs):
+def compute_qbd_mi_entropy(ensemble_probs: np.array):
+    """
+    Calcualte the entropy of the average distribution from an ensemble of
+    distributions. Calculate the mutual information between the members in the
+    ensemble and the average distribution.
+
+    Parameters
+    ----------
+    ensemble_probs: np.array
+        Probability from ensembles where the first dimension is number of unique
+        point, the second dimension is the number of ensemble members and the
+        third dimension is the number of events.
+
+    Returns
+    -------
+    entropy: np.array
+    mutual information: np.array
+    """
     avg_dist = np.mean(ensemble_probs, axis=1)
     entropy_avg_dist = compute_entropy(avg_dist)
     conditional_entropy = compute_entropy(ensemble_probs)

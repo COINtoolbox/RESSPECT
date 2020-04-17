@@ -1,0 +1,68 @@
+##SALT3 INPUT
+
+[pipeline]
+n_lcfit = 1
+n_biascorlcfit = 1
+
+[data]
+snlist=$SALT3_DIR/examples/pipelinetest/training/data/SALT3TEST_SIMPLE.LIST
+
+[byosed]
+baseinput=byosed/BYOSED_base.params
+outinput=pipelinetest/TEST_BYOSED.params
+set_key= FLAGS COLOR False
+    FLAGS STRETCH False
+    
+[simulation]
+pro=snlc_sim.exe
+#baseinput=simulation/SIMGEN_BYOSEDTEST.INPUT
+#outinput=pipelinetest/TEST_SIMGEN_BYOSEDTEST.INPUT
+baseinput=simulation/SIMGEN_SALT3TEST.INPUT
+outinput=pipelinetest/TEST_SIMGEN_SALT3TEST.INPUT
+batch=False
+prooptions=
+set_key= NGEN_LC 150
+    GENSOURCE RANDOM
+    GENRANGE_REDSHIFT 0.01 0.4
+    GENVERSION MD_BYOSEDTEST
+
+[training]
+pro=trainsalt
+proargs = -c 
+baseinput=training/SALT_SNANA.conf
+prooptions = 
+#--stage validate
+outinput=pipelinetest/TEST_SALT.conf
+set_key=trainparams waverange 2000,9200
+    iodata snlist training/data/SALT3TEST_SIMPLE.LIST
+    trainparams waveoutres 10
+#mcmcparams n_steps_mcmc 500
+#mcmcparams n_burnin_mcmc 200
+
+[lcfitting]
+pro=snlc_fit.exe
+baseinput=$ACTSNCLASS_DIR/auxiliary_files/baseinputs/perfect_sim_v1.nml
+outinput=pipelineinputs/snfit_TEST.nml
+batch=False
+validplots=False
+prooptions=
+set_key=4
+    0 SNLCINP VERSION_PHOTOMETRY RESSPECT_LSST_TRAIN_DDF_PLASTICC_MODEL90_SNIa-SALT2
+    0 SNLCINP SNCID_LIST_FILE test_photoids_loop_0.dat
+    0 SNLCINP PRIVATE_DATA_PATH /media/RESSPECT/data/RESSPECT_PERFECT_SIM_v2/raw_data
+
+[getmu]
+pro=SALT2mu.exe
+baseinput=$ACTSNCLASS_DIR/auxiliary_files/baseinputs/SALT2mu.default
+outinput=pipelineinputs/test_salt2mu.input
+batch=False
+validplots=False
+prooptions=
+set_key=2
+    file ps1sim_default.fitres
+    prefix test_salt2mu
+
+[cosmofit]
+pro=wfit.exe
+outinput=cosmofit/test.M0DIF
+prooptions= -ompri 0.3 -dompri 0.01

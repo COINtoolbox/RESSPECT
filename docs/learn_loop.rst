@@ -14,7 +14,7 @@ For start, we can load the feature information:
 .. code-block:: python
    :linenos:
 
-   >>> from actsnclass import DataBase
+   >>> from resspect import DataBase
 
    >>> path_to_features_file = 'results/Bazin.dat'
 
@@ -90,12 +90,12 @@ Running a number of iterations in sequence
 ------------------------------------------
 
 We provide a function where all the above steps can be done in sequence for a number of iterations.
-In interactive mode, you must define the required variables and use the :py:mod:`actsnclass.learn_loop` function:
+In interactive mode, you must define the required variables and use the :py:mod:`resspect.learn_loop` function:
 
 .. code-block:: python
    :linenos:
 
-   >>> from actsnclass.learn_loop import  learn_loop
+   >>> from resspect.learn_loop import  learn_loop
 
    >>> nloops = 1000                                  # number of iterations
    >>> method = 'Bazin'                               # only option in v1.0
@@ -116,7 +116,7 @@ Alternatively you can also run everything from the command line:
 .. code-block:: bash
 
    >>> run_loop.py -i <input features file> -b <batch size> -n <number of loops>
-   >>>             -d <output metrics file> -q <output queried sample file>
+   >>>             -m <output metrics file> -q <output queried sample file>
    >>>             -s <learning strategy> -t <choice of initial training>
 
 The queryable sample
@@ -128,7 +128,7 @@ In the example shown above, when reading the data from the features file there w
 .. code-block:: python
    :linenos:
 
-   >>> data.metadata['sample'].unique()
+   >>> data.metadata['orig_sample'].unique()
    array(['test', 'train'], dtype=object)
 
 This corresponds to an unrealistic scenario where we are able to obtain spectra for any object at any time.
@@ -140,7 +140,7 @@ Active Learning loop in time domain
 ===================================
 
 Considering that you have previously prepared the time domain data, you can run the active learning loop
-in its current form either by using the :py:mod:`actsnclass.time_domain_loop` or by using the command line
+in its current form either by using the :py:mod:`resspect.time_domain_loop` or by using the command line
 interface:
 
 .. code-block:: bash
@@ -159,10 +159,10 @@ In the example above, if you choose to start from the original training sample, 
 input the path to the file containing the full light curve analysis - so the full initial training can
 be read. This option corresponds to `-t original -fl <path to full lc features>`.
 
-More details can be found in the corresponding `docstring <https://github.com/COINtoolbox/ActSNClass/blob/master/actsnclass/scripts/run_time_domain.py>`_.
+More details can be found in the corresponding `docstring <https://github.com/COINtoolbox/resspect/blob/master/resspect/scripts/run_time_domain.py>`_.
 
 
-Once you ran one or more options, you can use the :py:mod:`actsnclass.plot_results` module, as described in the :ref:`produce plots <plotting>` page.
+Once you ran one or more options, you can use the :py:mod:`resspect.plot_results` module, as described in the :ref:`produce plots <plotting>` page.
 The result will be something like the plot below (accounting for variations due to initial training).
 
 

@@ -4,7 +4,7 @@ How to contribute
 =================
 
 Below you will find general guidance on how to prepare your piece of code to be integrated to the
-``actsnclass`` environment.
+``resspect`` environment.
 
 
 Add a new data set
@@ -53,14 +53,14 @@ The function below show how the basic structure required to deal with 1 light cu
 Feel free to also provide other keywords which might be important to handle your data.
 Given a function like this we should be capable of incorporating it into the pipeline.
 
-Please refer to the :py:mod:`actsnclass.fit_lightcurves` module for a closer look at this part of the code.
+Please refer to the :py:mod:`resspect.fit_lightcurves` module for a closer look at this part of the code.
 
 
 
 Add a new feature extraction method
 -----------------------------------
 
-Currently ``actsnclass`` only deals with Bazin features.
+Currently ``resspect`` only deals with Bazin features.
 The snipet below show an example of friendly code for a new feature extraction method.
 
 
@@ -90,7 +90,7 @@ The snipet below show an example of friendly code for a new feature extraction m
    >>>
    >>>    return features
 
-You can check the current feature extraction tools for the Bazin parametrization at :py:mod:`actsnclass.bazin`
+You can check the current feature extraction tools for the Bazin parametrization at :py:mod:`resspect.bazin`
 module.
 
 
@@ -131,7 +131,7 @@ A new classifier should be warp in a function such as:
    >>>    return predictions, probabilities
 
 The only classifier implemented at this point is a Random Forest and can be found at the
-:py:mod:`actsnclass.classifiers` module.
+:py:mod:`resspect.classifiers` module.
 
 .. important:: Remember that in order to be effective in the active learning frame work a classifier should not be heavy on the required computational resources and must be sensitive to small changes in the training sample. Otherwise the evolution will be difficult to tackle.
 
@@ -180,7 +180,7 @@ A minimum structure for such function would be:
 
 
 The current available strategies are Passive Learning (or Random Sampling) and Uncertainty Sampling.
-Both can be scrutinized at the :py:mod:actsnclass.`query_strategies` module.
+Both can be scrutinized at the :py:mod:resspect.`query_strategies` module.
 
 
 Add a new diagnostic metric
@@ -222,5 +222,5 @@ A new diagnostic metrics can then be provided in the form:
 
 The currently implemented diagnostic metrics are those used in the
 SNPCC (`Kessler et al., 2009 <https://arxiv.org/abs/1008.1024>`_) and can be found at the
-:py:mod:`actsnclass.metrics` module.
+:py:mod:`resspect.metrics` module.
 
