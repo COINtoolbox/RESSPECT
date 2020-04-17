@@ -1,4 +1,4 @@
-# Copyright 2020 snactclass software
+# Copyright 2020 resspect software
 # Author: Mi Dai
 #         
 # created on 30 March 2020
