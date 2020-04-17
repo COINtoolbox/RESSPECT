@@ -1113,9 +1113,9 @@ class DataBase:
                 metrics.write('loop ')
                 for name in self.metrics_list_names:
                     metrics.write(name + ' ')
-                for j in range(batch):
+                for j in range(batch - 1):
                     metrics.write('query_id' + str(j + 1) + ' ')
-                metrics.write('\n')
+                metrics.write('query_id' + str(batch) + '\n')
 
         # write to file
         if len(self.queried_sample[loop]) > 0:
@@ -1123,9 +1123,9 @@ class DataBase:
                 metrics.write(str(epoch) + ' ')
                 for value in self.metrics_list_values:
                     metrics.write(str(value) + ' ')
-                for j in range(len(self.queried_sample[loop])):
+                for j in range(len(self.queried_sample[loop]) - 1):
                     metrics.write(str(self.queried_sample[loop][j][1]) + ' ')
-                metrics.write('\n')
+                metrics.write(str(self.queried_sample[loop][len(self.queried_sample[loop]) - 1][1]) + '\n')
 
     def save_queried_sample(self, queried_sample_file: str, loop: int,
                             full_sample=False, batch=1):
