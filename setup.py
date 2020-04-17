@@ -1,6 +1,6 @@
-# Copyright 2019 actsnclass software
-# Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
+# Copyright 2020 resspect software
+# Author: The RESSPECT team
+#         Initial skeleton from ActSNClass
 #
 # created on 7 August 2019
 #
@@ -20,30 +20,21 @@ import setuptools
 
 
 setuptools.setup(
-    name='actsnclass',
-    version='1.2',
+    name='resspect',
+    version='0.1',
     packages=setuptools.find_packages(),
-    py_modules=['actsnclass/bazin',
-                'actsnclass/build_snpcc_canonical',
-                'actsnclass/classifiers',
-                'actsnclass/database',
-                'actsnclass/fit_lightcurves',
-                'actsnclass/learn_loop',
-                'actsnclass/metrics',
-                'actsnclass/plot_results',
-                'actsnclass/query_strategies',
-                'actsnclass/snana_fits_to_pd',
-                'actsnclass/time_domain',
-                'actsnclass/time_domain_PLAsTiC'],
-    scripts=['actsnclass/scripts/build_canonical.py',
-             'actsnclass/scripts/build_time_domain.py',
-             'actsnclass/scripts/fit_dataset.py',
-             'actsnclass/scripts/make_metrics_plots.py',
-             'actsnclass/scripts/run_loop.py',
-             'actsnclass/scripts/run_time_domain.py'],
-    url='https://github.com/COINtoolbox/ActSNClass/tree/RESSPECT',
+    py_modules=['classifiers',
+                'data_base',
+                'fit_lightcurves',
+                'learn_loop',
+                'metrics',
+                'plot_results',
+                'query_strategies',
+                'time_domain'],
+    scripts=[],
+    url='https://github.com/COINtoolbox/RESSPECT',
     license='GNU3',
     author='The RESSPECT team',
     author_email='contact@cosmostatistics-initiative.org',
-    description='ActSNClass - Recommendation System for Spectroscopic Follow-up'
+    description='Recommendation System for Spectroscopic follow-up'
 )
