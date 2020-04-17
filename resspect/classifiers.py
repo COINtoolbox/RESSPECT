@@ -1,8 +1,8 @@
-# Copyright 2019 snactclass software
-# Author: Emille E. O. Ishida
+# Copyright 2020 resspect software
+# Author: The RESSPECT team
 #         Based on initial prototype developed by the CRP #4 team
 #
-# created on 10 August 2019
+# created on 2 March 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -16,20 +16,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ['random_forest','gradient_boosted_trees','knn',
-           'mlp','svm','nbg']
+__all__ = ['knn']
 
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from xgboost.sklearn import XGBClassifier
+from actsnclass.classifiers import random_forest
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.neural_network import MLPClassifier
-from sklearn.svm import SVC
-from sklearn.naive_bayes import GaussianNB
 
-def random_forest(train_features:  np.array, train_labels: np.array,
-                  test_features: np.array, **kwargs):
-    """Random Forest classifier.
+
+def knn(train_features:  np.array, train_labels: np.array,
+                  test_features: np.array, nneighbors=10):
+    """k-Nearest Neighbor classifier.
 
     Parameters
     ----------
@@ -39,9 +35,11 @@ def random_forest(train_features:  np.array, train_labels: np.array,
         Training sample classes.
     test_features: np.array
         Test sample features.
-    kwargs: extra parameters
-        All keywords required by 
-        sklearn.ensemble.RandomForestClassifier function. 
+    nneighbors: int (optional)
+        Number of nearest neighbors to consider. 
+        Default is 10.
+    seed: float (optional)
+        Seed for random number generator. Default is 42.
 
     Returns
     -------
@@ -52,179 +50,11 @@ def random_forest(train_features:  np.array, train_labels: np.array,
     """
 
     # create classifier instance
-    clf = RandomForestClassifier(**kwargs)
+    clf = KNeighborsClassifier(n_neighbors=nneighbors)
     clf.fit(train_features, train_labels)                     # train
     predictions = clf.predict(test_features)                # predict
     prob = clf.predict_proba(test_features)       # get probabilities
 
-    return predictions, prob
-
-
-def gradient_boosted_trees(train_features: np.array, 
-                           train_labels: np.array,
-                           test_features: np.array, **kwargs):
-    """Gradient Boosted Trees classifier.
-
-    Parameters
-    ----------
-    train_features : np.array
-        Training sample features.
-    train_labels: np.array
-        Training sample classes.
-    test_features: np.array
-        Test sample features.
-    kwargs: extra parameters
-        All parameters allowed by sklearn.XGBClassifier
-
-    Returns
-    -------
-    predictions: np.array
-        Predicted classes.
-    prob: np.array
-        Classification probability for all objects, [pIa, pnon-Ia].
-    """
-
-    #create classifier instance
-    clf = XGBClassifier(**kwargs)
-
-    clf.fit(train_features, train_labels)             # train
-    predictions = clf.predict(test_features)          # predict
-    prob = clf.predict_proba(test_features)           # get probabilities
-
-    return predictions, prob
-
-
-def knn(train_features: np.array, train_labels: np.array,
-        test_features: np.array, **kwargs):
-
-    """K-Nearest Neighbour classifier.
-
-    Parameters
-    ----------
-    train_features : np.array
-        Training sample features.
-    train_labels: np.array
-        Training sample classes.
-    test_features: np.array
-        Test sample features.
-    kwargs: extra parameters
-        All parameters allowed by sklearn.neighbors.KNeighborsClassifier
-
-    Returns
-    -------
-    predictions: np.array
-        Predicted classes.
-    prob: np.array
-        Classification probability for all objects, [pIa, pnon-Ia].
-    """
-
-    #create classifier instance
-    clf = KNeighborsClassifier(**kwargs)
-
-    clf.fit(train_features, train_labels)              # train
-    predictions = clf.predict(test_features)           # predict
-    prob = clf.predict_proba(test_features)            # get probabilities
-
-    return predictions, prob
-
-def mlp(train_features: np.array, train_labels: np.array,
-        test_features: np.array, **kwargs):
-
-    """Multi Layer Perceptron classifier.
-
-    Parameters
-    ----------
-    train_features : np.array
-        Training sample features.
-    train_labels: np.array
-        Training sample classes.
-    test_features: np.array
-        Test sample features.
-    kwargs: extra parameters
-        All parameters allowed by sklearn.neural_network.MLPClassifier
-
-    Returns
-    -------
-    predictions: np.array
-        Predicted classes.
-    prob: np.array
-        Classification probability for all objects, [pIa, pnon-Ia].
-    """
-    
-    #create classifier instance
-    clf=MLPClassifier(**kwargs)
-
-    clf.fit(train_features, train_labels)              # train
-    predictions = clf.predict(test_features)           # predict
-    prob = clf.predict_proba(test_features)            # get probabilities
-        
-    return predictions, prob
-
-def svm(train_features: np.array, train_labels: np.array,
-        test_features: np.array, **kwargs):
-    """Support Vector classifier.
-
-    Parameters
-    ----------
-    train_features : np.array
-        Training sample features.
-    train_labels: np.array
-        Training sample classes.
-    test_features: np.array
-        Test sample features.
-    kwargs: dict (optional)
-        All parameters which can be passed to sklearn.svm.SVC
-        function.
-
-    Returns
-    -------
-    predictions: np.array
-        Predicted classes.
-    prob: np.array
-        Classification probability for all objects, [pIa, pnon-Ia].
-    """
-
-    #create classifier instance
-    clf = SVC(kwargs)
-
-    clf.fit(train_features, train_labels)          # train
-    predictions = clf.predict(test_features)       # predict
-    prob = clf.predict_proba(test_features)        # get probabilities
-
-    return predictions, prob
-
-def nbg(train_features: np.array, train_labels: np.array,
-                  test_features: np.array, **kwargs):
-
-    """Naive Bayes classifier.
-
-    Parameters
-    ----------
-    train_features : np.array
-        Training sample features.
-    train_labels: np.array
-        Training sample classes.
-    test_features: np.array
-        Test sample features.
-    kwargs: dict (optional)
-        All parameters which can be passed to sklearn.svm.SVC
-        function.
-
-    Returns
-    -------
-    predictions: np.array
-        Predicted classes.
-    prob: np.array
-        Classification probability for all objects, [pIa, pnon-Ia].
-    """
-
-    #create classifier instance
-    clf=GaussianNB(**kwargs)
-
-    clf.fit(train_features, train_labels)         # fit
-    predictions = clf.predict(test_features)      # predict
-    prob = clf.predict_proba(test_features)       # get probabilities
-    
     return predictions, prob
 
 

@@ -1,8 +1,8 @@
-# Copyright 2019 snactclass software
-# Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
+# Copyright 2020 RESSPECT software
+# Author: The RESSPECT team
+#         Initial skeleton from ActSNClass
 #
-# created on 10 August 2019
+# created on 2 March 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@
 
 __all__ = ['learn_loop']
 
-from actsnclass import DataBase
+from resspect import DataBase
 
 
 def learn_loop(nloops: int, strategy: str, path_to_features: str,
-               output_metrics_file: str, output_queried_file: str,
+               output_diag_file: str, output_queried_file: str,
                features_method='Bazin', classifier='RandomForest',
                training='original', batch=1, screen=True, survey='DES',
-               nclass=2, **kwargs):
+               perc=0.1, nclass=2):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -39,16 +39,15 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         if dict, keywords should be 'train' and 'test', 
         and values must contain the path for separate train 
         and test sample files.
-    output_metrics_file: str
-        Full path to output file to store metric values of each loop.
+    output_diag_file: str
+        Full path to output file to store diagnostics of each loop.
     output_queried_file: str
         Full path to output file to store the queried sample.
     features_method: str (optional)
         Feature extraction method. Currently only 'Bazin' is implemented.
-    classifier: str 
+    classifier: str (optional)
         Machine Learning algorithm.
-        Currently implemented options are 'RandomForest', 'GradientBoostedTrees',
-        'K-NNclassifier','MLPclassifier','SVMclassifier' and 'NBclassifier'.
+        Currently only 'RandomForest' is implemented.
     training: str or int (optional)
         Choice of initial training sample.
         If 'original': begin from the train sample flagged in the file
@@ -62,12 +61,16 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     survey: str (optional)
         'DES' or 'LSST'. Default is 'DES'.
         Name of the survey which characterizes filter set.
+    perc: float in [0,1] (optioal)
+        Percentile chosen to identify the new query. 
+        Only used for PercentileSampling. 
+        Default is 0.1.
     nclass: int (optional)
         Number of classes to consider in the classification
-        Currently only nclass == 2 is implemented.
-    kwargs: extra parameters
-        All keywords required by the classifier function.    
+        Currently only nclass == 2 is implemented.    
     """
+
+    ## This module will need to be expanded for RESSPECT
 
     # initiate object
     data = DataBase()
@@ -95,19 +98,19 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
             print('Processing... ', loop)
 
         # classify
-        data.classify(method=classifier, **kwargs)
+        data.classify(method=classifier)
 
         # calculate metrics
         data.evaluate_classification()
 
         # choose object to query
-        indx = data.make_query(strategy=strategy, batch=batch)
+        indx = data.make_query(strategy=strategy, batch=batch, perc=perc)
 
         # update training and test samples
         data.update_samples(indx, loop=loop)
 
-        # save metrics for current state
-        data.save_metrics(loop=loop, output_metrics_file=output_metrics_file,
+        # save diagnostics for current state
+        data.save_metrics(loop=loop, output_metrics_file=output_diag_file,
                           batch=batch, epoch=loop)
 
         # save query sample to file

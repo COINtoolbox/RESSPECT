@@ -1,8 +1,8 @@
-# Copyright 2019 snactclass software
-# Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
+# Copyright 2020 RESSPECT software
+# Author: The RESSPECT team
+#         Initial skeleton taken from ActSNClass
 #
-# created on 9 August 2019
+# created on 5 March 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 # limitations under the License.
 
 from actsnclass.bazin import bazin, fit_scipy
-from actsnclass.snana_fits_to_pd import read_fits
 
 import io
 import matplotlib.pylab as plt
@@ -252,7 +251,7 @@ class LightCurve(object):
         Parameters
         ----------
         photo_file: str
-            Complete path to light curves file.
+            Complete path to full sample file.
         snid: int
             Identification number for the desired light curve.
         """
@@ -263,8 +262,6 @@ class LightCurve(object):
             content = tar.extractfile(fname).read()
             all_photo = pd.read_csv(io.BytesIO(content))
             tar.close()
-        elif '.FITS' in photo_file:
-            df_header, all_photo = read_fits(photo_file, drop_separators=True)
         else:    
             all_photo = pd.read_csv(photo_file, index_col=False)
 
@@ -280,39 +277,18 @@ class LightCurve(object):
         elif 'objid' in all_photo.keys():
             flag = all_photo['objid'] == snid
             self.id_name = 'objid'
-        elif 'id' in all_photo.keys():
-            flag = all_photo['id'] == snid
-            self.id_name = 'id'
 
         photo = all_photo[flag]
-
-        self.dataset_name = 'RESSPECT'                      # name of data set
-        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']       # list of filters  
-        
-        # check filter name
-        if 'b' in str(photo['FLT'].values[0]):
-            band = []
-            for i in range(photo.shape[0]):
-                for f in self.filters:
-                    if "b'" + f + " '" == str(photo['FLT'].values[i]):
-                        band.append(f)
-            photo.insert(1, 'band', band, True)
-                        
+           
+        self.dataset_name = 'RESSPECT'              # name of data set
+        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']       # list of filters
         self.id = snid 
         self.photometry = {}
         self.photometry['mjd'] = photo['MJD'].values
-        self.photometry['band'] = photo['band'].values
+        self.photometry['band'] = photo['FLT'].values
         self.photometry['flux'] = photo['FLUXCAL'].values
         self.photometry['fluxerr'] = photo['FLUXCALERR'].values
-
-        if 'SNR' in photo.keys():
-            self.photometry['SNR'] = photo['SNR'].values
-        else:
-            signal = self.photometry['flux']
-            noise = self.photometry['fluxerr']
-            self.photometry['SNR'] = \
-                np.array([signal[i]/noise[i] for i in range(signal.shape[0])])
-            
+        self.photometry['SNR'] = photo['SNR'].values
         self.photometry = pd.DataFrame(self.photometry)
         
     def load_plasticc_lc(self, photo_file: str, snid: int):
@@ -322,7 +298,7 @@ class LightCurve(object):
         Parameters
         ----------
         photo_file: str
-            Complete path to light curve file.
+            Complete path to full sample file.
         snid: int
             Identification number for the desired light curve.
         """
@@ -383,6 +359,8 @@ class LightCurve(object):
         bool
             If true, sample is changed to `queryable`.
         """
+
+        ### This will need to change for RESSPECT
 
         # create photo flag
         photo_flag = self.photometry['mjd'].values <= mjd
@@ -566,6 +544,7 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str):
         Path to directory containing the set of individual files, one for each light curve.
     features_file: str
         Path to output file where results should be stored.
+
     """
 
     # read file names
@@ -577,7 +556,7 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str):
 
     # add headers to files
     with open(features_file, 'w') as param_file:
-        param_file.write('id redshift type code orig_sample gA gB gt0 gtfall gtrise rA rB rt0 rtfall rtrise iA iB it0 ' +
+        param_file.write('id redshift type code sample gA gB gt0 gtfall gtrise rA rB rt0 rtfall rtrise iA iB it0 ' +
                          'itfall itrise zA zB zt0 ztfall ztrise\n')
 
     for file in lc_list:
@@ -618,6 +597,7 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
         Output file where the features will be stored.
     sample: str
 	'train' or 'test'. Default is None.
+
     """
     # count survivers
     count_surv = 0
@@ -629,8 +609,7 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
         content = tar.extractfile(fname).read()
         header = pd.read_csv(io.BytesIO(content))
         tar.close()
-    elif 'FITS' in path_header_file:
-        header, photo = read_fits(path_photo_file, drop_separators=True)    
+        
     else:    
         header = pd.read_csv(path_header_file, index_col=False)
         if ' ' in header.keys()[0]:
@@ -638,7 +617,7 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
     
     # add headers to files
     with open(output_file, 'w') as param_file:
-        param_file.write('id redshift type code orig_sample uA uB ut0 utfall ' +
+        param_file.write('id redshift type code sample uA uB ut0 utfall ' +
                          'utrise gA gB gt0 gtfall gtrise rA rB rt0 rtfall ' +
                          'rtrise iA iB it0 itfall itrise zA zB zt0 ztfall ' + 
                          'ztrise YA YB Yt0 Ytfall Ytrise\n')
@@ -675,7 +654,13 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
         lc = LightCurve()                       
         lc.load_resspect_lc(path_photo_file, snid)
 
-        # fit all bands                
+        # check filter name
+        if 'b' in lc.photometry['band'].iloc[0]:
+            for i in range(lc.photometry['band'].values.shape[0]):
+                for f in lc.filters:
+                    if "b'" + f + " '" == str(lc.photometry['band'].values[i]):
+                        lc.photometry['band'].iloc[i] = f
+                
         lc.fit_bazin_all()
 
         # get model name 
@@ -714,6 +699,7 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file:str,
         Output file where the features will be stored.
     sample: str
 	'train' or 'test'. Default is None.
+
     """
     types = {90: 'Ia', 67: '91bg', 52:'Iax', 42:'II', 62:'Ibc', 
              95: 'SLSN', 15:'TDE', 64:'KN', 88:'AGN', 92:'RRL', 65:'M-dwarf',
@@ -738,7 +724,7 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file:str,
 
     # add headers to files
     with open(output_file, 'w') as param_file:
-        param_file.write('id redshift type code orig_sample uA uB ut0 utfall ' +
+        param_file.write('id redshift type code sample uA uB ut0 utfall ' +
                          'utrise gA gB gt0 gtfall gtrise rA rB rt0 rtfall ' +
                          'rtrise iA iB it0 itfall itrise zA zB zt0 ztfall ' + 
                          'ztrise YA YB Yt0 Ytfall Ytrise\n')
