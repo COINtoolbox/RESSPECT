@@ -127,6 +127,13 @@ class Canvas(object):
                        'QBDMI': '#0a4f08',                     # dark green
                        'QBDEntropy': '#434773'                 # grey blue
                        }
+        self.classifiers = {'RandomForest': 'Random Forest',
+                            'GradientBoostedTrees': 'GBT',
+                            'KNN': 'KNN',
+                            'MLP': 'MLP',
+                            'SVM': 'SVM',
+                            'NB': 'NB'
+                       }
         self.labels = {'Canonical': 'Canonical',
                        'RandomSampling': 'Passive Learning',
                        'UncSampling': 'AL - Uncertainty Sampling',
@@ -134,7 +141,13 @@ class Canvas(object):
                        'UncSamplingLeastConfident': 'Uncertainty Sampling LC',
                        'UncSamplingMargin': 'Uncertainty Sampling Margin',
                        'QBDMI': 'QBD with MI',
-                       'QBDEntropy': 'QBD with Entropy'}
+                       'QBDEntropy': 'QBD with Entropy',
+                       'RandomForest': 'Random Forest',
+                       'GradientBoostedTrees': 'GBT',
+                       'KNN': 'KNN',
+                       'MLP': 'MLP',
+                       'SVM': 'SVM',
+                       'NB': 'NB'}
         self.markers = {'Canonical': '--',
                         'RandomSampling': ':',
                         'UncSampling': '-.',
@@ -142,7 +155,13 @@ class Canvas(object):
                         'UncSamplingLeastConfident': '-.',
                         'UncSamplingMargin': '-.',
                         'QBDMI': '-.',
-                        'QBDEntropy': '-.'}
+                        'QBDEntropy': '-.',
+                        'RandomForest': '-',
+                        'GradientBoostedTrees': '--',
+                        'KNN': ':',
+                        'MLP': '-.',
+                        'SVM': '-',
+                        'NB': '-.'}
         self.strategies = {'Canonical': self.canonical,
                            'RandomSampling': self.rand_sampling,
                            'UncSampling': self.unc_sampling,
