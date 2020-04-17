@@ -1,13 +1,15 @@
+[![resspect](https://img.shields.io/badge/COIN--Focus-RESSPECT-red)](http://cosmostatistics-initiative.org/resspect/)
+
 # <img align="right" src="docs/images/logo_small.png" width="350"> RESSPECT
 
 
-## ActSNClass - RESSPECT version 
+## Recommendation System for Spectroscopic follow-up 
 
-This repository holds the pipeline for the RESSPECT project (REcommendation System for SPECTroscopic follow-up).
+This repository holds the pipeline of the RESSPECT project, built as part of the inter-collaboration activities developed by the Cosmostatistics Initiative ([COIN](cosmostatistics-initiative.org)) and the LSST Dark Energy Science Collaboration ([DESC](https://lsstdesc.org/)).
 
-It grew from the work developed by COIN in the [ActSNClass](https://github.com/COINtoolbox/ActSNClass) package.
+This work grew from activities developed within the [COIN Residence Program #4](http://iaacoin.wix.com/crp2017), using as a starting point their [ActSNClass](https://github.com/COINtoolbox/ActSNClass) software. We kindly ask you to include the full citation to the original work if you use this material in your research: [Ishida et al, 2019, MNRAS, 483 (1), 2–18](https://cosmostatistics-initiative.org/wp-content/uploads/2019/06/COIN_ActSNClass.txt).
 
-Full documentation can be found at [readthedocs](https://actsnclass.readthedocs.io/en/resspect/index.html).
+Full documentation can be found at [readthedocs](https://resspect.readthedocs.io/en/latest/).
 
 # Dependencies
 
@@ -41,7 +43,7 @@ You will need to install the `Python` package ``virtualenv``. In MacOS or Linux,
 
 Navigate to a ``env_directory`` where you will store the new virtual environment and create it  
 
-    >> python3 -m venv ActSNClass  
+    >> python3 -m venv RESSPECT  
 
 > Make sure you deactivate any ``conda`` environment you might have running before moving forward.   
 
@@ -49,21 +51,19 @@ Once the environment is set up you can activate it,
 
     >> source <env_directory>/bin/activate  
 
-You should see a ``(ActSNClass)`` flag in the extreme left of terminal command line.   
+You should see a ``(RESSPECT)`` flag in the extreme left of terminal command line.   
 
 Next, clone this repository in another chosen location:  
 
-    (ActSNClass) >> git clone -b RESSPECT https://github.com/COINtoolbox/ActSNClassgit s.git  
+    (RESSPECT) >> git clone https://github.com/COINtoolbox/RESSPECT.git  
 
 Navigate to the repository folder and do  
 
-    (ActSNClass) >> pip install -r requirements.txt  
+    (RESSPECT) >> pip install -r requirements.txt  
 
 
 You can now install this package with:  
 
-    (ActSNClass) >>> python setup.py develop  
+    (RESSPECT) >>> python setup.py install  
 
 > You may choose to create your virtual environment within the folder of the repository. If you choose to do this, you must remember to exclude the virtual environment directory from version control using e.g., ``.gitignore``.   
-
-
