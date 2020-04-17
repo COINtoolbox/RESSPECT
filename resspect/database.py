@@ -1,8 +1,7 @@
-# Copyright 2019 snactclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
 #
-# created on 10 August 2019
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -22,10 +21,10 @@ import os
 import pandas as pd
 import tarfile
 
-from actsnclass.classifiers import *
+from resspect.classifiers import *
 
-from actsnclass.query_strategies import *
-from actsnclass.metrics import *
+from resspect.query_strategies import *
+from resspect.metrics import *
 
 
 __all__ = ['DataBase']
@@ -81,6 +80,8 @@ class DataBase:
         Separate train and test samples.
     classify(method: str)
         Apply a machine learning classifier.
+    classify_bootstrap(method: str)
+        Apply a machine learning classifier bootstrapping the classifier
     evaluate_classification(metric_label: str)
         Evaluate results from classification.
     identify_keywords()
@@ -104,7 +105,7 @@ class DataBase:
 
     Examples
     --------
-    >>> from actsnclass import DataBase
+    >>> from resspect import DataBase
 
     Define the necessary paths
 
@@ -773,7 +774,7 @@ class DataBase:
         method: str
             Chosen classifier.
             The current implementation accepts `RandomForest`,
-            'GradientBoostedTrees', 'KNN', 'MLP' and 'NB'.
+            'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
         kwargs: extra parameters
             Parameters required by the chosen classifier.
         """
@@ -814,14 +815,14 @@ class DataBase:
     def classify_bootstrap(self, method: str, **kwargs):
         """Apply a machine learning classifier bootstrapping the classifier.
 
-        Populate properties: predicted_class and class_prob
+        Populate properties: predicted_class, class_prob and ensemble_probs.
 
         Parameters
         ----------
         method: str
             Chosen classifier.
             The current implementation accepts `RandomForest`,
-            'GradientBoostedTrees', 'KNN', 'MLP' and 'NB'.
+            'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
         kwargs: extra parameters
             Parameters required by the chosen classifier.
         """
@@ -866,7 +867,7 @@ class DataBase:
                              "\n Feel free to add other options.")
 
     def output_photo_Ia(self, threshold: float, to_file=True, 
-                        filename=' ', screen=False):
+                        filename=' '):
         """Returns the metadata for  photometrically classified SN Ia.
 
         Parameters
@@ -878,9 +879,11 @@ class DataBase:
             write to file. Default is False.
         filename: str (optional)
             Name of output file. Only used if to_file is True.
-        screen: bool (optional)
-            Print number of photometrically classified Ia to screen.
-            Default is False.
+
+        Returns
+        -------
+        pd.DataFrame
+            if to_file is False, otherwise write DataFrame to file.
         """
 
         # photo Ia flag
@@ -893,9 +896,7 @@ class DataBase:
 
         # get ids
         photo_Ia_metadata = self.test_metadata[photo_flag]
-
-        if screen:
-            print('Number of photo-Ia: ', sum(photo_flag))
+        
 
         if to_file:
             photo_Ia_metadata.to_csv(filename, index=False)
@@ -930,7 +931,9 @@ class DataBase:
         strategy: str (optional)
             Strategy used to choose the most informative object.
             Current implementation accepts 'UncSampling' and
-            'RandomSampling'. Default is `UncSampling`.
+            'RandomSampling', 'UncSamplingEntropy', 
+            'UncSamplingLeastConfident', 'UncSamplingMargin',
+            'QBDMI', 'QBDEntropy', . Default is `UncSampling`.
 
         batch: int (optional)
             Number of objects to be chosen in each batch query.
@@ -944,7 +947,7 @@ class DataBase:
         screen: bool (optional)
             If true, display on screen information about the
             displacement in order and classificaion probability due to
-            constraints on queryable sample.
+            constraints on queryable sample. Default is False.
 
         Returns
         -------
@@ -1014,9 +1017,7 @@ class DataBase:
             return query_indx
 
         else:
-            raise ValueError('Invalid strategy. Only "UncSampling" and '
-                             '"RandomSampling are implemented! \n '
-                             'Feel free to add other options. ')
+            raise ValueError('Invalid strategy.')
 
     def update_samples(self, query_indx: list, loop: int, epoch=0):
         """Add the queried obj(s) to training and remove them from test.
@@ -1112,9 +1113,9 @@ class DataBase:
                 metrics.write('loop ')
                 for name in self.metrics_list_names:
                     metrics.write(name + ' ')
-                for j in range(batch):
+                for j in range(batch - 1):
                     metrics.write('query_id' + str(j + 1) + ' ')
-                metrics.write('\n')
+                metrics.write('query_id' + str(batch) + '\n')
 
         # write to file
         if len(self.queried_sample[loop]) > 0:
@@ -1122,9 +1123,9 @@ class DataBase:
                 metrics.write(str(epoch) + ' ')
                 for value in self.metrics_list_values:
                     metrics.write(str(value) + ' ')
-                for j in range(len(self.queried_sample[loop])):
+                for j in range(len(self.queried_sample[loop]) - 1):
                     metrics.write(str(self.queried_sample[loop][j][1]) + ' ')
-                metrics.write('\n')
+                metrics.write(str(self.queried_sample[loop][len(self.queried_sample[loop]) - 1][1]) + '\n')
 
     def save_queried_sample(self, queried_sample_file: str, loop: int,
                             full_sample=False, batch=1):
