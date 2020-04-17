@@ -1,7 +1,6 @@
-# Copyright 2020 snactclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
-#
+#     
 # created on 26 February 2020
 #
 # Licensed GNU General Public License v3.0;
@@ -22,7 +21,7 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 
-from actsnclass import LightCurve
+from resspect import LightCurve
 
 
 class PLAsTiCCPhotometry(object):
@@ -202,7 +201,7 @@ class PLAsTiCCPhotometry(object):
         Parameters
         ----------
         lc: LightCurve
-            ActSNClass light curve object.
+            resspect light curve object.
         features_file: str
             Output file to store Bazin features.
         queryable: bool
