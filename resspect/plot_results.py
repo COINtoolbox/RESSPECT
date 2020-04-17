@@ -125,8 +125,13 @@ class Canvas(object):
                        'UncSamplingLeastConfident': '#eb34de', # pink
                        'UncSamplingMargin': '#ff8f05',         # orange
                        'QBDMI': '#0a4f08',                     # dark green
-                       'QBDEntropy': '#434773'                 # grey blue
-                       }
+                       'QBDEntropy': '#434773',                # grey blue
+                       'RandomForest': '#fac901',
+                       'GradientBoostedTrees': '#ff8f05',
+                       'KNN': '#dd0100',
+                       'MLP': '#225095',
+                       'SVM' : '#74eb34',
+                       'NB': '#0a4f08'}
         self.classifiers = {'RandomForest': 'Random Forest',
                             'GradientBoostedTrees': 'GBT',
                             'KNN': 'KNN',
