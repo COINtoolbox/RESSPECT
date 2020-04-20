@@ -24,6 +24,7 @@ from .learn_loop import *
 from .metrics import *
 from .query_strategies import *
 from .plot_results import *
+from .salt3_utils import *
 from .snana_fits_to_pd import *
 from .scripts.build_canonical import main as build_canonical
 from .scripts.build_time_domain import main as build_time_domain
@@ -49,6 +50,7 @@ __all__ = ['accuracy',
            'fit_plasticc_bazin',
            'fit_resspect_bazin',
            'fom',
+           'get_distances',
            'get_snpcc_metric',
            'gradient_boosted_trees',
            'knn',
