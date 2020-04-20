@@ -764,7 +764,8 @@ class DataBase:
                 wsample.write(str(self.train_features[j][-1]) + '\n')
             wsample.close()
 
-    def classify(self, method: str, **kwargs):
+    def classify(self, method: str, save_predictions=False, pred_dir=None,
+                 loop=None, **kwargs):
         """Apply a machine learning classifier.
 
         Populate properties: predicted_class and class_prob
@@ -775,6 +776,11 @@ class DataBase:
             Chosen classifier.
             The current implementation accepts `RandomForest`,
             'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
+        save_predictions: bool (optional)
+            Save predictions to file. Default is False
+        pred_dir: str (optional)
+            Output directory to store class predictions.
+            Only used if `save_predictions == True`. Default is None.
         kwargs: extra parameters
             Parameters required by the chosen classifier.
         """
@@ -811,6 +817,19 @@ class DataBase:
                               "'RandomForest', 'GradientBoostedTrees'," +
                               "'KNN', 'MLP' and NB'." +
                              "\n Feel free to add other options.")
+
+        if save_predictions:
+            id_name = self.identify_keywords()
+
+            out_fname = 'predict_loop_' + str(loop) + '.dat'
+            op = open(pred_dir + '/' + out_fname, 'w')
+            op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
+            for i in range(self.test_metadata.shape[0]):
+                op.write(str(self.test_metadata[id_name].iloc[i]) + ',')
+                op.write(str(self.classprob[i][0]) + ',' + str(self.classprob[i][1]) + ',')
+                op.write(str(self.predicted_class[i]) + '\n')
+            op.close()
+                
 
     def classify_bootstrap(self, method: str, **kwargs):
         """Apply a machine learning classifier bootstrapping the classifier.

@@ -25,7 +25,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                features_method='Bazin', classifier='RandomForest',
                training='original', batch=1, screen=True, survey='DES',
                nclass=2, photo_class_thr=0.5, photo_ids=False, photo_ids_tofile = False,
-               photo_ids_froot=' ', classifier_bootstrap=False, **kwargs):
+               photo_ids_froot=' ', classifier_bootstrap=False, save_predictions=False,
+               pred_dir=None, **kwargs):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -67,6 +68,12 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     photo_ids_froot: str (optional)
         Output root of file name to store photo ids.
         Only used if photo_ids is True.
+    pred_dir: str (optional)
+        Output diretory to store prediction file for each loop.
+        Only used if `save_predictions==True`.
+    save_predictions: bool (optional)
+        If True, save classification predictions to file in each loop.
+        Default is False.
     screen: bool (optional)
         If True, print on screen number of light curves processed.
     survey: str (optional)
@@ -111,9 +118,11 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
 
         # classify
         if classifier_bootstrap:
-            data.classify_bootstrap(method=classifier, **kwargs)
+            data.classify_bootstrap(method=classifier, save_predictions=save_predictions,
+                                    pred_dir=pred_dir, loop=loop, **kwargs)
         else:
-            data.classify(method=classifier, **kwargs)
+            data.classify(method=classifier, save_predictions=save_predictions,
+                          pred_dir=pred_dir, loop=loop, **kwargs)
 
         # calculate metrics
         data.evaluate_classification()
