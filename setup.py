@@ -31,6 +31,7 @@ setuptools.setup(
                 'resspect/metrics',
                 'resspect/plot_results',
                 'resspect/query_strategies',
+                'resspect/salt3_utils',
                 'resspect/snana_fits_to_pd',
                 'resspect/time_domain',
                 'resspect/time_domain_PLAsTiCC'],
