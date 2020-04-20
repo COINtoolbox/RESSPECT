@@ -59,20 +59,26 @@ class DataBase:
         Predicted classes - results from ML classifier.
     queried_sample: list
         Complete information of queried objects.
-    queryable_ids: np.array()
+    queryable_ids: np.array
         Flag for objects available to be queried.
-    test_features: np.array()
+    test_features: np.array
         Features matrix for the test sample.
     test_metadata: pd.DataFrame
         Metadata for the test sample
-    test_labels: np.array()
+    test_labels: np.array
         True classification for the test sample.
-    train_features: np.array()
+    train_features: np.array
         Features matrix for the train sample.
     train_metadata: pd.DataFrame
         Metadata for the training sample.
     train_labels: np.array
         Classes for the training sample.
+    validation_features: np.array
+        Features matrix for the validation sample. 
+    validation_labels: np.array
+        Classes for the validation sample.
+    validation_metadata: pd.DataFrame
+        Metadata for the validation sample.
 
     Methods
     -------
@@ -153,6 +159,7 @@ class DataBase:
     def __init__(self):
         self.classprob = np.array([])
         self.data = pd.DataFrame()
+        self.ensemble_probs = None
         self.features = pd.DataFrame([])
         self.features_names = []
         self.metadata = pd.DataFrame()
@@ -168,7 +175,9 @@ class DataBase:
         self.train_features = np.array([])
         self.train_metadata = pd.DataFrame()
         self.train_labels = np.array([])
-        self.ensemble_probs = None
+        self.validation_features = np.array([])
+        self.validation_labels = np.array([])
+        self.validation_metadata = pd.DataFrame()        
 
     def load_bazin_features(self, path_to_bazin_file: str, screen=False,
                             survey='DES', sample=None):
@@ -506,7 +515,8 @@ class DataBase:
                                  "\n Feel free to add other options.")
 
     def build_random_training(self, initial_training: int, nclass=2, screen=False,
-                              Ia_frac=0.5, queryable=True, sep_files=False):
+                              Ia_frac=0.5, queryable=True, sep_files=False,
+                              sep_validation=False):
         """Construct initial random training and corresponding test sample.
 
         Populate properties: train_features, train_header, test_features,
@@ -532,6 +542,8 @@ class DataBase:
         sep_files: bool (optional)
             If True, consider train and test samples separately read
             from independent files.
+        sep_validation: bool (optional)
+            Separate validation sample. Default is False.
         """
 
         # object if keyword
@@ -563,13 +575,31 @@ class DataBase:
         self.train_metadata = data_copy[train_flag]
         self.train_features = self.features[train_flag].values
 
-        # get test sample
-        self.test_metadata = data_copy[~train_flag]
-        self.test_features = self.features[~train_flag].values
+        if sep_validation:
+            # separate validation sample
+            temp_ids = data_copy[~train_flag][id_name].sample(int(0.25) * sum(~train_flag))
+            temp_flag = [obj in temp_ids for obj in data_copy[~train_flag][id_name].values]
+
+            validation_flag = np.logical_and(~train_flag, np.array(temp_flag))
+            test_flag = np.logical_and(~train_flag, ~temp_flag)
+             
+            self.validation_metadata = data_copy[validation_flag]
+            self.validation_features = self.features[validation_flag].values
+            self.test_metadata = data_copy[test_flag]
+            self.test_features = self.features[test_flag].values
+ 
+        else:
+            # get test sample
+            test_flag = ~train_flag
+            self.test_metadata = data_copy[test_flag]
+            self.test_features = self.features[test_flag].values
 
         if nclass == 2:
             self.train_labels = data_copy['type'][train_flag].values == 'Ia'
-            self.test_labels = data_copy['type'][~train_flag].values == 'Ia'
+            self.test_labels = data_copy['type'][test_flag].values == 'Ia'
+          
+            if sep_validation:
+                self.validation_labels = data_copy['type'][validation_flag].values == 'Ia'
         else:
             raise ValueError("Only 'Ia x non-Ia' are implemented! "
                              "\n Feel free to add other options.")
