@@ -75,7 +75,8 @@ def bootstrap_clf(clf_function, n_ensembles, train_features,
 
 
 def random_forest(train_features:  np.array, train_labels: np.array,
-                  test_features: np.array, **kwargs):
+                  test_features: np.array, validation_features=None,
+                  **kwargs):
     """Random Forest classifier.
 
     Parameters
@@ -86,6 +87,8 @@ def random_forest(train_features:  np.array, train_labels: np.array,
         Training sample classes.
     test_features: np.array
         Test sample features.
+    validation_features: np.array
+        Validation sample features.
     kwargs: extra parameters
         All keywords required by
         sklearn.ensemble.RandomForestClassifier function.
@@ -93,9 +96,13 @@ def random_forest(train_features:  np.array, train_labels: np.array,
     Returns
     -------
     predictions: np.array
-        Predicted classes.
+        Predicted classes for test sample.
     prob: np.array
-        Classification probability for all objects, [pIa, pnon-Ia].
+        Classification probability for test sample [pIa, pnon-Ia].
+    val_pred: np.array
+        Predicted classes for the validation sample.
+    prob: np.array
+        Classification probability for validation sample [pIa, pnon-Ia].
     """
 
     # create classifier instance
@@ -105,7 +112,14 @@ def random_forest(train_features:  np.array, train_labels: np.array,
     predictions = clf.predict(test_features)                # predict
     prob = clf.predict_proba(test_features)       # get probabilities
 
-    return predictions, prob
+    if not isinstance(validation_features, None):
+        val_prob = clf.predict_proba(validation_features)
+        val_pred = clf.predict(validation_features)
+
+        return predictions, prob, val_pred, val_prob
+
+    else:
+        return predicions, prob
 
 
 def gradient_boosted_trees(train_features: np.array,
