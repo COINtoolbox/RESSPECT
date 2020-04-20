@@ -808,7 +808,7 @@ class DataBase:
             wsample.close()
 
     def classify(self, method: str, save_predictions=False, pred_dir=None,
-                 loop=None, sep_validation=False, **kwargs):
+                 loop=None,  **kwargs):
         """Apply a machine learning classifier.
 
         Populate properties: predicted_class and class_prob
@@ -986,9 +986,8 @@ class DataBase:
         """
 
         if metric_label == 'snpcc' and sep_validation:
-            val_pred_class = self.classify(self.te)
             self.metrics_list_names, self.metrics_list_values = \
-                get_snpcc_metric(list(self.predicted_class),
+                get_snpcc_metric(list(self.val_pred),
                                  list(self.validation_labels))
 
         elif metric_label == 'snpcc' and not sep_validation:
