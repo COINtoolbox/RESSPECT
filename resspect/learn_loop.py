@@ -26,7 +26,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                training='original', batch=1, screen=True, survey='DES',
                nclass=2, photo_class_thr=0.5, photo_ids=False, photo_ids_tofile = False,
                photo_ids_froot=' ', classifier_bootstrap=False, save_predictions=False,
-               pred_dir=None, **kwargs):
+               pred_dir=None, sep_validation=False, **kwargs):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -74,6 +74,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     save_predictions: bool (optional)
         If True, save classification predictions to file in each loop.
         Default is False.
+    sep_validation: bool (optional)
+        If True, construt separated validation sample. Default is False.
     screen: bool (optional)
         If True, print on screen number of light curves processed.
     survey: str (optional)
@@ -100,7 +102,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                            screen=screen, survey=survey)
 
         # separate training and test samples
-        data.build_samples(initial_training=training, nclass=nclass)
+        data.build_samples(initial_training=training, nclass=nclass,
+                           sep_validation=sep_validation)
 
     else:
         data.load_features(path_to_features['train'], method=features_method,
@@ -109,7 +112,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                            screen=screen, survey=survey, sample='test')
 
         data.build_samples(initial_training=training, nclass=nclass,
-                           screen=screen, sep_files=True)
+                           screen=screen, sep_files=True, sep_validation=sep_validation)
 
     for loop in range(nloops):
 

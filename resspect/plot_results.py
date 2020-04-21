@@ -125,8 +125,13 @@ class Canvas(object):
                        'UncSamplingLeastConfident': '#eb34de', # pink
                        'UncSamplingMargin': '#ff8f05',         # orange
                        'QBDMI': '#0a4f08',                     # dark green
-                       'QBDEntropy': '#434773'                 # grey blue
-                       }
+                       'QBDEntropy': '#434773',                 # grey blue
+                       'RandomForest': '#fac901',
+                       'GradientBoostedTrees': '#ff8f05',
+                       'KNN': '#dd0100',
+                       'MLP': '#225095',
+                       'SVM' : '#74eb34',
+                       'NB': '#0a4f08'}
         self.labels = {'Canonical': 'Canonical',
                        'RandomSampling': 'Passive Learning',
                        'UncSampling': 'AL - Uncertainty Sampling',
@@ -134,7 +139,13 @@ class Canvas(object):
                        'UncSamplingLeastConfident': 'Uncertainty Sampling LC',
                        'UncSamplingMargin': 'Uncertainty Sampling Margin',
                        'QBDMI': 'QBD with MI',
-                       'QBDEntropy': 'QBD with Entropy'}
+                       'QBDEntropy': 'QBD with Entropy',
+                       'RandomForest': 'Random Forest',
+                       'GradientBoostedTrees': 'GBT',
+                       'KNN': 'KNN',
+                       'MLP': 'MLP',
+                       'SVM': 'SVM',
+                       'NB': 'NB'}
         self.markers = {'Canonical': '--',
                         'RandomSampling': ':',
                         'UncSampling': '-.',
@@ -142,7 +153,13 @@ class Canvas(object):
                         'UncSamplingLeastConfident': '-.',
                         'UncSamplingMargin': '-.',
                         'QBDMI': '-.',
-                        'QBDEntropy': '-.'}
+                        'QBDEntropy': '-.',
+                        'RandomForest': '-',
+                        'GradientBoostedTrees': '--',
+                        'KNN': ':',
+                        'MLP': '-.',
+                        'SVM': '-',
+                        'NB': '-.'}
         self.strategies = {'Canonical': self.canonical,
                            'RandomSampling': self.rand_sampling,
                            'UncSampling': self.unc_sampling,
