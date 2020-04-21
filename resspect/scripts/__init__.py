@@ -17,6 +17,7 @@
 
 from .build_canonical import main as build_canonical
 from .build_time_domain import main as build_time_domain
+from .calculate_cosmology_metric import main as calculate_cosmology_metric
 from .fit_dataset import main as fit_dataset
 from .make_metrics_plots import main as make_metrics_plots
 from .run_loop import main as run_loop
@@ -25,6 +26,7 @@ from .run_time_domain import main as run_time_domain
 
 __all__ = ['build_canonical',
            'build_time_domain',
+           'calculate_cosmology_metric',
            'fit_dataset',
            'make_metrics_plots',
            'run_loop',
