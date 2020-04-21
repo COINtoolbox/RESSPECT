@@ -582,13 +582,14 @@ class DataBase:
         self.train_features = self.features[train_flag].values
 
         if sep_validation:
-            # separate validation sample
-            temp_ids = data_copy[~train_flag][id_name].sample(int(0.25) * sum(~train_flag))
-            temp_flag = [obj in temp_ids for obj in data_copy[~train_flag][id_name].values]
+            # get all ids which are not in training 
+            all_not_train_ids = data_copy[id_name].values[~train_flag]
 
-            validation_flag = np.logical_and(~train_flag, np.array(temp_flag))
-            test_flag = np.logical_and(~train_flag, ~temp_flag)
-             
+            # select 25% of the non-train ids, via their indexes
+            indx = np.random.randint(low=0, high=len(all_not_train_ids), size=int(0.25 * len(all_not_train_ids)))
+            validation_flag = np.array([obj in all_not_train_ids[indx] for obj in data_copy[id_name].values])
+            test_flag = np.logical_and(~train_flag, ~validation_flag)
+              
             self.validation_metadata = data_copy[validation_flag]
             self.validation_features = self.features[validation_flag].values
             self.test_metadata = data_copy[test_flag]
@@ -828,16 +829,17 @@ class DataBase:
             Parameters required by the chosen classifier.
         """
 
-        if method == 'RandomForest':
-            self.predicted_class,  self.classprob,
+        if method == 'RandomForest' and str(self.validation_features) != 'None':
+            self.predicted_class,  self.classprob, \
              self.val_class, self.val_prob = \
                    random_forest(self.train_features, self.train_labels,
                                   self.test_features, self.validation_features,
                                   **kwargs)
-        else:
+        elif method == 'RandomForest':
             self.predicted_class,  self.classprob = \
                     random_forest(self.train_features, self.train_labels,
-                                  self.test_features, **kwargs)
+                                  self.test_features, self.validation_features,
+                                  **kwargs)
 
         elif method == 'GradientBoostedTrees':
             self.predicted_class,  self.classprob = \
@@ -867,7 +869,7 @@ class DataBase:
                               "'KNN', 'MLP' and NB'." +
                              "\n Feel free to add other options.")
 
-        if save_predictions:
+        if save_predictions and str(self.validation_features) == 'None':
             id_name = self.identify_keywords()
 
             out_fname = 'predict_loop_' + str(loop) + '.dat'
@@ -878,9 +880,23 @@ class DataBase:
                 op.write(str(self.classprob[i][0]) + ',' + str(self.classprob[i][1]) + ',')
                 op.write(str(self.predicted_class[i]) + '\n')
             op.close()
+
+        elif save_predictions:
+            id_name = self.identify_keywords()
+
+            out_fname = 'predict_loop_' + str(loop) + '.dat'
+            op = open(pred_dir + '/' + out_fname, 'w')
+            op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
+            for i in range(self.validation_metadata.shape[0]):
+                op.write(str(self.validation_metadata[id_name].iloc[i]) + ',')
+                op.write(str(self.val_prob[i][0]) + ',' + str(self.val_prob[i][1]) + ',')
+                op.write(str(self.val_class[i]) + '\n')
+            op.close()
+                                                                                                                                        
                 
 
-    def classify_bootstrap(self, method: str, **kwargs):
+    def classify_bootstrap(self, method: str, save_predictions=False, pred_dir=None,
+                           loop=None,**kwargs):
         """Apply a machine learning classifier bootstrapping the classifier.
 
         Populate properties: predicted_class, class_prob and ensemble_probs.
@@ -891,15 +907,29 @@ class DataBase:
             Chosen classifier.
             The current implementation accepts `RandomForest`,
             'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
+        save_predictions: bool (optional)
+            Save predictions to file. Default is False.
+        pred_dir: str (optional)
+            Output directory to store class predictions.
+            Only used if `save_predictions == True`. Default is None.
+        loop: int (optional)
+            Corresponding loop. Default is None.
         kwargs: extra parameters
             Parameters required by the chosen classifier.
         """
         n_ensembles = 10
-        if method == 'RandomForest':
+        
+        if method == 'RandomForest' and str(self.validation_features) != 'None':
+            self.predicted_class, self.class_prob, self.ensemble_probs = \
+                bootstrap_clf(random_forest, n_ensembles,
+                              self.train_features, self.train_labels,
+                              self.validation_features, **kwargs)
+
+        elif method == 'RandomForest':
             self.predicted_class, self.class_prob, self.ensemble_probs = \
             bootstrap_clf(random_forest, n_ensembles,
                           self.train_features, self.train_labels,
-                          self.validation_features, **kwargs)
+                          self.test_features, **kwargs)
 
         elif method == 'GradientBoostedTrees':
             self.predicted_class, self.class_prob, self.ensemble_probs = \
@@ -1038,11 +1068,6 @@ class DataBase:
         elif 'id' in self.test_metadata.keys():
             id_name = 'id'
    
-        if sep_validation:
-            test_ids = self.test_metadata[id_name].values
-        else:
-            test_ids = self.test_metadata[id_name].values
-
         if strategy == 'UncSampling':
             query_indx = uncertainty_sampling(class_prob=self.classprob,
                                               queryable_ids=self.queryable_ids,
