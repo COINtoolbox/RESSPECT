@@ -59,20 +59,30 @@ class DataBase:
         Predicted classes - results from ML classifier.
     queried_sample: list
         Complete information of queried objects.
-    queryable_ids: np.array()
+    queryable_ids: np.array
         Flag for objects available to be queried.
-    test_features: np.array()
+    test_features: np.array
         Features matrix for the test sample.
     test_metadata: pd.DataFrame
         Metadata for the test sample
-    test_labels: np.array()
+    test_labels: np.array
         True classification for the test sample.
-    train_features: np.array()
+    train_features: np.array
         Features matrix for the train sample.
     train_metadata: pd.DataFrame
         Metadata for the training sample.
     train_labels: np.array
         Classes for the training sample.
+    validation_class: np.array
+        Estimated classes for validation sample.
+    validation_features: np.array
+        Features matrix for the validation sample. 
+    validation_labels: np.array
+        Classes for the validation sample.
+    validation_metadata: pd.DataFrame
+        Metadata for the validation sample.
+    validation_prob: np.array
+        Estimated probabilities for validation sample.
 
     Methods
     -------
@@ -153,6 +163,7 @@ class DataBase:
     def __init__(self):
         self.classprob = np.array([])
         self.data = pd.DataFrame()
+        self.ensemble_probs = None
         self.features = pd.DataFrame([])
         self.features_names = []
         self.metadata = pd.DataFrame()
@@ -168,7 +179,11 @@ class DataBase:
         self.train_features = np.array([])
         self.train_metadata = pd.DataFrame()
         self.train_labels = np.array([])
-        self.ensemble_probs = None
+        self.validation_class = None
+        self.validation_features = None
+        self.validation_labels = None
+        self.validation_metadata = None
+        self.validation_prob = None
 
     def load_bazin_features(self, path_to_bazin_file: str, screen=False,
                             survey='DES', sample=None):
@@ -506,7 +521,8 @@ class DataBase:
                                  "\n Feel free to add other options.")
 
     def build_random_training(self, initial_training: int, nclass=2, screen=False,
-                              Ia_frac=0.5, queryable=True, sep_files=False):
+                              Ia_frac=0.5, queryable=True, sep_files=False,
+                              sep_validation=False):
         """Construct initial random training and corresponding test sample.
 
         Populate properties: train_features, train_header, test_features,
@@ -532,6 +548,8 @@ class DataBase:
         sep_files: bool (optional)
             If True, consider train and test samples separately read
             from independent files.
+        sep_validation: bool (optional)
+            Separate validation sample. Default is False.
         """
 
         # object if keyword
@@ -563,21 +581,42 @@ class DataBase:
         self.train_metadata = data_copy[train_flag]
         self.train_features = self.features[train_flag].values
 
-        # get test sample
-        self.test_metadata = data_copy[~train_flag]
-        self.test_features = self.features[~train_flag].values
+        if sep_validation:
+            # separate validation sample
+            temp_ids = data_copy[~train_flag][id_name].sample(int(0.25) * sum(~train_flag))
+            temp_flag = [obj in temp_ids for obj in data_copy[~train_flag][id_name].values]
+
+            validation_flag = np.logical_and(~train_flag, np.array(temp_flag))
+            test_flag = np.logical_and(~train_flag, ~temp_flag)
+             
+            self.validation_metadata = data_copy[validation_flag]
+            self.validation_features = self.features[validation_flag].values
+            self.test_metadata = data_copy[test_flag]
+            self.test_features = self.features[test_flag].values
+ 
+        else:
+            # get test sample
+            test_flag = ~train_flag
+            self.test_metadata = data_copy[test_flag]
+            self.test_features = self.features[test_flag].values
 
         if nclass == 2:
             self.train_labels = data_copy['type'][train_flag].values == 'Ia'
-            self.test_labels = data_copy['type'][~train_flag].values == 'Ia'
+            self.test_labels = data_copy['type'][test_flag].values == 'Ia'
+          
+            if sep_validation:
+                self.validation_labels = data_copy['type'][validation_flag].values == 'Ia'
         else:
             raise ValueError("Only 'Ia x non-Ia' are implemented! "
                              "\n Feel free to add other options.")
 
-        if queryable:
+        if queryable and not sep_validation:
             queryable_flag = data_copy['queryable'].values
             combined_flag = np.logical_and(~train_flag, queryable_flag)
             self.queryable_ids = data_copy[combined_flag][id_name].values
+
+        elif sep_validation:
+            self.queryable_ids = data_copy[test_flag][id_name].values
         else:
             self.queryable_ids = self.test_metadata[id_name].values
 
@@ -677,8 +716,8 @@ class DataBase:
                       screen=False, Ia_frac=0.5,
                       queryable=False, save_samples=False, sep_files=False,
                       survey='DES', output_fname=' ', path_to_train=' ',
-                      path_to_queried=' ', method='Bazin'):
-        """Separate train and test samples.
+                      path_to_queried=' ', method='Bazin', sep_validation=False):
+        """Separate train, test and validation samples.
 
         Populate properties: train_features, train_header, test_features,
         test_header, queryable_ids (if flag available), train_labels and
@@ -702,6 +741,9 @@ class DataBase:
         nclass: int (optional)
             Number of classes to consider in the classification
             Currently only nclass == 2 is implemented.
+        output_fname: str (optional)
+            Complete path to output file where initial training will be stored.
+            Only used if save_samples == True.
         path_to_train: str (optional)
             Path to initial training file from previous run.
             Only used if initial_training == 'previous'.
@@ -723,9 +765,8 @@ class DataBase:
         sep_files: bool (optional)
             If True, consider train and test samples separately read
             from independent files. Default is False.
-        output_fname: str (optional)
-            Complete path to output file where initial training will be stored.
-            Only used if save_samples == True.
+        sep_validation: bool (optional)
+            If True, construt separated validation sample. Default is False.
         """
 
         if initial_training == 'original':
@@ -741,11 +782,13 @@ class DataBase:
             self.build_random_training(initial_training=initial_training,
                                        nclass=nclass, screen=screen,
                                        Ia_frac=Ia_frac, queryable=queryable,
-                                       sep_files=sep_files)
+                                       sep_files=sep_files, 
+                                       sep_validation=sep_validation)
 
         if screen:
             print('Training set size: ', self.train_metadata.shape[0])
             print('Test set size: ', self.test_metadata.shape[0])
+            print('Validation set size: ', self.validation_metadata.shape[0])
             print('Queryable set size: ', sum(self.metadata['queryable']))
 
         if save_samples:
@@ -764,7 +807,8 @@ class DataBase:
                 wsample.write(str(self.train_features[j][-1]) + '\n')
             wsample.close()
 
-    def classify(self, method: str, **kwargs):
+    def classify(self, method: str, save_predictions=False, pred_dir=None,
+                 loop=None,  **kwargs):
         """Apply a machine learning classifier.
 
         Populate properties: predicted_class and class_prob
@@ -775,14 +819,25 @@ class DataBase:
             Chosen classifier.
             The current implementation accepts `RandomForest`,
             'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
+        save_predictions: bool (optional)
+            Save predictions to file. Default is False.
+        pred_dir: str (optional)
+            Output directory to store class predictions.
+            Only used if `save_predictions == True`. Default is None.
         kwargs: extra parameters
             Parameters required by the chosen classifier.
         """
 
         if method == 'RandomForest':
+            self.predicted_class,  self.classprob,
+             self.val_class, self.val_prob = \
+                   random_forest(self.train_features, self.train_labels,
+                                  self.test_features, self.validation_features,
+                                  **kwargs)
+        else:
             self.predicted_class,  self.classprob = \
-                random_forest(self.train_features, self.train_labels,
-                              self.test_features, **kwargs)
+                    random_forest(self.train_features, self.train_labels,
+                                  self.test_features, **kwargs)
 
         elif method == 'GradientBoostedTrees':
             self.predicted_class,  self.classprob = \
@@ -812,6 +867,19 @@ class DataBase:
                               "'KNN', 'MLP' and NB'." +
                              "\n Feel free to add other options.")
 
+        if save_predictions:
+            id_name = self.identify_keywords()
+
+            out_fname = 'predict_loop_' + str(loop) + '.dat'
+            op = open(pred_dir + '/' + out_fname, 'w')
+            op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
+            for i in range(self.test_metadata.shape[0]):
+                op.write(str(self.test_metadata[id_name].iloc[i]) + ',')
+                op.write(str(self.classprob[i][0]) + ',' + str(self.classprob[i][1]) + ',')
+                op.write(str(self.predicted_class[i]) + '\n')
+            op.close()
+                
+
     def classify_bootstrap(self, method: str, **kwargs):
         """Apply a machine learning classifier bootstrapping the classifier.
 
@@ -831,7 +899,7 @@ class DataBase:
             self.predicted_class, self.class_prob, self.ensemble_probs = \
             bootstrap_clf(random_forest, n_ensembles,
                           self.train_features, self.train_labels,
-                          self.test_features, **kwargs)
+                          self.validation_features, **kwargs)
 
         elif method == 'GradientBoostedTrees':
             self.predicted_class, self.class_prob, self.ensemble_probs = \
@@ -903,7 +971,8 @@ class DataBase:
         else:
             self.photo_Ia_metadata = photo_Ia_metadata     
 
-    def evaluate_classification(self, metric_label='snpcc'):
+    def evaluate_classification(self, metric_label='snpcc', 
+                                sep_validation=False):
         """Evaluate results from classification.
 
         Populate properties: metric_list_names and metrics_list_values.
@@ -912,9 +981,16 @@ class DataBase:
         ----------
         metric_label: str
             Choice of metric. Currenlty only `snpcc` is accepted.
+        sep_validation: bool (optional)
+            If True, construt separated validation sample. Default is False.
         """
 
-        if metric_label == 'snpcc':
+        if metric_label == 'snpcc' and sep_validation:
+            self.metrics_list_names, self.metrics_list_values = \
+                get_snpcc_metric(list(self.val_pred),
+                                 list(self.validation_labels))
+
+        elif metric_label == 'snpcc' and not sep_validation:
             self.metrics_list_names, self.metrics_list_values = \
                 get_snpcc_metric(list(self.predicted_class),
                                  list(self.test_labels))
@@ -961,6 +1037,11 @@ class DataBase:
             id_name = 'objid'
         elif 'id' in self.test_metadata.keys():
             id_name = 'id'
+   
+        if sep_validation:
+            test_ids = self.test_metadata[id_name].values
+        else:
+            test_ids = self.test_metadata[id_name].values
 
         if strategy == 'UncSampling':
             query_indx = uncertainty_sampling(class_prob=self.classprob,

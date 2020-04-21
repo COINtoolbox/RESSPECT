@@ -20,7 +20,7 @@ import setuptools
 
 setuptools.setup(
     name='resspect',
-    version='1.2',
+    version='0.1',
     packages=setuptools.find_packages(),
     py_modules=['resspect/bazin',
                 'resspect/build_snpcc_canonical',
@@ -31,6 +31,7 @@ setuptools.setup(
                 'resspect/metrics',
                 'resspect/plot_results',
                 'resspect/query_strategies',
+                'resspect/salt3_utils',
                 'resspect/snana_fits_to_pd',
                 'resspect/time_domain',
                 'resspect/time_domain_PLAsTiCC'],
