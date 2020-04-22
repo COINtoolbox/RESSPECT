@@ -18,6 +18,7 @@
 from .bazin import *
 from .build_snpcc_canonical import *
 from .classifiers import *
+from .cosmo_metrics_utils import *
 from .database import *
 from .fit_lightcurves import *
 from .learn_loop import *
@@ -37,20 +38,27 @@ from .time_domain import *
 from .time_domain_loop import *
 
 __all__ = ['accuracy',
+           'assign_cosmo',
            'bazin',
            'build_canonical',
            'build_snpcc_canonical',
            'Canonical',
            'Canvas',
+           'column_deriv_m',
+           'compare_two_fishers',
            'DataBase',
            'efficiency',
            'errfunc',
+           'fish_deriv_m',
+           'fisher_results',
+           'fisher_most_useful',
            'fit_dataset',
            'fit_scipy',
            'fit_snpcc_bazin',
            'fit_plasticc_bazin',
            'fit_resspect_bazin',
            'fom',
+           'full_check',
            'get_distances',
            'get_snpcc_metric',
            'gradient_boosted_trees',
@@ -71,4 +79,5 @@ __all__ = ['accuracy',
            'SNPCCPhotometry',
            'svm',
            'time_domain_loop',
-           'uncertainty_sampling']
+           'uncertainty_sampling',
+           'update_matrix']
