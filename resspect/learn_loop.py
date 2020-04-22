@@ -25,7 +25,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                features_method='Bazin', classifier='RandomForest',
                training='original', batch=1, screen=True, survey='DES',
                nclass=2, photo_class_thr=0.5, photo_ids=False, photo_ids_tofile = False,
-               photo_ids_froot=' ', classifier_bootstrap=False, **kwargs):
+               photo_ids_froot=' ', classifier_bootstrap=False, save_predictions=False,
+               pred_dir=None, sep_validation=False, **kwargs):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -67,6 +68,14 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     photo_ids_froot: str (optional)
         Output root of file name to store photo ids.
         Only used if photo_ids is True.
+    pred_dir: str (optional)
+        Output diretory to store prediction file for each loop.
+        Only used if `save_predictions==True`.
+    save_predictions: bool (optional)
+        If True, save classification predictions to file in each loop.
+        Default is False.
+    sep_validation: bool (optional)
+        If True, construt separated validation sample. Default is False.
     screen: bool (optional)
         If True, print on screen number of light curves processed.
     survey: str (optional)
@@ -80,7 +89,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         Must be true if using disagreement based strategy
     kwargs: extra parameters
         All keywords required by the classifier function.
-    """    
+    """
     if 'QBD' in strategy and not classifier_bootstrap:
         raise ValueError('bootstrap must be true when using disagreement strategy')
 
@@ -93,7 +102,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                            screen=screen, survey=survey)
 
         # separate training and test samples
-        data.build_samples(initial_training=training, nclass=nclass)
+        data.build_samples(initial_training=training, nclass=nclass,
+                           sep_validation=sep_validation)
 
     else:
         data.load_features(path_to_features['train'], method=features_method,
@@ -102,7 +112,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                            screen=screen, survey=survey, sample='test')
 
         data.build_samples(initial_training=training, nclass=nclass,
-                           screen=screen, sep_files=True)
+                           screen=screen, sep_files=True, sep_validation=sep_validation)
 
     for loop in range(nloops):
 
@@ -111,9 +121,11 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
 
         # classify
         if classifier_bootstrap:
-            data.classify_bootstrap(method=classifier, **kwargs)
+            data.classify_bootstrap(method=classifier, save_predictions=save_predictions,
+                                    pred_dir=pred_dir, loop=loop, **kwargs)
         else:
-            data.classify(method=classifier, **kwargs)
+            data.classify(method=classifier, save_predictions=save_predictions,
+                          pred_dir=pred_dir, loop=loop, **kwargs)
 
         # calculate metrics
         data.evaluate_classification()
