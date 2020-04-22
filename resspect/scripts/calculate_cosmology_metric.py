@@ -18,9 +18,9 @@
 import argparse
 import numpy as np
 
-from resspect.cosmology_metric import compare_two_fishers
-from resspect.cosmology_metric import fisher_results
-from resspect.cosmology_metric import update_matrix
+from resspect.cosmo_metric_utils import compare_two_fishers
+from resspect.cosmo_metric_utils import fisher_results
+from resspect.cosmo_metric_utils import update_matrix
 
 __all__ = ['main']
 

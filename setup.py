@@ -25,6 +25,7 @@ setuptools.setup(
     py_modules=['resspect/bazin',
                 'resspect/build_snpcc_canonical',
                 'resspect/classifiers',
+                'resspect/cosmo_metric_utils',
                 'resspect/database',
                 'resspect/fit_lightcurves',
                 'resspect/learn_loop',
