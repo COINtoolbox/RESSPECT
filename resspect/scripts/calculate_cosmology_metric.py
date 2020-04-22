@@ -114,8 +114,6 @@ def main(args):
 
 if __name__ == '__main__':
 
-    if __name__ == "__main__":
-
     usage = "usage: [%prog] [options]"
 
     parser = argparse.ArgumentParser(description='resspect - Calculate cosmology metric.')
