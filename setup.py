@@ -37,7 +37,7 @@ setuptools.setup(
                 'resspect/time_domain_PLAsTiCC'],
     scripts=['resspect/scripts/build_canonical.py',
              'resspect/scripts/build_time_domain.py',
-             'resspect/scripts/calculate_cosmology_metrics.py',
+             'resspect/scripts/calculate_cosmology_metric.py',
              'resspect/scripts/fit_dataset.py',
              'resspect/scripts/make_metrics_plots.py',
              'resspect/scripts/run_loop.py',
