@@ -13,7 +13,7 @@
     !PHOTFLAG_MSKREJ   = 1016, 0
     SNTABLE_LIST      = 'FITRES'
 
-    KCOR_FILE        = '$ACTSNCLASS_DIR/auxiliary_files/kcor/kcor_LSST.fits'
+    KCOR_FILE        = '$RESSPECT_DIR/auxiliary_files/kcor/kcor_LSST.fits'
 
     NFIT_ITERATION = 3
     INTERP_OPT     = 1

@@ -27,8 +27,10 @@ __all__ = ['get_distances', 'parse_salt2mu_output', 'parse_snid_file']
 def get_distances(snid_file,data_folder: str, data_prefix: str,
                   select_modelnum: list, select_orig_sample: list,
                   salt2mu_prefix='test_salt2mu',
+                  fitres_prefix='test_fitres',
+                  combined_fitres_name='test_fitres_combined.fitres',
                   maxsnnum=1000, **kwargs):
-    """Calculates distances and erros for cosmology metric.
+    """Calculates distances and errors for cosmology metric.
 
     Parameters
     ----------
@@ -39,13 +41,17 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
     data_prefix: str
         Prefix/genversion of SNANA sim.
     select_modelnum: list
-        SNANA model number (only one number is allowed for now).
+        list of SNANA model numbers to be fitted 
     select_orig_sample: list
         Original simulated sample. 
         Options are ['train'] or ['test'] (only one sample is allowed for now).
     salt2mu_prefix: str (optional)
          Filename prefix for SALT2mu output.
          Default is 'test_salt2mu'.
+    fitres_prefix: str
+        prefix for snana light curve fitting result files
+    combined_fitres_name: str
+        filename for the combined (different types) fitres file
     maxsnnum: int (optional)
          max number of objects to fit. Default is 1000.
     
@@ -73,14 +79,27 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                                   select_orig_sample=select_orig_sample,
                                   maxsnnum=maxsnnum,**kwargs)
 
-    for f,modelnum,sntype in zip(result_dict['snid'],
-                                 result_dict['modelnum'],
-                                 result_dict['sntype']):
+    fitres_list = []
+    for i,(f,modelnum,sntype) in enumerate(zip(result_dict['snid'],
+                                               result_dict['modelnum'],
+                                               result_dict['sntype'])):
+        print(i,"modelnum =",modelnum,"sntype=",sntype)
 
+        prefix = fitres_prefix.strip()+'_'+str(i)
+        fitres_file = prefix+'.FITRES.TEXT'
         phot_version = '{}_MODEL{}_SN{}'.format(data_prefix,modelnum,sntype)
         hook = SNANAHook(snid_file=f, data_folder=data_folder, 
-                         phot_version=phot_version, salt2mu_prefix=salt2mu_prefix,**kwargs)
-        hook.run()    
+                         phot_version=phot_version, fitres_prefix=prefix,
+                         stages=['lcfit'], glue=False,**kwargs)
+        hook.run() 
+        fitres_list.append(fitres_file)
+    
+    combine_fitres(fitres_list,output=combined_fitres_name)
+    hook = SNANAHook(snid_file=None, data_folder=None, 
+                 phot_version=None, salt2mu_prefix=salt2mu_prefix.strip()+'_combined',
+                 combined_fitres=combined_fitres_name,
+                 stages=['getmu'], glue=False,**kwargs)
+    hook.run()
         
     result_df = parse_salt2mu_output('{}.fitres'.format(salt2mu_prefix))
     
@@ -92,13 +111,14 @@ def parse_snid_file(snid_file: str,
                     outfolder='snid',
                     maxsnnum=1000,
                     random_state=None,
+                    combined_fitres_name='fitres_combined.fitres',
                     **kwargs):
     """Parse the snid file that is output from the pipeline.
 
     Parameters
     ----------
     select_modelnum: list
-        SNANA model number (only one number is allowed for now).
+        list of SNANA model numbers
     select_orig_sample: list
         Original simulated sample. 
         Options are ['train'] or ['test'] (only one sample is allowed for now).
@@ -215,6 +235,12 @@ def parse_salt2mu_output(fitres_file: str, timeout=50):
     df.columns = [key for key, value in cname_map.items()]
 
     return df
+
+                
+def combine_fitres(fitres_list,output='fitres_combined.fitres'):
+    cmd = 'cat {} > {}'.format(' '.join(fitres_list),output)
+    os.system(cmd)
+
 
 def main():
     return None

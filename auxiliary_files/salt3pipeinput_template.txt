@@ -41,7 +41,7 @@ set_key=trainparams waverange 2000,9200
 
 [lcfitting]
 pro=snlc_fit.exe
-baseinput=$ACTSNCLASS_DIR/auxiliary_files/baseinputs/perfect_sim_v1.nml
+baseinput=$RESSPECT_DIR/auxiliary_files/baseinputs/perfect_sim_v1.nml
 outinput=pipelineinputs/snfit_TEST.nml
 batch=False
 validplots=False
@@ -50,10 +50,11 @@ set_key=4
     0 SNLCINP VERSION_PHOTOMETRY RESSPECT_LSST_TRAIN_DDF_PLASTICC_MODEL90_SNIa-SALT2
     0 SNLCINP SNCID_LIST_FILE test_photoids_loop_0.dat
     0 SNLCINP PRIVATE_DATA_PATH /media/RESSPECT/data/RESSPECT_PERFECT_SIM_v2/raw_data
+    0 SNLCINP TEXTFILE_PREFIX test_fitres
 
 [getmu]
 pro=SALT2mu.exe
-baseinput=$ACTSNCLASS_DIR/auxiliary_files/baseinputs/SALT2mu.default
+baseinput=$RESSPECT_DIR/auxiliary_files/baseinputs/SALT2mu.default
 outinput=pipelineinputs/test_salt2mu.input
 batch=False
 validplots=False
