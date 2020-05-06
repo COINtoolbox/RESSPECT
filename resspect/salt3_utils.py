@@ -29,7 +29,9 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                   salt2mu_prefix='test_salt2mu',
                   fitres_prefix='test_fitres',
                   combined_fitres_name='test_fitres_combined.fitres',
-                  maxsnnum=1000, **kwargs):
+                  maxsnnum=1000, 
+                  tempfile='$RESSPECT_DIR/auxiliary_files/salt3pipeinput_template.txt',
+                  **kwargs):
     """Calculates distances and errors for cosmology metric.
 
     Parameters
@@ -48,13 +50,14 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
     salt2mu_prefix: str (optional)
          Filename prefix for SALT2mu output.
          Default is 'test_salt2mu'.
-    fitres_prefix: str
+    fitres_prefix: str (optional)
         prefix for snana light curve fitting result files
-    combined_fitres_name: str
+    combined_fitres_name: str (optional)
         filename for the combined (different types) fitres file
     maxsnnum: int (optional)
          max number of objects to fit. Default is 1000.
-    
+    tempfile: str (optional)
+         template file for SALT3 input    
 
     Returns
     -------
@@ -90,7 +93,7 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
         phot_version = '{}_MODEL{}_SN{}'.format(data_prefix,modelnum,sntype)
         hook = SNANAHook(snid_file=f, data_folder=data_folder, 
                          phot_version=phot_version, fitres_prefix=prefix,
-                         stages=['lcfit'], glue=False,**kwargs)
+                         stages=['lcfit'], glue=False,tempfile=tempfile,**kwargs)
         hook.run() 
         fitres_list.append(fitres_file)
     
@@ -98,7 +101,8 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
     hook = SNANAHook(snid_file=None, data_folder=None, 
                  phot_version=None, salt2mu_prefix=salt2mu_prefix.strip()+'_combined',
                  combined_fitres=combined_fitres_name,
-                 stages=['getmu'], glue=False,**kwargs)
+                 stages=['getmu'], glue=False,
+                 tempfile=tempfile,**kwargs)
     hook.run()
         
     result_df = parse_salt2mu_output('{}.fitres'.format(salt2mu_prefix))
