@@ -27,7 +27,7 @@ class SNANAHook():
         return pipe
     
     def gen_input(self,data_folder=None,phot_version=None,snid_file=None,salt2mu_prefix=None,
-                  fitres_prefix=None,combined_fitres=None,
+                  fitres_prefix=None,combined_fitres=None,result_dir='results/salt3',
                   outfile='salt3pipeinput.txt',tempfile='salt3pipeinput_template.txt',**kwargs):
         salt3pipe = SALT3pipe(finput=os.path.expandvars(tempfile))
         config = configparser.ConfigParser()
@@ -53,16 +53,18 @@ class SNANAHook():
         setkey_string = self._df_to_string(setkeys.reset_index(),has_section=False)
         config['getmu']['set_key'] = setkey_string
         
+        #add result_dir and check if output folder exists
+        for sec in ['lcfitting','getmu']:
+            outname = config[sec]['outinput']
+            outname = outname.replace('REPLACE_RESULT_DIR',result_dir)
+            config[sec]['outinput'] = outname
+            folder = os.path.split(outname)[0]
+            if not os.path.isdir(folder):
+                os.mkdir(folder)        
+        
         with open(outfile, 'w') as configfile:
             config.write(configfile)
         self.pipeinput = outfile
-        
-        #check if output folder exists
-        for sec in ['lcfitting','getmu']:
-            outname = config[sec]['outinput']
-            folder = os.path.split(outname)[0]
-            if not os.path.isdir(folder):
-                os.mkdir(folder)
         
     def _df_to_string(self,df,has_section=True,has_label=True):
         outstring = '{}\n'.format(len(df.columns)) 

@@ -30,7 +30,9 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                   fitres_prefix='test_fitres',
                   combined_fitres_name='test_fitres_combined.fitres',
                   maxsnnum=1000, 
-                  tempfile='$RESSPECT_DIR/auxiliary_files/salt3pipeinput_template.txt',
+                  salt3_outfile='salt3pipeinput.txt',
+                  salt3_tempfile='$RESSPECT_DIR/auxiliary_files/salt3pipeinput_template.txt',
+                  outputdir='results/salt3',
                   **kwargs):
     """Calculates distances and errors for cosmology metric.
 
@@ -56,8 +58,12 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
         filename for the combined (different types) fitres file
     maxsnnum: int (optional)
          max number of objects to fit. Default is 1000.
-    tempfile: str (optional)
+    salt3_outfile: str (optional)
+         generated salt3 input file
+    salt3_tempfile: str (optional)
          template file for SALT3 input    
+    outputdir: str (optional)
+         dir of all outputs
 
     Returns
     -------
@@ -78,9 +84,15 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                   select_orig_sample=['train'])
     """
 
+    #check if outputdir exists. create one if not.
+    if not os.path.isdir(outputdir):
+        os.makedirs(outputdir)    
+    salt3_outfile = os.path.join(outputdir,salt3_outfile)
+    
     result_dict = parse_snid_file(snid_file, select_modelnum=select_modelnum,
                                   select_orig_sample=select_orig_sample,
-                                  maxsnnum=maxsnnum,**kwargs)
+                                  maxsnnum=maxsnnum,outfolder=os.path.join(outputdir,'snid'),
+                                  **kwargs)
 
     fitres_list = []
     for i,(f,modelnum,sntype) in enumerate(zip(result_dict['snid'],
@@ -88,24 +100,27 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                                                result_dict['sntype'])):
         print(i,"modelnum =",modelnum,"sntype=",sntype)
 
-        prefix = fitres_prefix.strip()+'_'+str(i)
+        prefix = os.path.join(outputdir,fitres_prefix.strip()+'_'+str(i))
         fitres_file = prefix+'.FITRES.TEXT'
         phot_version = '{}_MODEL{}_SN{}'.format(data_prefix,modelnum,sntype)
         hook = SNANAHook(snid_file=f, data_folder=data_folder, 
                          phot_version=phot_version, fitres_prefix=prefix,
-                         stages=['lcfit'], glue=False,tempfile=tempfile,**kwargs)
+                         stages=['lcfit'], glue=False,tempfile=salt3_tempfile,
+                         outfile=salt3_outfile,**kwargs)
         hook.run() 
         fitres_list.append(fitres_file)
-    
-    combine_fitres(fitres_list,output=combined_fitres_name)
-    hook = SNANAHook(snid_file=None, data_folder=None, 
-                 phot_version=None, salt2mu_prefix=salt2mu_prefix.strip()+'_combined',
-                 combined_fitres=combined_fitres_name,
-                 stages=['getmu'], glue=False,
-                 tempfile=tempfile,**kwargs)
+
+    combined_fitres_name_str = os.path.join(outputdir,combined_fitres_name)
+    combine_fitres(fitres_list,output=combined_fitres_name_str)
+    salt2mu_prefix_str = os.path.join(outputdir,salt2mu_prefix.strip()+'_combined')
+    hook = SNANAHook(salt2mu_prefix=salt2mu_prefix_str,
+                     combined_fitres=combined_fitres_name_str,
+                     stages=['getmu'], glue=False,
+                     outfile=salt3_outfile,
+                     tempfile=salt3_tempfile,**kwargs)
     hook.run()
         
-    result_df = parse_salt2mu_output('{}.fitres'.format(salt2mu_prefix))
+    result_df = parse_salt2mu_output('{}.fitres'.format(salt2mu_prefix_str))
     
     return result_df
 
@@ -115,7 +130,6 @@ def parse_snid_file(snid_file: str,
                     outfolder='snid',
                     maxsnnum=1000,
                     random_state=None,
-                    combined_fitres_name='fitres_combined.fitres',
                     **kwargs):
     """Parse the snid file that is output from the pipeline.
 
