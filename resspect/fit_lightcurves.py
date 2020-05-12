@@ -329,7 +329,7 @@ class LightCurve(object):
             else:
                 self.full_photometry = pd.read_csv(photo_file, index_col=False)
 
-            if ' ' in all_photo.keys()[0]:
+            if ' ' in self.full_photometry.keys()[0]:
                 self.full_photometry = pd.read_csv(photo_file, sep=' ', index_col=False)
 
         if 'object_id' in self.full_photometry.keys():
@@ -748,11 +748,14 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file:str,
         id_name = 'snid'
     elif 'objid' in header.keys():
         id_name = 'objid'
+    elif 'object_id' in header.keys():
+        id_name = 'object_id'
+
+    lc = LightCurve()
 
     for snid in header[id_name].values:      
 
         # load individual light curves
-        lc = LightCurve()                       
         lc.load_plasticc_lc(path_photo_file, snid) 
         lc.fit_bazin_all()
 
@@ -775,6 +778,11 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file:str,
                     param_file.write(str(item) + ' ')
                 param_file.write('\n')
 
+        lc.photometry = []
+        lc.redshift = None
+        lc.sntype = None
+        lc.sample = None
+        
     param_file.close()
 
 
