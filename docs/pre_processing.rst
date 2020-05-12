@@ -6,10 +6,7 @@ Feature Extraction
 The first stage in consists in transforming the raw data into a uniform data matrix which will subsequently be given
 as input to the learning algorithm.
 
-The original implementation of ``resspect`` can handle text-like data from the SuperNova Photometric Classification Challenge
-(SNPCC) which is described in `Kessler et al., 2010 <https://arxiv.org/abs/1008.1024>`_.
-
-This version is equiped to input ``RESSPECT`` simulatons made with the `SNANA simulator <http://snana.uchicago.edu/>`_.
+``resspect`` can handle FITS format data from the RESSPECT project, csv data from the Photometric LSST Astronomical Classification Challenge (`PLAsTiCC <https://zenodo.org/record/2539456#.Xrsk33UzZuQ>`_)  and text-like data from the SuperNova Photometric Classification Challenge (`SNPCC <<https://arxiv.org/abs/1008.1024>>`_).
 
 
 Load 1 light curve: 
