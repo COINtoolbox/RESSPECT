@@ -255,7 +255,7 @@ class LightCurve(object):
             else:    
                 self.full_photometry = pd.read_csv(photo_file, index_col=False)
 
-                if ' ' in all_photo.keys()[0]:
+                if ' ' in self.full_photometry.keys()[0]:
                     self.full_photometry = pd.read_csv(photo_file, sep=' ', index_col=False)
 
         if 'SNID' in self.full_photometry.keys():
@@ -667,10 +667,12 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
     elif 'SNTYPE_SUBCLASS' in header.keys():
         subtype_name = 'SNTYPE_SUBCLASS'
 
+
+    lc = LightCurve()
+
     for snid in header[id_name].values:      
 
-        # load individual light curves
-        lc = LightCurve()                       
+        # load individual light curves                      
         lc.load_resspect_lc(path_photo_file, snid)
 
         # fit all bands                
@@ -694,6 +696,12 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
                 for item in lc.bazin_features:
                     param_file.write(str(item) + ' ')
                 param_file.write('\n')
+
+        lc.redshift = None
+        lc.sntype = None
+        lc.sncode = None
+        lc.sample = None
+        lc.photometry = []
 
     param_file.close()
 
