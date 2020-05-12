@@ -27,7 +27,7 @@ In order to fit a single light curve from the RESSPECT simulations you need to h
     >>> import pandas as pd
     >>> import tarfile
 
-    >>> path_to_header = '~/RESSPECT_PERFECT_V2_TRAIN_HEADER.tar.gz'
+    >>> path_to_header = '~/RESSPECT_TRAIN_HEAD.tar.gz'
 
     # openning '.tar.gz' files requires some juggling ...
     >>> tar = tarfile.open(path_to_header, 'r:gz')
@@ -64,7 +64,7 @@ Now that you have selected on object, you can fit its light curve using the `Lig
 
     >>> from resspect.fit_lightcurves import LightCurve
 
-    >>> path_to_lightcurves = '~/RESSPECT_PERFECT_V2_TRAIN_LIGHTCURVES.tar.gz'
+    >>> path_to_lightcurves = '~/RESSPECT_TRAIN_LIGHTCURVES.tar.gz'
 
     >>> lc = LightCurve()
     >>> lc.load_resspect_lc(photo_file=path_to_lightcurves, snid=snid)
@@ -194,7 +194,45 @@ It is possible to perform the fit in all filters at once and visualize the resul
 Processing all light curves in the data set
 -------------------------------------------
 
-There are 2 way to perform the Bazin fits for the entire SNPCC data set. Using a python interpreter,
+There are 2 way to perform the Bazin fits for all three data sets. Using a python interpreter,
+
+
+For RESSPECT:
+^^^^^^^^^^^^^
+
+.. code-block:: python
+   :linenos:
+
+   >>> from resspect import fit_resspect_bazin
+
+   >>> photo_file = '~/RESSPECT_TRAIN_LIGHTCURVES.csv.gz' 
+   >>> header_file = '~/RESSPECT_TRAIN_HEAD.csv.gz'
+   >>> output_file = 'results/RESSPECT_Bazin_train.dat'     
+
+   >>> sample = 'train'       
+
+   >>> fit_resspect_bazin(photo_file, header_file, output_file, sample=sample)
+
+
+For PLAsTiCC:
+^^^^^^^^^^^^^
+
+.. code-block:: python
+   :linenos:
+
+   >>> from resspect import fit_plasticc_bazin
+
+   >>> photo_file = '~/plasticc_train_lightcurves.csv' 
+   >>> header_file = '~/plasticc_train_metadata.csv.gz'
+   >>> output_file = 'results/PLAsTiCC_Bazin_train.dat'            
+
+   >>> sample = 'train'
+
+   >>> fit_plasticc_bazin(photo_file, header_file, output_file, sample=sample)
+
+
+For SNPCC:
+^^^^^^^^^^
 
 .. code-block:: python
    :linenos:
@@ -203,17 +241,17 @@ There are 2 way to perform the Bazin fits for the entire SNPCC data set. Using a
 
    >>> path_to_data_dir = 'data/SIMGEN_PUBLIC_DES/'            # raw data directory
    >>> output_file = 'results/Bazin.dat'                              # output file
+
    >>> fit_snpcc_bazin(path_to_data_dir=path_to_data_dir, features_file=output_file)
 
-The above will produce a file called ``Bazin.dat`` in the `results` directory.
+
 
 The same result can be achieved using the command line:
 
 .. code-block:: bash
-
-   # for SNPCC
-    >>> fit_dataset.py -s SNPCC -dd <path_to_data_dir> -o <output_file>
-
     # for RESSPECT or PLAsTiCC
     >>> fit_dataset.py -s <dataset_name> -p <path_to_photo_file> 
-             -hd <path_to_header_file> -o <output_file> 
+             -hd <path_to_header_file> -sp <sample> -o <output_file> 
+
+    # for SNPCC
+    >>> fit_dataset.py -s SNPCC -dd <path_to_data_dir> -o <output_file>
