@@ -99,7 +99,7 @@ Similar to the case presented below, reading only 1 light curve from PLAsTiCC re
     >>> metadata = pd.read_csv(path_to_metadata)
 
     # check keys
-    metadata.keys()
+    >>> metadata.keys()
     Index(['object_id', 'ra', 'decl', 'ddf_bool', 'hostgal_specz',
            'hostgal_photoz', 'hostgal_photoz_err', 'distmod', 'mwebv', 'target',
            'true_target', 'true_submodel', 'true_z', 'true_distmod',
@@ -109,11 +109,11 @@ Similar to the case presented below, reading only 1 light curve from PLAsTiCC re
          dtype='object')
     
     # choose 1 object
-    snid = metadata['object_id'].values[0]
+    >>> snid = metadata['object_id'].values[0]
 
     # create light curve object and load data
-    lc = LightCurve()
-    lc.load_plasticc_lc(photo_file=path_to_lightcurves, snid=snid)
+    >>> lc = LightCurve()
+    >>> lc.load_plasticc_lc(photo_file=path_to_lightcurves, snid=snid)
     
 
 For SNPCC:
