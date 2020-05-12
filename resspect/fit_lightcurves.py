@@ -43,6 +43,8 @@ class LightCurve(object):
         Name of the survey or data set being analyzed.
     filters: list
         List of broad band filters.
+    full_photometry: pd.DataFrame
+        Photometry for a set of light curves read from file.
     id: int
         SN identification number
     id_name:
@@ -135,6 +137,7 @@ class LightCurve(object):
         self.bazin_features_names = ['a', 'b', 't0', 'tfall', 'trsise']
         self.dataset_name = ' '
         self.filters = []
+        self.full_photometry = pd.DataFrame()
         self.id = 0
         self.id_name = None
         self.photometry = pd.DataFrame()
@@ -240,34 +243,35 @@ class LightCurve(object):
             Identification number for the desired light curve.
         """
 
-        if '.tar.gz' in photo_file:
-            tar = tarfile.open(photo_file, 'r:gz')
-            fname = tar.getmembers()[0]
-            content = tar.extractfile(fname).read()
-            all_photo = pd.read_csv(io.BytesIO(content))
-            tar.close()
-        elif '.FITS' in photo_file:
-            df_header, all_photo = read_fits(photo_file, drop_separators=True)
-        else:    
-            all_photo = pd.read_csv(photo_file, index_col=False)
+        if self.full_photometry.shape[0] == 0:
+            if '.tar.gz' in photo_file:
+                tar = tarfile.open(photo_file, 'r:gz')
+                fname = tar.getmembers()[0]
+                content = tar.extractfile(fname).read()
+                self.full_photometry = pd.read_csv(io.BytesIO(content))
+                tar.close()
+            elif '.FITS' in photo_file:
+                df_header, self.full_photometry = read_fits(photo_file, drop_separators=True)
+            else:    
+                self.full_photometry = pd.read_csv(photo_file, index_col=False)
 
-            if ' ' in all_photo.keys()[0]:
-                all_photo = pd.read_csv(photo_file, sep=' ', index_col=False)
+                if ' ' in all_photo.keys()[0]:
+                    self.full_photometry = pd.read_csv(photo_file, sep=' ', index_col=False)
 
-        if 'SNID' in all_photo.keys():
-            flag = all_photo['SNID'] == snid
+        if 'SNID' in self.full_photometry.keys():
+            flag = self.full_photometry['SNID'] == snid
             self.id_name = 'SNID'
-        elif 'snid' in all_photo.keys():
-            flag = all_photo['snid'] == snid
+        elif 'snid' in self.full_photometry.keys():
+            flag = self.full_photometry['snid'] == snid
             self.id_name = 'snid'
-        elif 'objid' in all_photo.keys():
-            flag = all_photo['objid'] == snid
+        elif 'objid' in self.full_photometry.keys():
+            flag = self.full_photometry['objid'] == snid
             self.id_name = 'objid'
-        elif 'id' in all_photo.keys():
-            flag = all_photo['id'] == snid
+        elif 'id' in self.full_photometry.keys():
+            flag = self.full_photometry['id'] == snid
             self.id_name = 'id'
 
-        photo = all_photo[flag]
+        photo = self.full_photometry[flag]
 
         self.dataset_name = 'RESSPECT'                      # name of data set
         self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']       # list of filters  
@@ -315,28 +319,30 @@ class LightCurve(object):
             Identification number for the desired light curve.
         """
 
-        if '.tar.gz' in photo_file:
-            tar = tarfile.open(photo_file, 'r:gz')
-            fname = tar.getmembers()[0]
-            content = tar.extractfile(fname).read()
-            all_photo = pd.read_csv(io.BytesIO(contente))
-        else:
-            all_photo = pd.read_csv(photo_file, index_col=False)
+        # read from file if full photometry not available
+        if self.full_photometry.shape[0] == 0:
+            if '.tar.gz' in photo_file:
+                tar = tarfile.open(photo_file, 'r:gz')
+                fname = tar.getmembers()[0]
+                content = tar.extractfile(fname).read()
+                self.full_photometry = pd.read_csv(io.BytesIO(contente))
+            else:
+                self.full_photometry = pd.read_csv(photo_file, index_col=False)
 
             if ' ' in all_photo.keys()[0]:
-                all_photo = pd.read_csv(photo_file, sep=' ', index_col=False)
+                self.full_photometry = pd.read_csv(photo_file, sep=' ', index_col=False)
 
-        if 'object_id' in all_photo.keys():
-            flag = all_photo['object_id'] == snid
+        if 'object_id' in self.full_photometry.keys():
+            flag = self.full_photometry['object_id'] == snid
             self.id_name = 'object_id'
-        elif 'SNID' in all_photo.keys():
-            flag = all_photo['SNID'] == snid
+        elif 'SNID' in self.full_photometry.keys():
+            flag = self.full_photometry['SNID'] == snid
             self.id_name = 'SNID'
-        elif 'snid' in all_photo.keys():
-            flag = all_photo['snid'] == snid
+        elif 'snid' in self.full_photometry.keys():
+            flag = self.full_photometry['snid'] == snid
             self.id_name = 'snid'
 
-        photo = all_photo[flag]
+        photo = self.full_photometry[flag]
 
         filter_dict = {0:'u', 1:'g', 2:'r', 3:'i', 4:'z', 5:'Y'}
            
