@@ -246,6 +246,8 @@ For SNPCC:
 The same result can be achieved using the command line:
 
 .. code-block:: bash
+    :linenos:
+
     # for RESSPECT or PLAsTiCC
     >>> fit_dataset.py -s <dataset_name> -p <path_to_photo_file> 
              -hd <path_to_header_file> -sp <sample> -o <output_file> 
