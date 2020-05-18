@@ -18,6 +18,7 @@
 from .bazin import *
 from .build_snpcc_canonical import *
 from .classifiers import *
+from .cosmo_metric_utils import *
 from .database import *
 from .fit_lightcurves import *
 from .learn_loop import *
@@ -28,6 +29,7 @@ from .salt3_utils import *
 from .snana_fits_to_pd import *
 from .scripts.build_canonical import main as build_canonical
 from .scripts.build_time_domain import main as build_time_domain
+from .scripts.calculate_cosmology_metric import main as calculate_cosmology_metric
 from .scripts.fit_dataset import main as fit_dataset
 from .scripts.make_metrics_plots import main as make_metrics_plots
 from .scripts.run_loop import main as run_loop
@@ -36,20 +38,27 @@ from .time_domain import *
 from .time_domain_loop import *
 
 __all__ = ['accuracy',
+           'assign_cosmo',
            'bazin',
            'build_canonical',
            'build_snpcc_canonical',
            'Canonical',
            'Canvas',
+           'column_deriv_m',
+           'compare_two_fishers',
            'DataBase',
            'efficiency',
            'errfunc',
+           'fish_deriv_m',
+           'fisher_results',
+           'fisher_most_useful',
            'fit_dataset',
            'fit_scipy',
            'fit_snpcc_bazin',
            'fit_plasticc_bazin',
            'fit_resspect_bazin',
            'fom',
+           'full_check',
            'get_distances',
            'get_snpcc_metric',
            'gradient_boosted_trees',
@@ -70,4 +79,5 @@ __all__ = ['accuracy',
            'SNPCCPhotometry',
            'svm',
            'time_domain_loop',
-           'uncertainty_sampling']
+           'uncertainty_sampling',
+           'update_matrix']
