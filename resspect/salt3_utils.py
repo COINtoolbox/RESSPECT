@@ -27,8 +27,14 @@ __all__ = ['get_distances', 'parse_salt2mu_output', 'parse_snid_file']
 def get_distances(snid_file,data_folder: str, data_prefix: str,
                   select_modelnum: list, select_orig_sample: list,
                   salt2mu_prefix='test_salt2mu',
-                  maxsnnum=1000, **kwargs):
-    """Calculates distances and erros for cosmology metric.
+                  fitres_prefix='test_fitres',
+                  combined_fitres_name='test_fitres_combined.fitres',
+                  maxsnnum=1000, 
+                  salt3_outfile='salt3pipeinput.txt',
+                  salt3_tempfile='$RESSPECT_DIR/auxiliary_files/salt3pipeinput_template.txt',
+                  outputdir='results/salt3',
+                  **kwargs):
+    """Calculates distances and errors for cosmology metric.
 
     Parameters
     ----------
@@ -39,16 +45,25 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
     data_prefix: str
         Prefix/genversion of SNANA sim.
     select_modelnum: list
-        SNANA model number (only one number is allowed for now).
+        list of SNANA model numbers to be fitted 
     select_orig_sample: list
         Original simulated sample. 
         Options are ['train'] or ['test'] (only one sample is allowed for now).
     salt2mu_prefix: str (optional)
          Filename prefix for SALT2mu output.
          Default is 'test_salt2mu'.
+    fitres_prefix: str (optional)
+        prefix for snana light curve fitting result files
+    combined_fitres_name: str (optional)
+        filename for the combined (different types) fitres file
     maxsnnum: int (optional)
          max number of objects to fit. Default is 1000.
-    
+    salt3_outfile: str (optional)
+         generated salt3 input file
+    salt3_tempfile: str (optional)
+         template file for SALT3 input    
+    outputdir: str (optional)
+         dir of all outputs
 
     Returns
     -------
@@ -69,20 +84,43 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                   select_orig_sample=['train'])
     """
 
+    #check if outputdir exists. create one if not.
+    if not os.path.isdir(outputdir):
+        os.makedirs(outputdir)    
+    salt3_outfile = os.path.join(outputdir,salt3_outfile)
+    
     result_dict = parse_snid_file(snid_file, select_modelnum=select_modelnum,
                                   select_orig_sample=select_orig_sample,
-                                  maxsnnum=maxsnnum,**kwargs)
+                                  maxsnnum=maxsnnum,outfolder=os.path.join(outputdir,'snid'),
+                                  **kwargs)
 
-    for f,modelnum,sntype in zip(result_dict['snid'],
-                                 result_dict['modelnum'],
-                                 result_dict['sntype']):
+    fitres_list = []
+    for i,(f,modelnum,sntype) in enumerate(zip(result_dict['snid'],
+                                               result_dict['modelnum'],
+                                               result_dict['sntype'])):
+        print(i,"modelnum =",modelnum,"sntype=",sntype)
 
+        prefix = os.path.join(outputdir,fitres_prefix.strip()+'_'+str(i))
+        fitres_file = prefix+'.FITRES.TEXT'
         phot_version = '{}_MODEL{}_SN{}'.format(data_prefix,modelnum,sntype)
         hook = SNANAHook(snid_file=f, data_folder=data_folder, 
-                         phot_version=phot_version, salt2mu_prefix=salt2mu_prefix,**kwargs)
-        hook.run()    
+                         phot_version=phot_version, fitres_prefix=prefix,
+                         stages=['lcfit'], glue=False,tempfile=salt3_tempfile,
+                         outfile=salt3_outfile,**kwargs)
+        hook.run() 
+        fitres_list.append(fitres_file)
+
+    combined_fitres_name_str = os.path.join(outputdir,combined_fitres_name)
+    combine_fitres(fitres_list,output=combined_fitres_name_str)
+    salt2mu_prefix_str = os.path.join(outputdir,salt2mu_prefix.strip()+'_combined')
+    hook = SNANAHook(salt2mu_prefix=salt2mu_prefix_str,
+                     combined_fitres=combined_fitres_name_str,
+                     stages=['getmu'], glue=False,
+                     outfile=salt3_outfile,
+                     tempfile=salt3_tempfile,**kwargs)
+    hook.run()
         
-    result_df = parse_salt2mu_output('{}.fitres'.format(salt2mu_prefix))
+    result_df = parse_salt2mu_output('{}.fitres'.format(salt2mu_prefix_str))
     
     return result_df
 
@@ -98,7 +136,7 @@ def parse_snid_file(snid_file: str,
     Parameters
     ----------
     select_modelnum: list
-        SNANA model number (only one number is allowed for now).
+        list of SNANA model numbers
     select_orig_sample: list
         Original simulated sample. 
         Options are ['train'] or ['test'] (only one sample is allowed for now).
@@ -215,6 +253,12 @@ def parse_salt2mu_output(fitres_file: str, timeout=50):
     df.columns = [key for key, value in cname_map.items()]
 
     return df
+
+                
+def combine_fitres(fitres_list,output='fitres_combined.fitres'):
+    cmd = 'cat {} > {}'.format(' '.join(fitres_list),output)
+    os.system(cmd)
+
 
 def main():
     return None
