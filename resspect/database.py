@@ -1002,7 +1002,7 @@ class DataBase:
             self.photo_Ia_metadata = photo_Ia_metadata     
 
     def evaluate_classification(self, metric_label='snpcc', 
-                                sep_validation=False, dist_loop_root=None
+                                sep_validation=False, dist_loop_root=None,
                                 loop=None):
         """Evaluate results from classification.
 
