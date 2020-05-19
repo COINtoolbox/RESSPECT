@@ -15,7 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ['efficiency', 'purity', 'fom', 'accuracy', 'get_snpcc_metric']
+from resspect.cosmo_metric_utils import compare_two_fishers
+from resspect.salt3_utils import get_distances
+
+__all__ = ['efficiency', 'purity', 'fom', 'accuracy', 'get_snpcc_metric',
+           'cosmo_metric']
 
 
 def efficiency(label_pred: list, label_true: list, ia_flag=1):
@@ -163,6 +167,41 @@ def get_snpcc_metric(label_pred: list, label_true: list, ia_flag=1,
     metric_names = ['accuracy', 'efficiency', 'purity', 'fom']
 
     return metric_names, metric_values
+
+
+def cosmo_metric(data: str, comp_data: str):
+    """Calculate the Fisher-matrix based difference between two sets.
+
+    Parameters
+    ----------
+    data: str or pd.DataFrame
+        Path to original data set or data frame from which 
+        Fisher matrix will be calculated.
+        The data should be formated: ['id', 'z', 'mu', 'muerr'].
+    comp_data: str or pd.DataFrame
+        Path to second data set or data frame to be compared 
+        to the original data.
+        The data should be formated: ['id', 'z', 'mu', 'muerr'].   
+ 
+    Returns
+    -------
+    metrics_names: list
+        Name of elements in metrics: [fisher_diff]
+    metric_values: list
+        list of calculated metrics values for each element
+    """
+
+    # read distances
+    if isinstance(data, str):
+        data_original = pd.read_csv(data)
+    
+    if isinstance(comp_data, str):
+        data_update = pd.read_csv(comp_data)
+
+    # compare results from 2 fisher matrices
+    fisher_diff = compare_two_fishers(data_original, data_update)
+    
+    return ['fisher_diff'], [delta]
 
 
 def main():
