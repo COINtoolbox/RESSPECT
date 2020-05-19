@@ -18,9 +18,10 @@
 import pandas as pd
 
 from resspect.cosmo_metric_utils import compare_two_fishers
+from resspect.salt3_utils import get_distances
 
 __all__ = ['efficiency', 'purity', 'fom', 'accuracy', 'get_snpcc_metric',
-           'cosmo_metric']
+           'cosmo_metric', 'get_cosmo_metric']
 
 
 def efficiency(label_pred: list, label_true: list, ia_flag=1):
@@ -194,14 +195,14 @@ def cosmo_metric(data: str, comp_data: str):
 
     # read distances
     if isinstance(data, str):
-        data_original = pd.read_csv(data)
+        data = pd.read_csv(data)
     
     if isinstance(comp_data, str):
-        data_comp = pd.read_csv(comp_data)
+        comp_data = pd.read_csv(comp_data)
 
     # get useful columns only
-    data1 = data_original[['z','mu','mu_err']].values
-    data2 = data_comp[['z','mu','mu_err']].values
+    data1 = data[['z','mu','mu_err']].values
+    data2 = comp_data[['z','mu','mu_err']].values
     
     # compare results from 2 fisher matrices
     fisher_diff = compare_two_fishers(data1, data2)
@@ -213,8 +214,8 @@ def get_cosmo_metric(input_fname_root: str, loop: int,
         data_folder='/media/RESSPECT/data/RESSPECT_NONPERFECT_SIM/SNDATA_SIM_TMP/SNDATA_SIM_TMP/',
         data_prefix='RESSPECT_LSST_TEST_DDF_PLASTICC', maxsnnum=1000, 
         salt2mu_prefix='test_salt2mu_res', salt3_outfile='salt3pipeinput.txt',
-        save_dist=True, select_model_num=[90], select_orig_sample=['train'],
-        dist_root_fname='photo_ids_loop_'):
+        save_dist=True, select_modelnum=[90], select_orig_sample=['train'],
+        dist_root_fname='dist_loop_'):
     """Calculate distances and cosmology metrics for a list of ids.
 
     Parameters
@@ -226,7 +227,7 @@ def get_cosmo_metric(input_fname_root: str, loop: int,
         Current learning loop. 
         The cosmology metric can only be calculated in comparison
         to a previous state. "loop = 0" does not generate output.
-    calc_dist: bool
+    calc_dist: bool (optional)
         If True, calculate distances for objects given ids.
         Otherwise, read distances from file. Default is False.
     data_folder: str (optional)
@@ -237,7 +238,7 @@ def get_cosmo_metric(input_fname_root: str, loop: int,
         Default is "RESSPECT_LSST_TEST_DDF_PLASTICC".
     dist_root_fname: str (optional)
         Root for output file name where calculated distances will be stored. 
-        Only used if "calc_dist == True". Default is 'photo_ids_loop_'.
+        Only used if "calc_dist == True". Default is 'dist_loop_'.
     maxsnnum: int (optional)
         Number of objects to be fitted. 
         If this number is lower than the total number of objects, 
@@ -284,12 +285,17 @@ def get_cosmo_metric(input_fname_root: str, loop: int,
                             select_modelnum=select_modelnum, salt2mu_prefix=salt2mu_prefix,
                             maxsnnum=maxsnnum, select_orig_sample=select_orig_sample,
                             salt3_outfile=salt3_outfile)
-    
+
+            if save_dist:
+                if loop == 1:
+                    dist_original.to_csv(dist_root_fname + str(loop - 1) + '.csv', index=False)
+                dist_comp.to_csv(dist_root_fname + str(loop) + '.csv', index=False)
+                
         else:
-           dist_orignal = input_fname_root + str(loop - 1) + '.csv'
+           dist_original = input_fname_root + str(loop - 1) + '.csv'
            dist_comp = input_fname_root + str(loop) + '.csv'
 
-        names, values = cosmo_metric(data=dist_original, comp_data=dist_comp)
+        names, values = cosmo_metric(data=dist_original, comp_data=dist_comp)            
         
         return names, values
 

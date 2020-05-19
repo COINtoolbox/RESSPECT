@@ -1003,7 +1003,7 @@ class DataBase:
 
     def evaluate_classification(self, metric_label='snpcc', 
                                 sep_validation=False, dist_loop_root=None,
-                                loop=None):
+                                loop=None, **kwargs):
         """Evaluate results from classification.
 
         Populate properties: metric_list_names and metrics_list_values.
@@ -1021,6 +1021,9 @@ class DataBase:
         loop: int (optional)
             Index of AL loop. 
             Only used if "metric_label" is "cosmo" or "snpcc_cosmo".
+        kwargs: (optional)
+            All  arguments accepted by get_cosmo_metric when calculating
+            distances.
         """
 
         if metric_label == 'snpcc' and sep_validation:
@@ -1034,11 +1037,9 @@ class DataBase:
                                  list(self.test_labels))
 
         elif metric_label == 'cosmo':
-            if loop > 1:
-                fname_original = dist_loop_root + str(loop - 1) + '.csv'
-                fname_comp = dist_loop_root + str(loop) + '.csv'
-                self.metrics_list_names, self.metrics_list_values = \
-                    cosmo_metric(fname_original, fname_comp)
+            self.metrics_list_names, self.metrics_list_values = \
+                    get_cosmo_metric(input_fname_root=dist_loop_root,
+                                     loop=loop, **kwargs)
         else:
             raise ValueError('Only snpcc metric is implemented!'
                              '\n Feel free to add other options.')
