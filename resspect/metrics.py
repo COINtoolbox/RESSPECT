@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pandas as pd
+
 from resspect.cosmo_metric_utils import compare_two_fishers
 from resspect.salt3_utils import get_distances
 
