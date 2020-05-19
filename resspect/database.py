@@ -1002,7 +1002,8 @@ class DataBase:
             self.photo_Ia_metadata = photo_Ia_metadata     
 
     def evaluate_classification(self, metric_label='snpcc', 
-                                sep_validation=False):
+                                sep_validation=False, dist_loop_root=None
+                                loop=None):
         """Evaluate results from classification.
 
         Populate properties: metric_list_names and metrics_list_values.
@@ -1010,9 +1011,16 @@ class DataBase:
         Parameters
         ----------
         metric_label: str
-            Choice of metric. Currenlty only `snpcc` is accepted.
+            Choice of metric. 
+            Currenlty only "snpcc", "cosmo" or "snpcc_cosmo" are accepted.
         sep_validation: bool (optional)
             If True, construt separated validation sample. Default is False.
+        dist_loop_root: str (optional)
+            Pattern for file storing distances in each learn loop.
+            Only used if "metric_label" is "cosmo" or "snpcc_cosmo".
+        loop: int (optional)
+            Index of AL loop. 
+            Only used if "metric_label" is "cosmo" or "snpcc_cosmo".
         """
 
         if metric_label == 'snpcc' and sep_validation:
@@ -1024,6 +1032,13 @@ class DataBase:
             self.metrics_list_names, self.metrics_list_values = \
                 get_snpcc_metric(list(self.predicted_class),
                                  list(self.test_labels))
+
+        elif metric_label == 'cosmo':
+            if loop > 1:
+                fname_original = dist_loop_root + str(loop - 1) + '.csv'
+                fname_comp = dist_loop_root + str(loop) + '.csv'
+                self.metrics_list_names, self.metrics_list_values = \
+                    cosmo_metric(fname_original, fname_comp)
         else:
             raise ValueError('Only snpcc metric is implemented!'
                              '\n Feel free to add other options.')
