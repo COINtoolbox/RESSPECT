@@ -29,23 +29,24 @@ __all__ = ['assign_cosmo', 'fish_deriv_m', 'fisher_results',
            'full_check', 'compare_two_fishers']
 
 
-# original wa was 0.2
-# We start by having a model that will change the cosmology within the Fisher matrix
-def assign_cosmo(cosmo, model=[70, 0.3,0.7, -0.9, 0.0]):
-    """Do something.
+def assign_cosmo(cosmo, model=[70, 0.3, 0.7, -0.9, 0.0]):
+    """Define a new cosmology model.
+
 
     Parameters
     ----------
-    cosmo:  XXX
-        XXXX
+    cosmo: astropy.cosmology Cosmology Object
+        Assumes original cosmology was astropy.cosmology.w0waCDM
     model: list (optional)
-        Cosmology parameters: [H0, om, ol, w0, wa].
-        Default is [70, 0.3,0.7, -0.9, 0.0].
+        Cosmology parameters: [H0, Om, Ode, w0, wa].
+        Default is [70, 0.3, 0.7, -0.9, 0.0].
+        Hard code Ob0 (Omega baryons) = 0.022
+
 
     Returns
     -------
-    newcosmo: XX
-        XXX
+    newcosmo: astropy.cosmology Cosmology Object
+        New Cosmology Object with updated cosmology parameters
     """
 
     ob0=0.022
@@ -58,29 +59,33 @@ def assign_cosmo(cosmo, model=[70, 0.3,0.7, -0.9, 0.0]):
     return newcosmo
 
 
-# Define code that returns the mu and the Fisher matrix
 def fish_deriv_m(redshift, model, step, screen=False):
     """Calculates the derivatives and the base function at given redshifts.
 
     Parameters
     ----------
-    redshift: float
+    redshift: float or list
         Redshift where derivatives will be calculated.
     model: list
         List of cosmological model parameters.
-        Order is [H0, om, ol, w0, wa].
-    step: XXX
-        XXXXX
+        Order is [H0, Om, Ode, w0, wa].
+    step: list
+        List of steps the cosmological model paramter will take when determining
+         the derivative.
+        If a given entry is zero, that parameter will not be varied over.
+        Length is length of model list.
     screen: bool (optional)
         Print debug options to screen.
         Default is False.
 
     Returns
     -------
-    m: XX
-        XXXX
-    m_deriv: XXX
-        XXXX
+    m: list
+        List of theoretical distance modulus (mu) at a given redshift from
+         the base cosmology.
+    m_deriv: list (len(redshift), len(model))
+        List of parameter derivatives of the likelihood function
+         at given redshifts.
     """
     
     Ob0=0.022
@@ -90,7 +95,6 @@ def fish_deriv_m(redshift, model, step, screen=False):
 
     cosmo=assign_cosmo(cosmo, model)
 
-    #print cosmo.Ok0
     m = []
     m_deriv = []
     c = const.c.to('km/s')
@@ -119,7 +123,6 @@ def fish_deriv_m(redshift, model, step, screen=False):
 
                 tempmodel = list(model)
                 tempmodel[stepp] = model[stepp] + j*step[stepp]
-                #print tempmodel
                 c = const.c.to('km/s')
                 cosmo = assign_cosmo(cosmo, tempmodel)
                 tmp = cosmo.distmod(redshift)
@@ -133,26 +136,25 @@ def fish_deriv_m(redshift, model, step, screen=False):
 
 
 def fisher_results(redshift, mu_err):
-    """Do something.
+    """Computes the Fisher Matrix.
+       Assumes we only care about Om and w0.
 
-
-    ** original doc string, there are some missing inputs in the function definition? **
-    Inputs are redshift, probability, mu (distance modulus), mu_err in arrays.
     TBD: make stepvec an input.
+    TBD: Priors as inputs?
 
     Parameters
     ----------
-    redshift: float
+    redshift: list (float)
         Redshift.
-    mu_err: float
+    mu_err: list (float)
         Error in distance modulus.
 
     Returns
     -------
-    sigma: XXX
-        XXXX
-    covmat: XXX
-        XXXX
+    sigma: list
+        Error/Standard deviation of Om and w0, respectively.
+    covmat: list (2, 2)
+        Covariance matrix of Om and w0. Om is first row, w0 is second.
     """
     stepvec = np.array([0, 0.001, 0.00, 0.1, 0., 0.0, 0.0, 0.0])
 
@@ -193,32 +195,35 @@ def fisher_results(redshift, mu_err):
     return sigma, covmat
 
 
-def column_deriv_m(redshift, sigma, model, step):
-    """Do something.
-
-    ** original docstring: the description seems exactly the same as was given for fish_deriv_m **
-    takes the model vector - for now [h0,om,ok,w0,wa], step vector (0 if not step) \
-    data vector and gives back the derivs and the base function value at those \
-    redshifts
+def column_deriv_m(redshift, mu_err, model, step):
+    """Calculate a column derivative of your model.
+       Define a matrix P such that P_ik = 1/sigma_i del(M(i, params)/del(param_k)
+       and M=model.
+       This column matrix holds k constant.
 
     Parameters
     ----------
-    redshift: float
+    redshift: float or list
         Redshift.
-    sigma: float
-        XXXX
+    mu_err: float or list
+        Error in distance modulus.
     model: list
-         List of cosmological model parameters.
+        List of cosmological model parameters.
         Order is [H0, om, ol, w0, wa].
-    step: XX
-        XXXX
+    step: list
+        List of steps the cosmological model paramter will take when determining
+        the derivative.
+        If a given entry is zero, that parameter will not be varied over.
+        Length is length of model list.
 
     Returns
     -------
-    m: XXX
-        XXXXXX
-    m_deriv: XXX
-        XXXXX    
+    m: list
+        List of theoretical distance modulus (mu) at a given redshift from
+         the base cosmology.
+    m_deriv: list
+        List of derivatives for one parameter of the likelihood function
+         at given redshifts.
     """
 
     Ob0=0.022
@@ -227,7 +232,6 @@ def column_deriv_m(redshift, sigma, model, step):
     cosmo = w0waCDM(model[0], Ob0, Om0, Ode0, model[3],model[4])
 
     cosmo=assign_cosmo(cosmo, model)
-    #print cosmo.Ok0
     m = []
     m_deriv = []
     c = const.c.to('km/s')
@@ -250,7 +254,6 @@ def column_deriv_m(redshift, sigma, model, step):
 
                 tempmodel = list(model)
                 tempmodel[stepp] = model[stepp] + j*step[stepp]
-                #print tempmodel
                 c = const.c.to('km/s')
                 cosmo = assign_cosmo(cosmo, tempmodel)
                 tmp = cosmo.distmod(redshift)
@@ -258,29 +261,31 @@ def column_deriv_m(redshift, sigma, model, step):
 
             deriv[stepp] = (theory[:,1] - theory[:,0])/(2.*step[stepp])
 
-    m_deriv = 1.0/sigma * deriv
+    m_deriv = 1.0/mu_err * deriv
 
     return m, m_deriv
 
 
-def update_matrix(redshift, sigma, covmat):
-    """Do something.
+def update_matrix(redshift, mu_err, covmat):
+    """Update matrix calculated from Hees et al (2019).
+        https://ui.adsabs.harvard.edu/abs/2019ApJ...880...87H/abstract
+       How much the Fisher Matrix changed given a new set of observations.
 
-    ** original docstring **
-    TBD: generalize this back to take in step and model.
+    TBD: make stepvec an input.
 
     Parameters
     ----------
-    redshift: float
+    redshift: float or list
         Redshift.
-    sigma: float
-        XXXX
-    covmat: XXXX
-        XXXXXX
+    mu_err: float or list
+        Error in distance modulus.
+    covmat: list
+        Covariance matrix from running the full Fisher Matrix analysis.
 
     Returns
     -------
-    XXXXX
+    u: list (2, 2)
+        Update to the Fisher Matrix covariance matrix given new observations.
     """
     stepvec = np.array([0, 0.001, 0.00, 0.1, 0.])
     step_inds = np.where(stepvec)[0]
@@ -288,7 +293,7 @@ def update_matrix(redshift, sigma, covmat):
     names = ['hubble', 'omega_m', 'omega_de', 'w0', 'wa']
 
     partialmu, partial_deriv = column_deriv_m(np.array(redshift),
-                                              np.array(sigma),
+                                              np.array(mu_err),
                                               model, stepvec)
     p_deriv = partial_deriv[step_inds]
 
@@ -298,31 +303,38 @@ def update_matrix(redshift, sigma, covmat):
     bottom = 1.0 + np.matmul(np.dot(np.transpose(p_deriv[np.newaxis].T), covmat),
                              p_deriv[np.newaxis].T)
 
-    return top/bottom
+    u = top/bottom
+
+    return u
 
 
-def find_most_useful(ID, redshift, error, covmat, N, tot=False):
-    """Do something.
+def find_most_useful(ID, redshift, error, covmat, N=None, tot=False):
+    """Find which objects improve w0 the most given a list of observations.
+       Uses update_matrix to find best improvements in w0.
+
 
     Parameters
     ----------
-    ID: int 
+    ID: int list
         Identification number
-    redshift: XXXX 
-        Redshifts XXX
-    error: XXXX
-        Uncertainties of distance modulus
-    covmat: XXXX
-        Covariance matrix from original Fisher Matrix
-    N: int
-        Top number to search
+    redshift: list
+        Redshifts of new observations.
+    error: list
+        Uncertainties of distance modulus of new observations.
+    covmat: list (2, 2)
+        Covariance matrix from original Fisher Matrix.
+    N: int (optional)
+        If defined, return only the top N objects that most improve w0.
+        Default is None.
     tot: bool (optional)
-        XXXX. Default is False.
+        Prints the total change in w0 for every object in list.
+        Default is False.
 
     Returns
     -------
-    u_stack: XXX
-        XXX
+    u_stack: sorted list (len(objects), 2)
+        Sorted list of the amount w0 changes for the input observations.
+        Returns concatenated list of the object IDs and amount w0 changes.
     """
 
     u = np.zeros(len(redshift))
@@ -341,25 +353,30 @@ def find_most_useful(ID, redshift, error, covmat, N, tot=False):
         return u_stack[0:N]
 
 def full_check(redshift, error, covmat, N):
-    """Do something.
+    """Find the top N objects over a range of different baseline cosmologies.
+
+       TBD: Are we going to use something like this? If not, we can remove this function.
 
     Parameters
     ----------
-    redshift: XXX
-        XXXXX
-    error: XXX
-        XXXX
-    covmat: XXXX
-        XXX
+    redshift: list
+        Redshift.
+    error: list
+        Error in distance modulus.
+    covmat: list
+        Full covariance matrix from the Fisher matrix.
+        (This should change as a function of the baseline, probably wrong implementation)
     N: int
-        Top number to search
+        Top number to search.
 
     Returns
     -------
+    arg_u: list
+        List of the index of the top N best observations to improve w0.
     """
     ndim = 5
 
-    full_check = np.zeros((ndim, ndim, len(test)))#all_red) ))
+    full_check = np.zeros((ndim, ndim, len(test)))
     for i, om in enumerate(np.linspace(0.2, 0.4, ndim)):
         for j, w0 in enumerate(np.linspace(-0.9, -1.1, ndim)):
             print(om, w0)
@@ -381,32 +398,34 @@ def full_check(redshift, error, covmat, N):
     numberf = np.array(number).flatten()
     arg_sort_numberf = np.argsort(numberf)
 
-    return arg_sort_numberf[-N:]
+    arg_u = arg_sort_numberf[-N:]
+
+    return arg_u
 
 
 def compare_two_fishers(data1, data2, screen=False):
-    """Do something. 
-    
-    ** original docstring ***
-        data should be of the form redshift, mu, and error on distance modulus
-        
-        if positive, data set 2 has tighter constraints than data set 1
-        if negative, data set 1 has tighter constraints than data set 2
+    """Compare different in w0 precision given 2 different sets of data
+        using Fisher Matrix.
+
 
     Parameters
     ----------
-    data1: XXX
-        XXXX
-    data2: XXX
-        XXXXX
+    data1: list
+        List of redshift, mu, error on distance modulus for data set 1.
+        Order is [z, mu, mu_err].
+    data2: list
+        List of redshift, mu, error on distance modulus for data set 2.
+        Order is [z, mu, mu_err].
     screen: bool (optional)
         Print debug options to screen.
         Default is False.
 
     Returns
     -------
-    delta_sig: XXX
-        XXXX
+    delta_sig: float
+        Difference in precision on w0 between data set 1 and data set 2.
+        If positive, data set 2 has tighter constraints than data set 1.
+        If negative, data set 1 has tighter constraints than data set 2.
     """
 
     sig_fr1, cov1 = fisher_results(data1[0], data1[2])
