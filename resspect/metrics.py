@@ -18,7 +18,6 @@
 import pandas as pd
 
 from resspect.cosmo_metric_utils import compare_two_fishers
-from resspect.salt3_utils import get_distances
 
 __all__ = ['efficiency', 'purity', 'fom', 'accuracy', 'get_snpcc_metric',
            'cosmo_metric']
@@ -196,12 +195,13 @@ def cosmo_metric(data: str, comp_data: str):
     # read distances
     if isinstance(data, str):
         data_original = pd.read_csv(data)
+        print(data_original)
     
     if isinstance(comp_data, str):
-        data_update = pd.read_csv(comp_data)
-
+        data_comp = pd.read_csv(comp_data)
+        print(data_comp)
     # compare results from 2 fisher matrices
-    fisher_diff = compare_two_fishers(data_original, data_update)
+    fisher_diff = compare_two_fishers(data_original, data_comp)
     
     return ['fisher_diff'], [delta]
 
