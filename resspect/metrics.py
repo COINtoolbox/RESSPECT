@@ -199,9 +199,13 @@ def cosmo_metric(data: str, comp_data: str):
     
     if isinstance(comp_data, str):
         data_comp = pd.read_csv(comp_data)
-        print(data_comp)
+
+    # get useful columns only
+    data1 = data_original[['z','mu','mu_err']]
+    data2 = data_comp[['z','mu','mu_err']]
+
     # compare results from 2 fisher matrices
-    fisher_diff = compare_two_fishers(data_original, data_comp)
+    fisher_diff = compare_two_fishers(data1, data2)
     
     return ['fisher_diff'], [delta]
 
