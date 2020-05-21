@@ -459,11 +459,10 @@ class LightCurve(object):
             flux[self.filters[k]] = []
 
             for item in time:
-                epoch = t_max + item
-                flux[self.filters[k]].append(bazin(epoch, param[0 + k * 5], 
+                flux[self.filters[k]].append(bazin(item, param[0 + k * 5], 
                       param[1 + k * 5], param[2 + k * 5], param[3 + k * 5], param[4 + k * 5]))
 
-            first_obs.append(t_max + time[0])
+            first_obs.append(time[0] - t_max)
 
         return np.array(flux), first_obs, tmax_all
         
