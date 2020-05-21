@@ -66,6 +66,8 @@ class LightCurve(object):
     -------
     check_queryable(mjd: float, r_lim: float)
         Check if this light can be queried in a given day.
+    conv_flux_mag(flux: np.array)
+        Convert positive flux into magnitude.
     evaluate_bazin(param: list, time: np.array) -> np.array
         Evaluate the Bazin function given parameter values.
     load_snpcc_lc(path_to_data: str)
@@ -357,6 +359,26 @@ class LightCurve(object):
         self.photometry['detected_bool'] = photo['detected_bool'].values
         self.photometry = pd.DataFrame(self.photometry)
 
+    def conv_flux_mag(self, flux, zpt=27.5):
+        """Convert FLUXCAL to magnitudes.
+
+        Parameters
+        ----------
+        flux: list or np.array
+            Values of flux to be converted into mag.
+        zpt: float (optional)
+            Zero point. Default is 27.5 (from SNANA).
+
+        Returns
+        -------
+        mag: list or np.array
+            Magnitude values. If flux < 1e-5 returns 99.
+        """
+      
+        mag = [zpt - 2.5 * np.log10(f) if f > 1e-5 else 99 for f in flux]
+       
+        return np.array(mag)
+
     def check_queryable(self, mjd: float, r_lim: float, criteria=1, 
                         time_flux_pred=None):
         """Check if this object can be queried in a given day.
@@ -399,18 +421,12 @@ class LightCurve(object):
 
             else:
                 surv_flux = self.photometry['flux'].values[surv_flag]
-                if surv_flux[-1] > 0:
-                    mag = 2.5 * (11 - np.log10(surv_flux[-1]))
-                else:
-                    mag = 99
+                mag = self.convert_flux_mag([surv_flux[-1]])[0]
 
         elif criteria == 2:
             # estimate flux based on Bazin function
             fitted_flux = self.evaluate_bazin([time_flux_pred])['r'][0]
-            
-            if fitted_flux > 0:
-                # calculate magnitude from flux
-                mag = 2.5 * (11 - np.log10(fitted_flux))
+            mag = self.convert_flux_mag([fitted_flux])[0]
 
         if mag <= r_lim:
             return True
@@ -563,8 +579,9 @@ class LightCurve(object):
                     plt.plot(xaxis, fitted_flux[self.filters[i]], color='red',
                              lw=1.5, label='Bazin fit')
                 elif unit == 'mag':
-                    mag = 2.5 * (11 - np.log10(fitted_flux[self.filters[i]].values))
-                    plt.plot(xaxis, mag, color='red', lw=1.5)
+                    mag = self.convert_flux_mag(fitted_flux[self.filters[i]].values)
+                    mag_flag = mag < 50
+                    plt.plot(xaxis, mag[mag_flag], color='red', lw=1.5)
                 else:
                     raise ValueError('Unit can only be "flux" or "mag".')
 
@@ -576,12 +593,39 @@ class LightCurve(object):
                         plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
                                  color='red', lw=1.5, ls='--', label='Bazin extrap')
                     elif unit == 'mag':
-                        ext_mag = 2.5 * (11 - np.log10(ext_flux[self.filters[i]].values))
-                        plt.plot(xaxis_extrap, ext_mag, color='red', lw=1.5, ls='--')
+                        ext_mag = self.convert_flux_mag(ext_flux[self.filters[i]].values))
+                        ext_mag_flag = ext_mag < 50
+                        plt.plot(xaxis_extrap, ext_mag[ext_mag_flag], color='red',
+                                 lw=1.5, ls='--')
+            
+            if unit == 'flux':
+                plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o', label='obs')
+                plt.ylabel('FLUXCAL')
+            elif unit == 'mag':
+                mag_obs  = self.convert_flux_mag(y)
+                mag_obs_flag = mag_obs < 50
+                time_mag = time[mag_obs_flag]
+                
+                plt.scatter(time_mag, mag_obs[mag_obs_flag], color='blue',
+                            label='calc mag', marker='s')
 
-            plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o', label='obs')
+                # if MAG is provided in the table, also plot it
+                # this allows checking the flux mag conversion
+                if 'MAG' in self.photometry.keys():
+                    mag_flag = self.photometry['MAG'].values < 50
+                    mag_ff = np.logical_and(filter_flag, mag_flag)
+                    mag_table = self.photometry['MAG'][mag_ff].values
+                    mjd_table = self.photometry['mjd'][mag_ff].values
+
+                    plt.scatter(mjd_table, mag_table, color='black', label='table mag',
+                                marker='x')
+
+                ax = plt.gca()
+                ax.set_ylim(ax.get_ylim()[::-1])
+                plt.ylabel('mag')            
+
             plt.xlabel('days since start')
-            plt.ylabel('FLUXCAL')
+            
             plt.tight_layout()
 
         if save:
