@@ -424,21 +424,18 @@ class LightCurve(object):
 
         return bazin_param
 
-    def evaluate_bazin(self, param: list, time: np.array):
+    def evaluate_bazin(self, time: np.array):
         """Evaluate the Bazin function given parameter values.
 
         Parameters
         ----------
-        param: list
-            List of Bazin parameters in order [a, b, t0, tfall, trise] 
-            for all filters, concatenated from blue to red
         time: np.array or list
             Time since maximum where to evaluate the Bazin fit.
 
         Returns
         -------
-        np.array
-            Value of the Bazin flux in each required time
+        dict
+            Value of the Bazin flux in each required time per filter.
         """
         # store flux values and starting points
         flux = {}
@@ -448,8 +445,11 @@ class LightCurve(object):
             flux[self.filters[k]] = []
 
             for item in time:
-                flux[self.filters[k]].append(bazin(item, param[0 + k * 5], 
-                      param[1 + k * 5], param[2 + k * 5], param[3 + k * 5], param[4 + k * 5]))
+                flux[self.filters[k]].append(bazin(item, self.bazin_features[0 + k * 5], 
+                                                   self.bazin_features[1 + k * 5], 
+                                                   self.bazin_features[2 + k * 5],
+                                                   self.bazin_features[3 + k * 5],
+                                                   self.bazin_features[4 + k * 5]))
 
         return flux
         
