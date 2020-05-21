@@ -379,8 +379,7 @@ class LightCurve(object):
        
         return np.array(mag)
 
-    def check_queryable(self, mjd: float, r_lim: float, criteria=1, 
-                        time_flux_pred=None):
+    def check_queryable(self, mjd: float, r_lim: float, criteria=1):
         """Check if this object can be queried in a given day.
 
         This checks only r-band mag limit in a given epoch.
@@ -398,10 +397,6 @@ class LightCurve(object):
             1 -> r-band cut on last measured photometric point.
             2 -> use Bazin estimate of flux today.
             Default is 1.
-        time_flux_pred: float (optional)
-            Time since first measurement when flux should be estimated.
-            Only used if "criteria == 2". Default is None.
-
 
         Returns
         -------
@@ -425,7 +420,7 @@ class LightCurve(object):
 
         elif criteria == 2:
             # estimate flux based on Bazin function
-            fitted_flux = self.evaluate_bazin([time_flux_pred])['r'][0]
+            fitted_flux = self.evaluate_bazin([mjd])['r'][0]
             mag = self.conv_flux_mag([fitted_flux])[0]
 
         if mag <= r_lim:
