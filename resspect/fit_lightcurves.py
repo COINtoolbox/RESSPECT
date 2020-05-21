@@ -524,7 +524,7 @@ class LightCurve(object):
             yerr = self.photometry['fluxerr'][filter_flag].values
 
             # check Bazin fit convergence
-            if None in self.bazin_features[i * 5 : (i + 1) * 5]:
+            if 'None' in self.bazin_features[i * 5 : (i + 1) * 5]:
                 plot_fit = False
             else:
                 plot_fit = True
