@@ -562,9 +562,11 @@ class LightCurve(object):
                 if unit == 'flux':
                     plt.plot(xaxis, fitted_flux[self.filters[i]], color='red',
                              lw=1.5, label='Bazin fit')
-                else:
-                    mag = 2.5 * (11 - np.log10(fitted_flux[self.filters[i]]))
+                elif unit == 'mag':
+                    mag = 2.5 * (11 - np.log10(fitted_flux[self.filters[i]].values))
                     plt.plot(xaxis, mag, color='red', lw=1.5)
+                else:
+                    raise ValueError('Unit can only be "flux" or "mag".')
 
                 if extrapolate:
                     xaxis_extrap = list(xaxis) + list(time_flux_pred)
@@ -573,8 +575,8 @@ class LightCurve(object):
                     if unit == 'flux':
                         plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
                                  color='red', lw=1.5, ls='--', label='Bazin extrap')
-                    else:
-                        ext_mag = 2.5 * (11 - np.log10(ext_flux[self.filters[i]]))
+                    elif unit == 'mag':
+                        ext_mag = 2.5 * (11 - np.log10(ext_flux[self.filters[i]].values))
                         plt.plot(xaxis_extrap, ext_mag, color='red', lw=1.5, ls='--')
 
             plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o', label='obs')
