@@ -545,7 +545,6 @@ class LightCurve(object):
 
         if save:
             plt.savefig(output_file)
-            plt.show('all')
         if show:
             plt.show()
 
