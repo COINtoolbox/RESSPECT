@@ -357,8 +357,9 @@ class LightCurve(object):
         self.photometry['detected_bool'] = photo['detected_bool'].values
         self.photometry = pd.DataFrame(self.photometry)
 
-    def check_queryable(self, mjd: float, r_lim: float):
-        """Check if this light can be queried in a given day.
+    def check_queryable(self, mjd: float, r_lim: float, criteria=1, 
+                        time_flux_pred=None):
+        """Check if this object can be queried in a given day.
 
         This checks only r-band mag limit in a given epoch.
         It there is no observation on that day, use the last available
@@ -370,6 +371,15 @@ class LightCurve(object):
             MJD where the query will take place.
         r_lim: float
             r-band magnitude limit below which query is possible.
+        criteria: int [1 or 2] (optional)
+            Criteria to determine if an obj is queryable.
+            1 -> r-band cut on last measured photometric point.
+            2 -> use Bazin estimate of flux today.
+            Default is 1.
+        time_flux_pred: float (optional)
+            Time since first measurement when flux should be estimated.
+            Only used if "criteria == 2". Default is None.
+
 
         Returns
         -------
@@ -382,18 +392,27 @@ class LightCurve(object):
         rband_flag = self.photometry['band'].values == 'r'
         surv_flag = np.logical_and(photo_flag, rband_flag)
 
-        if 'MAG' in self.photometry.keys():
-            # check surviving photometry
-            surv_mag = self.photometry['MAG'].values[surv_flag]
+        if criteria == 1:
+            if 'MAG' in self.photometry.keys():
+                # check surviving photometry
+                mag = self.photometry['MAG'].values[surv_flag][-1]
 
-        else:
-            surv_flux = self.photometry['flux'].values[surv_flag]
-            if surv_flux[-1] > 0:
-                surv_mag = [2.5 * (11 - np.log10(surv_flux[-1]))]
             else:
-                surv_mag = []
+                surv_flux = self.photometry['flux'].values[surv_flag]
+                if surv_flux[-1] > 0:
+                    mag = 2.5 * (11 - np.log10(surv_flux[-1]))
+                else:
+                    mag = 99
 
-        if len(surv_mag) > 0 and 0 < surv_mag[-1] <= r_lim:
+        elif criteria == 2:
+            # estimate flux based on Bazin function
+            fitted_flux = self.evaluate_bazin([time_flux_pred])['r'][0]
+            
+            if fitted_flux > 0:
+                # calculate magnitude from flux
+                mag = 2.5 * (11 - np.log10(fitted_flux))
+
+        if mag <= r_lim:
             return True
         else:
             return False
@@ -484,7 +503,7 @@ class LightCurve(object):
                     self.bazin_features.append('None')
 
     def plot_bazin_fit(self, save=True, show=False, output_file=' ', figscale=1,
-                       extrapolate=False, time_flux_pred=None):
+                       extrapolate=False, time_flux_pred=None, unit='flux'):
         """
         Plot data and Bazin fitted function.
 
@@ -495,16 +514,21 @@ class LightCurve(object):
         extrapolate: bool (optional)
             If True, also plot the estimated flux values.
             Default is False.
-        time_flux_pred: list (optional)
-            Time since first observation where flux is to be
-            estimated. It is only used if "extrapolate == True".
-            Default is None.
+        output_file: str (optional)
+            Name of file to store the plot.
         save: bool (optional)
              Save figure to file. Default is True.
         show: bool (optinal)
              Display plot in windown. Default is False.
-        output_file: str (optional)
-            Name of file to store the plot.
+        time_flux_pred: list (optional)
+            Time since first observation where flux is to be
+            estimated. It is only used if "extrapolate == True".
+            Default is None.
+        unit: str (optional)
+            Unit for plot. Options are 'flux' or 'mag'.
+            Use zero point from SNANA for flux-to-mag conversion
+            ==> mag = 2.5 * (11 - np.log10(flux)).
+            Default is 'flux'.
         """
 
         # number of columns in the plot
@@ -535,15 +559,23 @@ class LightCurve(object):
             if plot_fit:                    
                 xaxis = np.linspace(0, max(time), 500)[:, np.newaxis]
                 fitted_flux = self.evaluate_bazin(xaxis)
-                plt.plot(xaxis, fitted_flux[self.filters[i]], color='red',
-                         lw=1.5, label='Bazin fit')
+                if unit == 'flux':
+                    plt.plot(xaxis, fitted_flux[self.filters[i]], color='red',
+                             lw=1.5, label='Bazin fit')
+                else:
+                    mag = 2.5 * (11 - np.log10(fitted_flux[self.filters[i]]))
+                    plt.plot(xaxis, mag, color='red', lw=1.5)
 
                 if extrapolate:
                     xaxis_extrap = list(xaxis) + list(time_flux_pred)
                     xaxis_extrap = np.sort(np.array(xaxis_extrap))
                     ext_flux = self.evaluate_bazin(xaxis_extrap)
-                    plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
-                             color='red', lw=1.5, ls='--', label='Bazin extrap')
+                    if unit == 'flux':
+                        plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
+                                 color='red', lw=1.5, ls='--', label='Bazin extrap')
+                    else:
+                        ext_mag = 2.5 * (11 - np.log10(ext_flux[self.filters[i]]))
+                        plt.plot(xaxis_extrap, ext_mag, color='red', lw=1.5, ls='--')
 
             plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o', label='obs')
             plt.xlabel('days since start')
