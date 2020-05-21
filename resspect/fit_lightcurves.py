@@ -579,7 +579,7 @@ class LightCurve(object):
                     plt.plot(xaxis, fitted_flux[self.filters[i]], color='red',
                              lw=1.5, label='Bazin fit')
                 elif unit == 'mag':
-                    mag = self.conv_flux_mag(fitted_flux[self.filters[i]].values)
+                    mag = self.conv_flux_mag(fitted_flux[self.filters[i]])
                     mag_flag = mag < 50
                     plt.plot(xaxis, mag[mag_flag], color='red', lw=1.5)
                 else:
@@ -593,7 +593,7 @@ class LightCurve(object):
                         plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
                                  color='red', lw=1.5, ls='--', label='Bazin extrap')
                     elif unit == 'mag':
-                        ext_mag = self.conv_flux_mag(ext_flux[self.filters[i]].values)
+                        ext_mag = self.conv_flux_mag(ext_flux[self.filters[i]])
                         ext_mag_flag = ext_mag < 50
                         plt.plot(xaxis_extrap, ext_mag[ext_mag_flag], color='red',
                                  lw=1.5, ls='--')
