@@ -444,12 +444,16 @@ class LightCurve(object):
             # store flux values per filter
             flux[self.filters[k]] = []
 
-            for item in time:
-                flux[self.filters[k]].append(bazin(item, self.bazin_features[0 + k * 5], 
-                                                   self.bazin_features[1 + k * 5], 
-                                                   self.bazin_features[2 + k * 5],
-                                                   self.bazin_features[3 + k * 5],
-                                                   self.bazin_features[4 + k * 5]))
+            # check if Bazin features exist
+            if None not in self.bazin_features[k * 5 : (k + 1) * 5]
+                for item in time:
+                    flux[self.filters[k]].append(bazin(item, self.bazin_features[0 + k * 5], 
+                                                       self.bazin_features[1 + k * 5], 
+                                                       self.bazin_features[2 + k * 5],
+                                                       self.bazin_features[3 + k * 5],
+                                                       self.bazin_features[4 + k * 5]))
+            else:
+                flux[self.filters[k]].append(None)
 
         return flux
         
@@ -544,7 +548,6 @@ class LightCurve(object):
             plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o', label='obs')
             plt.xlabel('days since start')
             plt.ylabel('FLUXCAL')
-            plt.legend()
             plt.tight_layout()
 
         if save:
