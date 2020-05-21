@@ -593,7 +593,7 @@ class LightCurve(object):
                         plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
                                  color='red', lw=1.5, ls='--', label='Bazin extrap')
                     elif unit == 'mag':
-                        ext_mag = self.convert_flux_mag(ext_flux[self.filters[i]].values))
+                        ext_mag = self.convert_flux_mag(ext_flux[self.filters[i]].values)
                         ext_mag_flag = ext_mag < 50
                         plt.plot(xaxis_extrap, ext_mag[ext_mag_flag], color='red',
                                  lw=1.5, ls='--')
