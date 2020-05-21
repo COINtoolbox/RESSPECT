@@ -353,12 +353,12 @@ def compare_two_fishers(data1, data2, screen=False):
     ----------
     data1: np.array 
         List of redshift, mu, error on distance modulus for data set 1.
-        Order is [z, mu, mu_err]. Number of lines == 3, number of 
-        columns == number of objects.
+        Order is [z, mu, mu_err]. Number of lines == number of objects,
+        number of columns == 3.
     data2: list
         List of redshift, mu, error on distance modulus for data set 2.
-        Order is [z, mu, mu_err]. Number of lines == 3, number of 
-        columns == number of objects.
+        Order is [z, mu, mu_err]. Number of lines == number of objects,
+        number of columns == 3.
     screen: bool (optional)
         Print debug options to screen. Default is False.
 
