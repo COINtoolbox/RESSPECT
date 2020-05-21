@@ -421,12 +421,12 @@ class LightCurve(object):
 
             else:
                 surv_flux = self.photometry['flux'].values[surv_flag]
-                mag = self.convert_flux_mag([surv_flux[-1]])[0]
+                mag = self.conv_flux_mag([surv_flux[-1]])[0]
 
         elif criteria == 2:
             # estimate flux based on Bazin function
             fitted_flux = self.evaluate_bazin([time_flux_pred])['r'][0]
-            mag = self.convert_flux_mag([fitted_flux])[0]
+            mag = self.conv_flux_mag([fitted_flux])[0]
 
         if mag <= r_lim:
             return True
@@ -579,7 +579,7 @@ class LightCurve(object):
                     plt.plot(xaxis, fitted_flux[self.filters[i]], color='red',
                              lw=1.5, label='Bazin fit')
                 elif unit == 'mag':
-                    mag = self.convert_flux_mag(fitted_flux[self.filters[i]].values)
+                    mag = self.conv_flux_mag(fitted_flux[self.filters[i]].values)
                     mag_flag = mag < 50
                     plt.plot(xaxis, mag[mag_flag], color='red', lw=1.5)
                 else:
@@ -593,7 +593,7 @@ class LightCurve(object):
                         plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
                                  color='red', lw=1.5, ls='--', label='Bazin extrap')
                     elif unit == 'mag':
-                        ext_mag = self.convert_flux_mag(ext_flux[self.filters[i]].values)
+                        ext_mag = self.conv_flux_mag(ext_flux[self.filters[i]].values)
                         ext_mag_flag = ext_mag < 50
                         plt.plot(xaxis_extrap, ext_mag[ext_mag_flag], color='red',
                                  lw=1.5, ls='--')
@@ -602,7 +602,7 @@ class LightCurve(object):
                 plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o', label='obs')
                 plt.ylabel('FLUXCAL')
             elif unit == 'mag':
-                mag_obs  = self.convert_flux_mag(y)
+                mag_obs  = self.conv_flux_mag(y)
                 mag_obs_flag = mag_obs < 50
                 time_mag = time[mag_obs_flag]
                 
