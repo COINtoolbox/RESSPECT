@@ -522,9 +522,16 @@ class LightCurve(object):
             y = self.photometry['flux'][filter_flag].values
             yerr = self.photometry['fluxerr'][filter_flag].values
 
-            if len(x) > 4:
-                # shift to avoid large numbers in x-axis
-                time = x - min(x)
+            # check Bazin fit convergence
+            if None in self.bazin_features[i * 5 : (i + 1) * 5]:
+                plot_fit = False
+            else:
+                plot_fit = True
+                
+            # shift to avoid large numbers in x-axis
+            time = x - min(x)
+            
+            if len(x) > 4 and plot_fit:                    
                 xaxis = np.linspace(0, max(time), 500)[:, np.newaxis]
                 # calculate fitted function
                 fitted_flux = np.array([bazin(t, self.bazin_features[i * 5],
@@ -533,13 +540,10 @@ class LightCurve(object):
                                               self.bazin_features[i * 5 + 3],
                                               self.bazin_features[i * 5 + 4])
                                         for t in xaxis])
-
-                plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o')
                 plt.plot(xaxis, fitted_flux, color='red', lw=1.5)
-                plt.xlabel('MJD - ' + str(min(x)))
 
-            else:
-                plt.xlabel('MJD')
+            plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o')
+            plt.xlabel('days since start')
             plt.ylabel('FLUXCAL')
             plt.tight_layout()
 
