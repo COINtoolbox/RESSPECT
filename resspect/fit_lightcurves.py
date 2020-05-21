@@ -379,7 +379,8 @@ class LightCurve(object):
        
         return np.array(mag)
 
-    def check_queryable(self, mjd: float, r_lim: float, criteria=1):
+    def check_queryable(self, mjd: float, r_lim: float, criteria=1,
+                        days_since_last_obs=2):
         """Check if this object can be queried in a given day.
 
         This checks only r-band mag limit in a given epoch.
@@ -395,8 +396,14 @@ class LightCurve(object):
         criteria: int [1 or 2] (optional)
             Criteria to determine if an obj is queryable.
             1 -> r-band cut on last measured photometric point.
-            2 -> use Bazin estimate of flux today.
+            2 -> last obs was further than a given limit, 
+                 use Bazin estimate of flux today. Otherwise, use
+                 the last observed point.
             Default is 1.
+        days_since_last_obs: int (optional)
+            If there is an observation within these days, use the
+            measured value, otherwise estimate current mag.
+            Only used if "criteria == 2". Default is 2.
 
         Returns
         -------
@@ -419,12 +426,30 @@ class LightCurve(object):
                 mag = self.conv_flux_mag([surv_flux[-1]])[0]
 
         elif criteria == 2:
-            # get first day of observation in this filter
-            mjd_min = min(self.photometry['mjd'].values[surv_flag])
+            # check if there is an observation recently
+            surv_mjd = self.photometry['mjd'].values[surv_flag]
+            gap = mjd - surv_mjd[-1]
+
+            if gap <= days_since_last_obs:
+                if 'MAG' in self.photometry.keys():
+                    # check surviving photometry
+                    mag = self.photometry['MAG'].values[surv_flag][-1]
+
+                else:
+                    surv_flux = self.photometry['flux'].values[surv_flag]
+                    mag = self.conv_flux_mag([surv_flux[-1]])[0]
             
-            # estimate flux based on Bazin function
-            fitted_flux = self.evaluate_bazin([mjd - mjd_min])['r'][0]
-            mag = self.conv_flux_mag([fitted_flux])[0]
+            else:
+                # get first day of observation in this filter
+                mjd_min = min(self.photometry['mjd'].values[surv_flag])
+            
+                # estimate flux based on Bazin function
+                fitted_flux = self.evaluate_bazin([mjd - mjd_min])['r'][0]
+                mag = self.conv_flux_mag([fitted_flux])[0]
+
+        else:
+            raise ValueError('Criteria needs to be "1" or "2". \n ' + \
+                             'See docstring for further info.')
 
         if mag <= r_lim:
             return True
