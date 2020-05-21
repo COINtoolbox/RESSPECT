@@ -25,7 +25,7 @@ from astropy import constants as const
 
 __all__ = ['assign_cosmo', 'fish_deriv_m', 'fisher_results',
            'column_deriv_m', 'update_matrix', 'find_most_useful',
-           'full_check', 'compare_two_fishers']
+           'compare_two_fishers']
 
 def assign_cosmo(cosmo, model=[70, 0.3, 0.7, -0.9, 0.0]):
     """Define a new cosmology model.
@@ -344,57 +344,6 @@ def find_most_useful(ID, redshift, error, covmat, N=None, tot=False):
         return u_stack
     else:
         return u_stack[0:N]
-
-def full_check(redshift, error, covmat, N):
-    """Find the top N objects over a range of different baseline cosmologies.
-
-       TBD: Are we going to use something like this? If not, we can remove this function.
-
-    Parameters
-    ----------
-    redshift: list
-        Redshift.
-    error: list
-        Error in distance modulus.
-    covmat: np.array
-        Full covariance matrix from the Fisher matrix.
-        (This should change as a function of the baseline, 
-        probably wrong implementation)
-    N: int
-        Top number to search.
-
-    Returns
-    -------
-    arg_u: list
-        List of the index of the top N best observations to improve w0.
-    """
-    ndim = 5
-
-    full_check = np.zeros((ndim, ndim, len(test)))
-    for i, om in enumerate(np.linspace(0.2, 0.4, ndim)):
-        for j, w0 in enumerate(np.linspace(-0.9, -1.1, ndim)):
-            print(om, w0)
-            model = [70., om, 0.7, w0, 0.]
-            for k, (red, err) in enumerate(zip(redshift, error)):
-                full_check[i, j, k] = update_matrix(red, err, covmat)[1][1]
-
-    arg_sort_full_check = np.argsort(full_check)
-
-    largest = []
-    number = []
-    for l in np.arange(0,5):
-        for n in np.arange(0,5):
-            arg_sort_l = np.argsort(full_check[l][n])
-            arg_sort_short = arg_sort_l[-10:]
-            largest.append(arg_sort_short)
-            number.append(full_check[l][n][arg_sort_short])
-
-    numberf = np.array(number).flatten()
-    arg_sort_numberf = np.argsort(numberf)
-
-    arg_u = arg_sort_numberf[-N:]
-
-    return arg_u
 
 
 def compare_two_fishers(data1, data2, screen=False):
