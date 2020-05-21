@@ -419,8 +419,11 @@ class LightCurve(object):
                 mag = self.conv_flux_mag([surv_flux[-1]])[0]
 
         elif criteria == 2:
+            # get first day of observation in this filter
+            mjd_min = min(self.photometry['mjd'].values[surv_flag])
+            
             # estimate flux based on Bazin function
-            fitted_flux = self.evaluate_bazin([mjd])['r'][0]
+            fitted_flux = self.evaluate_bazin([mjd - mjd_min])['r'][0]
             mag = self.conv_flux_mag([fitted_flux])[0]
 
         if mag <= r_lim:
