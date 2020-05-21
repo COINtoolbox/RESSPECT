@@ -538,7 +538,7 @@ class LightCurve(object):
                     xaxis_extrap = list(xaxis) + list(time_flux_pred)
                     xaxis_extrap = np.sort(np.array(xaxis_extrap))
                     ext_flux = self.evaluate_bazin(self.bazin_features, 
-                                                   time_flux_pred)
+                                                   xaxis_extrap)
                     plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
                              color='red', lw=1.5, ls='--', label='Bazin extrap')
 
