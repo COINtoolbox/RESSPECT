@@ -438,23 +438,12 @@ class LightCurve(object):
         Returns
         -------
         np.array
-            Value of the Bazin function in each required time
+            Value of the Bazin flux in each required time
         """
         # store flux values and starting points
         flux = {}
-        first_obs = []
-        tmax_all = []
-
-        for k in range(len(self.filters)):
-            # find day of maximum
-            x = range(400)
-            y = [bazin(epoch, param[0 + k * 5], 
-                      param[1 + k * 5], param[2 + k * 5], param[3 + k * 5], param[4 + k * 5])
-                      for epoch in x]
-
-            t_max = x[y.index(max(y))]
-            tmax_all.append(t_max)
-            
+ 
+        for k in range(len(self.filters)):            
             # store flux values per filter
             flux[self.filters[k]] = []
 
@@ -462,9 +451,7 @@ class LightCurve(object):
                 flux[self.filters[k]].append(bazin(item, param[0 + k * 5], 
                       param[1 + k * 5], param[2 + k * 5], param[3 + k * 5], param[4 + k * 5]))
 
-            first_obs.append(time[0] - t_max)
-
-        return np.array(flux), first_obs, tmax_all
+        return np.array(flux)
         
 
     def fit_bazin_all(self):
@@ -492,20 +479,28 @@ class LightCurve(object):
                 for i in range(5):
                     self.bazin_features.append('None')
 
-    def plot_bazin_fit(self, save=True, show=False, output_file=' ', figscale=1):
+    def plot_bazin_fit(self, save=True, show=False, output_file=' ', figscale=1,
+                       extrapolate=False, time_flux_pred=None):
         """
         Plot data and Bazin fitted function.
 
         Parameters
         ----------
+        figscale: float (optional)
+            Allow to control the size of the figure.
+        extrapolate: bool (optional)
+            If True, also plot the estimated flux values.
+            Default is False.
+        time_flux_pred: list (optional)
+            Time since first observation where flux is to be
+            estimated. It is only used if "extrapolate == True".
+            Default is None.
         save: bool (optional)
              Save figure to file. Default is True.
         show: bool (optinal)
              Display plot in windown. Default is False.
         output_file: str (optional)
             Name of file to store the plot.
-        figscale: float (optional)
-            Allow to control the size of the figure.
         """
 
         # number of columns in the plot
@@ -533,20 +528,24 @@ class LightCurve(object):
             # shift to avoid large numbers in x-axis
             time = x - min(x)
             
-            if len(x) > 4 and plot_fit:                    
+            if plot_fit:                    
                 xaxis = np.linspace(0, max(time), 500)[:, np.newaxis]
-                # calculate fitted function
-                fitted_flux = np.array([bazin(t, self.bazin_features[i * 5],
-                                              self.bazin_features[i * 5 + 1],
-                                              self.bazin_features[i * 5 + 2],
-                                              self.bazin_features[i * 5 + 3],
-                                              self.bazin_features[i * 5 + 4])
-                                        for t in xaxis])
-                plt.plot(xaxis, fitted_flux, color='red', lw=1.5)
+                fitted_flux = self.evaluate_bazin(self.bazin_features, xaxis)
+                plt.plot(xaxis, fitted_flux[self.filters[i]], color='red',
+                         lw=1.5, label='Bazin fit')
 
-            plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o')
+                if extrapolate:
+                    xaxis_extrap = list(xaxis) + list(time_flux_pred)
+                    xaxis_extrap = np.sort(np.array(xaxis_extrap))
+                    ext_flux = self.evaluate_bazin(self.bazin_features, 
+                                                   time_flux_pred)
+                    plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
+                             color='red', lw=1.5, ls='--', label='Bazin extrap')
+
+            plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o', label='obs')
             plt.xlabel('days since start')
             plt.ylabel('FLUXCAL')
+            plt.legend()
             plt.tight_layout()
 
         if save:
