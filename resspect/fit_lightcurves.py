@@ -451,7 +451,7 @@ class LightCurve(object):
                 flux[self.filters[k]].append(bazin(item, param[0 + k * 5], 
                       param[1 + k * 5], param[2 + k * 5], param[3 + k * 5], param[4 + k * 5]))
 
-        return np.array(flux)
+        return flux
         
 
     def fit_bazin_all(self):
