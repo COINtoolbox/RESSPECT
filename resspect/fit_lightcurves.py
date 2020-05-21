@@ -615,7 +615,7 @@ class LightCurve(object):
                     mag_flag = self.photometry['MAG'].values < 50
                     mag_ff = np.logical_and(filter_flag, mag_flag)
                     mag_table = self.photometry['MAG'][mag_ff].values
-                    mjd_table = self.photometry['mjd'][mag_ff].values
+                    mjd_table = self.photometry['mjd'][mag_ff].values - min(x)
 
                     plt.scatter(mjd_table, mag_table, color='black', label='table mag',
                                 marker='x')
