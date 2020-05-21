@@ -15,7 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import astropy as ap
 import numpy as np
 import pandas as pd
@@ -28,20 +27,17 @@ __all__ = ['assign_cosmo', 'fish_deriv_m', 'fisher_results',
            'column_deriv_m', 'update_matrix', 'find_most_useful',
            'full_check', 'compare_two_fishers']
 
-
 def assign_cosmo(cosmo, model=[70, 0.3, 0.7, -0.9, 0.0]):
     """Define a new cosmology model.
-
 
     Parameters
     ----------
     cosmo: astropy.cosmology Cosmology Object
-        Assumes original cosmology was astropy.cosmology.w0waCDM
+        Assumes original cosmology was astropy.cosmology.w0waCDM.
     model: list (optional)
         Cosmology parameters: [H0, Om, Ode, w0, wa].
         Default is [70, 0.3, 0.7, -0.9, 0.0].
         Hard code Ob0 (Omega baryons) = 0.022
-
 
     Returns
     -------
@@ -70,20 +66,19 @@ def fish_deriv_m(redshift, model, step, screen=False):
         List of cosmological model parameters.
         Order is [H0, Om, Ode, w0, wa].
     step: list
-        List of steps the cosmological model paramter will take when determining
+        List of steps the cosmological model parameter will take when determining
          the derivative.
-        If a given entry is zero, that parameter will not be varied over.
-        Length is length of model list.
+        If a given entry is zero, that parameter will be kept constant.
+        Length must match the number of parameters in "model" variable.
     screen: bool (optional)
-        Print debug options to screen.
-        Default is False.
+        Print debug options to screen. Default is False.
 
     Returns
     -------
     m: list
         List of theoretical distance modulus (mu) at a given redshift from
          the base cosmology.
-    m_deriv: list (len(redshift), len(model))
+    m_deriv: list [len(redshift), len(model)]
         List of parameter derivatives of the likelihood function
          at given redshifts.
     """
@@ -136,24 +131,23 @@ def fish_deriv_m(redshift, model, step, screen=False):
 
 
 def fisher_results(redshift, mu_err):
-    """Computes the Fisher Matrix.
-       Assumes we only care about Om and w0.
+    """Computes the Fisher Matrix. Assumes we only care about Om and w0.
 
     TBD: make stepvec an input.
     TBD: Priors as inputs?
 
     Parameters
     ----------
-    redshift: list (float)
+    redshift: list [float]
         Redshift.
-    mu_err: list (float)
+    mu_err: list [float]
         Error in distance modulus.
 
     Returns
     -------
     sigma: list
         Error/Standard deviation of Om and w0, respectively.
-    covmat: list (2, 2)
+    covmat: np.array [2, 2]
         Covariance matrix of Om and w0. Om is first row, w0 is second.
     """
     stepvec = np.array([0, 0.001, 0.00, 0.1, 0., 0.0, 0.0, 0.0])
@@ -197,9 +191,9 @@ def fisher_results(redshift, mu_err):
 
 def column_deriv_m(redshift, mu_err, model, step):
     """Calculate a column derivative of your model.
+    
        Define a matrix P such that P_ik = 1/sigma_i del(M(i, params)/del(param_k)
-       and M=model.
-       This column matrix holds k constant.
+       and M=model. This column matrix holds k constant.
 
     Parameters
     ----------
@@ -213,8 +207,8 @@ def column_deriv_m(redshift, mu_err, model, step):
     step: list
         List of steps the cosmological model paramter will take when determining
         the derivative.
-        If a given entry is zero, that parameter will not be varied over.
-        Length is length of model list.
+        If a given entry is zero, that parameter will be kept constant.
+        Length must match the number of parameters in "model" variable.
 
     Returns
     -------
@@ -279,12 +273,12 @@ def update_matrix(redshift, mu_err, covmat):
         Redshift.
     mu_err: float or list
         Error in distance modulus.
-    covmat: list
+    covmat: np.array
         Covariance matrix from running the full Fisher Matrix analysis.
 
     Returns
     -------
-    u: list (2, 2)
+    u: np.array (2, 2)
         Update to the Fisher Matrix covariance matrix given new observations.
     """
     stepvec = np.array([0, 0.001, 0.00, 0.1, 0.])
@@ -312,7 +306,6 @@ def find_most_useful(ID, redshift, error, covmat, N=None, tot=False):
     """Find which objects improve w0 the most given a list of observations.
        Uses update_matrix to find best improvements in w0.
 
-
     Parameters
     ----------
     ID: int list
@@ -321,7 +314,7 @@ def find_most_useful(ID, redshift, error, covmat, N=None, tot=False):
         Redshifts of new observations.
     error: list
         Uncertainties of distance modulus of new observations.
-    covmat: list (2, 2)
+    covmat: np.array (2, 2)
         Covariance matrix from original Fisher Matrix.
     N: int (optional)
         If defined, return only the top N objects that most improve w0.
@@ -363,9 +356,10 @@ def full_check(redshift, error, covmat, N):
         Redshift.
     error: list
         Error in distance modulus.
-    covmat: list
+    covmat: np.array
         Full covariance matrix from the Fisher matrix.
-        (This should change as a function of the baseline, probably wrong implementation)
+        (This should change as a function of the baseline, 
+        probably wrong implementation)
     N: int
         Top number to search.
 
@@ -404,21 +398,20 @@ def full_check(redshift, error, covmat, N):
 
 
 def compare_two_fishers(data1, data2, screen=False):
-    """Compare different in w0 precision given 2 different sets of data
-        using Fisher Matrix.
-
+    """Compare different in w0 precision given 2 different data sets.
 
     Parameters
     ----------
-    data1: list
+    data1: np.array 
         List of redshift, mu, error on distance modulus for data set 1.
-        Order is [z, mu, mu_err].
+        Order is [z, mu, mu_err]. Number of lines == 3, number of 
+        columns == number of objects.
     data2: list
         List of redshift, mu, error on distance modulus for data set 2.
-        Order is [z, mu, mu_err].
+        Order is [z, mu, mu_err]. Number of lines == 3, number of 
+        columns == number of objects.
     screen: bool (optional)
-        Print debug options to screen.
-        Default is False.
+        Print debug options to screen. Default is False.
 
     Returns
     -------
