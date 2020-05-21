@@ -581,7 +581,7 @@ class LightCurve(object):
                 elif unit == 'mag':
                     mag = self.conv_flux_mag(fitted_flux[self.filters[i]])
                     mag_flag = mag < 50
-                    plt.plot(xaxis, mag[mag_flag], color='red', lw=1.5)
+                    plt.plot(xaxis[mag_flag], mag[mag_flag], color='red', lw=1.5)
                 else:
                     raise ValueError('Unit can only be "flux" or "mag".')
 
@@ -595,8 +595,8 @@ class LightCurve(object):
                     elif unit == 'mag':
                         ext_mag = self.conv_flux_mag(ext_flux[self.filters[i]])
                         ext_mag_flag = ext_mag < 50
-                        plt.plot(xaxis_extrap, ext_mag[ext_mag_flag], color='red',
-                                 lw=1.5, ls='--')
+                        plt.plot(xaxis_extrap[ext_mag_flag], ext_mag[ext_mag_flag],
+                                 color='red', lw=1.5, ls='--')
             
             if unit == 'flux':
                 plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o', label='obs')
