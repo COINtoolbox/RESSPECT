@@ -441,7 +441,7 @@ class LightCurve(object):
             Value of the Bazin function in each required time
         """
         # store flux values and starting points
-        flux = []
+        flux = {}
         first_obs = []
         tmax_all = []
 
@@ -455,9 +455,12 @@ class LightCurve(object):
             t_max = x[y.index(max(y))]
             tmax_all.append(t_max)
             
+            # store flux values per filter
+            flux[self.filters[k]] = []
+
             for item in time:
                 epoch = t_max + item
-                flux.append(bazin(epoch, param[0 + k * 5], 
+                flux[self.filters[k]].append(bazin(epoch, param[0 + k * 5], 
                       param[1 + k * 5], param[2 + k * 5], param[3 + k * 5], param[4 + k * 5]))
 
             first_obs.append(t_max + time[0])
