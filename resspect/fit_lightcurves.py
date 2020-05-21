@@ -480,7 +480,7 @@ class LightCurve(object):
             flux[self.filters[k]] = []
 
             # check if Bazin features exist
-            if None not in self.bazin_features[k * 5 : (k + 1) * 5]:
+            if 'None' not in self.bazin_features[k * 5 : (k + 1) * 5]:
                 for item in time:
                     flux[self.filters[k]].append(bazin(item, self.bazin_features[0 + k * 5], 
                                                        self.bazin_features[1 + k * 5], 
