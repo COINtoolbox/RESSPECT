@@ -530,15 +530,14 @@ class LightCurve(object):
             
             if plot_fit:                    
                 xaxis = np.linspace(0, max(time), 500)[:, np.newaxis]
-                fitted_flux = self.evaluate_bazin(self.bazin_features, xaxis)
+                fitted_flux = self.evaluate_bazin(xaxis)
                 plt.plot(xaxis, fitted_flux[self.filters[i]], color='red',
                          lw=1.5, label='Bazin fit')
 
                 if extrapolate:
                     xaxis_extrap = list(xaxis) + list(time_flux_pred)
                     xaxis_extrap = np.sort(np.array(xaxis_extrap))
-                    ext_flux = self.evaluate_bazin(self.bazin_features, 
-                                                   xaxis_extrap)
+                    ext_flux = self.evaluate_bazin(xaxis_extrap)
                     plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
                              color='red', lw=1.5, ls='--', label='Bazin extrap')
 
