@@ -434,7 +434,7 @@ class ExpTimeCalc(object):
 
         est_exptime = self.texparray[np.argmin((SNRs - SNRin)**2)]
 
-        return ext_exptime
+        return est_exptime
 
 
 def main():
