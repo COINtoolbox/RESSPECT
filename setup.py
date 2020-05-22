@@ -26,6 +26,7 @@ setuptools.setup(
                 'resspect/build_snpcc_canonical',
                 'resspect/classifiers',
                 'resspect/database',
+                'resspect/exposure_time_calculator',
                 'resspect/fit_lightcurves',
                 'resspect/learn_loop',
                 'resspect/metrics',

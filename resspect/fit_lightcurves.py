@@ -50,7 +50,8 @@ class LightCurve(object):
     id_name:
         Column name of object identifier.
     photometry: pd.DataFrame
-        Photometry information. Keys --> [mjd, band, flux, fluxerr, SNR, MAG, MAGERR].
+        Photometry information. 
+        Minimum keys --> [mjd, band, flux, fluxerr].
     redshift: float
         Redshift
     sample: str

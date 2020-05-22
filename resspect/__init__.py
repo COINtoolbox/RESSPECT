@@ -19,6 +19,7 @@ from .bazin import *
 from .build_snpcc_canonical import *
 from .classifiers import *
 from .database import *
+from .exposure_time_calculator import *
 from .fit_lightcurves import *
 from .learn_loop import *
 from .metrics import *
@@ -41,6 +42,7 @@ __all__ = ['accuracy',
            'Canonical',
            'Canvas',
            'DataBase',
+           'ExpTimeCalc',
            'efficiency',
            'errfunc',
            'fit_dataset',

@@ -15,9 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ['random_forest','gradient_boosted_trees','knn',
-           'mlp','svm','nbg', 'bootstrap_clf']
-
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from xgboost.sklearn import XGBClassifier
@@ -26,6 +23,9 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.utils import resample
+
+__all__ = ['random_forest','gradient_boosted_trees','knn',
+           'mlp','svm','nbg', 'bootstrap_clf']
 
 
 def bootstrap_clf(clf_function, n_ensembles, train_features,
