@@ -114,6 +114,14 @@ class ExpTimeCalc(object):
         self.z = 922.5 
         self.Y = 995   
 
+        # scaling between seeing at different filters
+        self.seeing['g'] = self.seeing['r'] * (self.r / self.g)**0.2
+        self.seeing['u'] = 0.2 + self.seeing['g'] * (self.g / self.u)**0.2
+        self.seeing['i'] = self.seeing['r'] * (self.r / self.i)**0.2
+        self.seeing['r'] = self.seeing['i'] * (self.i / self.z)**0.2
+        self.seeing['Y'] = self.seeing['z'] * (self.z / self.Y)**0.2
+
+
     def FWHM(self, band: str, airmass: float):
         """Computes FWHM.
 
@@ -129,13 +137,6 @@ class ExpTimeCalc(object):
         FWHM_arcsec: float
             FWHM in arcsec
         """
-        
-        # scaling between seeing at different filters
-        seeing['g'] = self.seeing['r'] * (self.r / self.g)**0.2
-        seeing['u'] = 0.2 + self.seeing['g'] * (self.g / self.u)**0.2
-        seeing['i'] = self.seeing['r'] * (self.r / self.i)**0.2
-        seeing['r'] = self.seeing['i'] * (self.i / self.z)**0.2
-        seeing['Y'] = self.seeing['z'] * (self.z / self.Y)**0.2
     
         # select seeing depending on band
         seeing_arcsec = self.seeing[band]
