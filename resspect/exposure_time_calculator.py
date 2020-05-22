@@ -118,7 +118,7 @@ class ExpTimeCalc(object):
         self.seeing['g'] = self.seeing['r'] * (self.r / self.g)**0.2
         self.seeing['u'] = 0.2 + self.seeing['g'] * (self.g / self.u)**0.2
         self.seeing['i'] = self.seeing['r'] * (self.r / self.i)**0.2
-        self.seeing['r'] = self.seeing['i'] * (self.i / self.z)**0.2
+        self.seeing['z'] = self.seeing['i'] * (self.i / self.z)**0.2
         self.seeing['Y'] = self.seeing['z'] * (self.z / self.Y)**0.2
 
 
