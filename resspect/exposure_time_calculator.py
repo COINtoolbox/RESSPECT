@@ -278,7 +278,7 @@ class ExpTimeCalc(object):
 
         elif skymode == 'mag' or skymode == 'mag-FWHM':
             # electrons from the sky per aperture
-            sky_electrons = np.prod([10**(-kwargs['skymag'] / 2.5), 
+            sky_electrons = np.prod([10**(-skymag / 2.5), 
                                      zero_signal, aperture, airmass]) 
         else:
             raise ValueError("SNR: skymode %s not recognized" % skymode)
