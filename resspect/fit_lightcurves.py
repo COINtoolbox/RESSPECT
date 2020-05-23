@@ -16,6 +16,7 @@
 # limitations under the License.
 
 from resspect.bazin import bazin, fit_scipy
+from resspect.exposure_time_calculator import ExpTimeCalc
 from resspect.snana_fits_to_pd import read_fits
 
 import io
@@ -41,6 +42,9 @@ class LightCurve(object):
         Concatenated from blue to red.
     dataset_name: str
         Name of the survey or data set being analyzed.
+    exp_time: dict
+        Exposure time required to take a spectra. 
+        Keywords indicate telescope e.g.['4m', '8m'].
     filters: list
         List of broad band filters.
     full_photometry: pd.DataFrame
@@ -49,6 +53,8 @@ class LightCurve(object):
         SN identification number
     id_name:
         Column name of object identifier.
+    last_mag: float
+        r-band magnitude of last observed epoch.
     photometry: pd.DataFrame
         Photometry information. 
         Minimum keys --> [mjd, band, flux, fluxerr].
@@ -139,10 +145,12 @@ class LightCurve(object):
         self.bazin_features = []
         self.bazin_features_names = ['a', 'b', 't0', 'tfall', 'trsise']
         self.dataset_name = ' '
+        self.exp_time = {}
         self.filters = []
         self.full_photometry = pd.DataFrame()
         self.id = 0
         self.id_name = None
+        self.last_mag = None
         self.photometry = pd.DataFrame()
         self.redshift = 0
         self.sample = ' '
@@ -420,11 +428,11 @@ class LightCurve(object):
         if criteria == 1:
             if 'MAG' in self.photometry.keys():
                 # check surviving photometry
-                mag = self.photometry['MAG'].values[surv_flag][-1]
+                self.last_mag = self.photometry['MAG'].values[surv_flag][-1]
 
             else:
                 surv_flux = self.photometry['flux'].values[surv_flag]
-                mag = self.conv_flux_mag([surv_flux[-1]])[0]
+                self.last_mag = self.conv_flux_mag([surv_flux[-1]])[0]
 
         elif criteria == 2:
             # check if there is an observation recently
@@ -434,11 +442,11 @@ class LightCurve(object):
             if gap <= days_since_last_obs:
                 if 'MAG' in self.photometry.keys():
                     # check surviving photometry
-                    mag = self.photometry['MAG'].values[surv_flag][-1]
+                    self.last_mag = self.photometry['MAG'].values[surv_flag][-1]
 
                 else:
                     surv_flux = self.photometry['flux'].values[surv_flag]
-                    mag = self.conv_flux_mag([surv_flux[-1]])[0]
+                    self.last_mag = self.conv_flux_mag([surv_flux[-1]])[0]
             
             else:
                 # get first day of observation in this filter
@@ -446,16 +454,45 @@ class LightCurve(object):
             
                 # estimate flux based on Bazin function
                 fitted_flux = self.evaluate_bazin([mjd - mjd_min])['r'][0]
-                mag = self.conv_flux_mag([fitted_flux])[0]
+                self.last_mag = self.conv_flux_mag([fitted_flux])[0]
 
         else:
             raise ValueError('Criteria needs to be "1" or "2". \n ' + \
                              'See docstring for further info.')
 
-        if mag <= r_lim:
+        if self.last_mag <= r_lim:
             return True
         else:
             return False
+
+    def calc_exp_time(self, telescope_diam: float, SNR: float,
+                      telescope_name: str, **kwargs):
+        """Calcualtes time required to take a spectra in the last obs epoch.
+
+        Populates attribute exp_time.
+
+        Parameters
+        ----------
+        SNR: float
+            Required SNR.
+        telescope_diam: float
+            Diameter of primary mirror for spectroscopic telescope in meters.
+        telescope_name: str
+            Identification for telescope. 
+        kwargs: extra parameters
+            Any input required by ExpTimeCalc.findexptime function.
+        """
+
+        # check if last magnitude was calculated
+        if self.last_mag == None:
+            raise ValueError('Magnitude at last epoch not calculated.\n' + \
+                             'Run the check_queryable function.')
+
+        etc = ExpTimeCalc()
+        etc.diameter = telescope_diam
+
+        self.exp_time[telescope_name] = \
+            etc.findexptime(SNRin=SNR, mag=self.last_mag, **kwargs)
 
     def fit_bazin(self, band: str):
         """Extract Bazin features for one filter.

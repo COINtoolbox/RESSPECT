@@ -27,6 +27,8 @@ def main(user_choice):
 
     Parameters
     ----------
+    -c: bool
+        If True, calculate cost of spectroscopy in each day.
     -d: sequence
         Sequence of days since the begin of the survey to be processed.
     -p: str
@@ -38,17 +40,19 @@ def main(user_choice):
     -------
     Use it directly from the command line.
 
-    >>> build_time_domain.py -d 20 21 22 23 -p <path to raw data dir> -o <path to output time domain dir>
+    >>> build_time_domain.py -d 20 21 22 23 -p <path to raw data dir> 
+    >>>      -o <path to output time domain dir> -c True
     """
     path_to_data = user_choice.raw_data_dir
     output_dir = user_choice.output
     day = user_choice.day_of_survey
+    get_cost = user_choice.get_cost
 
     for item in day:
         data = SNPCCPhotometry()
         data.create_daily_file(output_dir=output_dir, day=item)
         data.build_one_epoch(raw_data_dir=path_to_data, day_of_survey=int(item),
-                             time_domain_dir=output_dir)
+                             time_domain_dir=output_dir, get_cost=get_cost)
 
 
 if __name__ == '__main__':
@@ -63,6 +67,8 @@ if __name__ == '__main__':
                         help='Complete path to raw data directory.')
     parser.add_argument('-o', '--output', dest='output', required=True,
                         type=str, help='Path to output time domain directory.')
+    parser.add_argument('-c', '--calculate-cost', dest='get_cost', required=False,
+                        default=False, help='Calculate cost of spectra in each day.')
 
     # get input directory and output file name from user
     from_user = parser.parse_args()
