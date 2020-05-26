@@ -817,7 +817,7 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str,
             print('Survived: ', count_surv)
 
             if get_cost:
-                queryable = lc.check_queryable(mjd=self.sim_pkmjd, 
+                queryable = lc.check_queryable(mjd=lc.sim_pkmjd, 
                                                filter_lim=24, criteria=3)
                 cost4m = self.calc_exp_time(telescope_diam=4,
                                             SNR=10, telescope_name='4m')
@@ -830,8 +830,8 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str,
                                  str(lc.sntype) + ' ')
                 param_file.write(str(lc.sncode) + ' ' + str(lc.sample) + ' ')
                 if get_cost:
-                    param_file.write(str(self.exp_time['4m']) + ' ')
-                    param_file.write(str(self.exp_time['8m']) + ' ')
+                    param_file.write(str(lc.exp_time['4m']) + ' ')
+                    param_file.write(str(lc.exp_time['8m']) + ' ')
                 for item in lc.bazin_features:
                     param_file.write(str(item) + ' ')
                 param_file.write('\n')
