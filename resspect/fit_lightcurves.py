@@ -500,7 +500,7 @@ class LightCurve(object):
         etc.diameter = telescope_diam
         exp_time = etc.findexptime(SNRin=SNR, mag=self.last_mag, **kwargs)
 
-        if time < max_exp_time:
+        if exp_time < max_exp_time:
             self.exp_time[telescope_name] = exp_time
             return exp_time
         else:
