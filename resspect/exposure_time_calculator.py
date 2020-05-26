@@ -19,6 +19,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# For more on DECam see: https://www.noao.edu/meetings/decam/media/DECam_Data_Handbook.pdf
 
 
 __all__ = ['ExpTimeCalc']
@@ -35,9 +37,9 @@ class ExpTimeCalc(object):
     all_filter_eff: np.array
         Efficiency for all filters.
     all_corrector_eff: np.array
-        XXXXXXXX
+        Optical corrector efficiency for all filters.
     aperture_eff: float
-        XXXXXX
+        Aperture efficiency: factor to multiply FWHM with
     CCD_eff_filt: np.array
         CCD efficiency per filter.
     cspeed: float
@@ -49,7 +51,7 @@ class ExpTimeCalc(object):
     hPlanck_MKS: float
         Planck's constant in m2 kg / s.
     magsarray: np.array
-        XXXXXXXXX
+        Span of possible limiting magnitudes
     num_atm_eff: np.array
         Numerator of atmospheric efficiency. XXXXX
     pixelsize: float
@@ -61,7 +63,7 @@ class ExpTimeCalc(object):
     seeing: dict
         Seeing in different bands (keywords) in arcsec.
     texparray: np.array
-        Spam of possible exposure times. 
+        Span of possible exposure times. 
     vig: float
         Vignetting.
     u: float
@@ -81,7 +83,7 @@ class ExpTimeCalc(object):
     -------
     findexptime(mag: float, SNRin:float)
         Calculates required exposure time.
-    findmag(exptime: float)
+    findmag(exptime: float,SNRin:float)
         Calculates magnitude limit.
     FWHM(band: str, airmass: float)
         Computes FWHM.
