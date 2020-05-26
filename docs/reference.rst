@@ -16,9 +16,14 @@ Light curve analysis
    :toctree: api
 
    LightCurve
-   LightCurve.load_snpcc_lc
    LightCurve.fit_bazin
    LightCurve.fit_bazin_all
+   LightCurve.check_queryable
+   LightCurve.conv_flux_mag
+   LightCurve.evaluate_bazin
+   LightCurve.load_plasticc_lc
+   LightCurve.load_resspect_lc
+   LightCurve.load_snpcc_lc
    LightCurve.plot_bazin_fit
 
 *Fitting an entire data set*
@@ -35,6 +40,7 @@ Light curve analysis
    bazin
    errfunc
    fit_scipy
+   read_fits
 
 Canonical sample
 ================
@@ -68,6 +74,14 @@ Build time domain data base
    SNPCCPhotometry.create_daily_file
    SNPCCPhotometry.build_one_epoch
 
+.. autosummary::
+   :toctree: api
+
+   ExpTimeCalc
+   ExpTimeCalc.findexptime
+   ExpTimeCalc.findmag
+   ExpTimeCalc.FWHM
+   ExpTimeCalc.SNR
 
 DataBase
 ========
@@ -78,15 +92,22 @@ DataBase
    :toctree: api
 
     DataBase
-    DataBase.load_bazin_features
-    DataBase.load_features
+    DataBase.build_orig_samples
+    DataBase.build_random_training
     DataBase.build_samples
     DataBase.classify
+    Database.classify_bootstrap
     DataBase.evaluate_classification
+    DataBAse.identify_keywords
+    DataBase.load_bazin_features
+    DataBase.load_features
+    DataBase.load_photometry_features
+    DataBase.load_plasticc_mjd
     DataBase.make_query
-    DataBase.update_samples
+    Dataase.output_photo_Ia
     DataBase.save_metrics
     DataBase.save_queried_sample
+    DataBase.update_samples
 
 
 Classifiers
@@ -165,7 +186,7 @@ Scripts
 .. autosummary::
 
    build_canonical
-   build_time_domain
+   build_time_domain_SNPCC
    fit_dataset
    make_metrics_plots
    run_loop
