@@ -42,16 +42,23 @@ class SNPCCPhotometry(object):
     -------
     get_lim_mjds(raw_data_dir)
         Get minimum and maximum MJD for complete sample.
-    create_daily_file(raw_data_dir: str, day: int, output_dir: str, header: str)
+    create_daily_file(raw_data_dir: str, day: int, output_dir: str,
+                      header: str)
         Create one file for a given day of the survey.
-        Only populates the file with header. It will erase existing files!
-    build_one_epoch(raw_data_dir: str, day_of_survey: int, time_domain_dir: str,
-                    feature_method: str, dataset: str)
-        Selects objects with observed points until given MJD, performs feature extraction
-        and evaluate if query is possible. Save results to file.
+        Only populates the file with header. 
+        It will erase existing files!
+    build_one_epoch(raw_data_dir: str, day_of_survey: int, 
+                    time_domain_dir: str, feature_method: str, 
+                    dataset: str)
+        Selects objects with observed points until given MJD, 
+        performs feature extraction and evaluate if query is possible.
+        Save results to file.
     """
     def __init__(self):
-        self.bazin_header = 'id redshift type code orig_sample queryable gA gB gt0 ' + \
+        # header is hard coded! If different telescopes, this needs to be 
+        # changed by hand.
+        self.bazin_header = 'id redshift type code orig_sample queryable ' + \
+                            'cost_4m cost_8m gA gB gt0 ' + \
                             'gtfall gtrise rA rB rt0 rtfall rtrise iA ' + \
                             'iB it0 itfall itrise zA zB zt0 ztfall ztrise\n'
         self.max_epoch = 56352
@@ -179,6 +186,12 @@ class SNPCCPhotometry(object):
         kwargs: extra parameters
             Any input required by ExpTimeCalc.findexptime function.
         """
+        # check if telescope names are ok
+        if tel_names[0] not in self.bazin_header or 
+            tel_names[1] not in self.bazin_header: 
+                raise ValueError('Telescope names are hard coded in ' + \
+                                 'header.\n Change attribute ' + \
+                                 '"bazin_header" to continue!')
 
         # read file names
         file_list_all = os.listdir(raw_data_dir)
@@ -233,8 +246,6 @@ class SNPCCPhotometry(object):
                                            days_since_last_obs=days_since_obs)
 
                     if queryable:
-                        lc.sample = 'queryable'
-
                         if get_cost:
                             for k in range(len(tel_names)):
                                 lc.calc_exp_time(telescope_diam=tel_sizes[k],
@@ -242,7 +253,7 @@ class SNPCCPhotometry(object):
                                                  SNR=spec_SNR, **kwargs)
                     elif get_cost:
                         for k in range(len(tel_names)):
-                            lc.exp_time[tel_names[k]] = 99                    
+                            lc.exp_time[tel_names[k]] = 99999                    
                     
                     # save features to file
                     with open(features_file, 'a') as param_file:
