@@ -19,6 +19,7 @@ from .bazin import *
 from .build_snpcc_canonical import *
 from .classifiers import *
 from .database import *
+from .exposure_time_calculator import *
 from .fit_lightcurves import *
 from .learn_loop import *
 from .metrics import *
@@ -26,12 +27,12 @@ from .query_strategies import *
 from .plot_results import *
 from .snana_fits_to_pd import *
 from .scripts.build_canonical import main as build_canonical
-from .scripts.build_time_domain import main as build_time_domain
+from .scripts.build_time_domain_SNPCC import main as build_time_domain
 from .scripts.fit_dataset import main as fit_dataset
 from .scripts.make_metrics_plots import main as make_metrics_plots
 from .scripts.run_loop import main as run_loop
 from .scripts.run_time_domain import main as run_time_domain
-from .time_domain import *
+from .time_domain_SNPCC import *
 from .time_domain_loop import *
 
 __all__ = ['accuracy',
@@ -41,6 +42,7 @@ __all__ = ['accuracy',
            'Canonical',
            'Canvas',
            'DataBase',
+           'ExpTimeCalc',
            'efficiency',
            'errfunc',
            'fit_dataset',

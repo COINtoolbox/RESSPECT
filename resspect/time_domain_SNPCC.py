@@ -42,16 +42,23 @@ class SNPCCPhotometry(object):
     -------
     get_lim_mjds(raw_data_dir)
         Get minimum and maximum MJD for complete sample.
-    create_daily_file(raw_data_dir: str, day: int, output_dir: str, header: str)
+    create_daily_file(raw_data_dir: str, day: int, output_dir: str,
+                      header: str)
         Create one file for a given day of the survey.
-        Only populates the file with header. It will erase existing files!
-    build_one_epoch(raw_data_dir: str, day_of_survey: int, time_domain_dir: str,
-                    feature_method: str, dataset: str)
-        Selects objects with observed points until given MJD, performs feature extraction
-        and evaluate if query is possible. Save results to file.
+        Only populates the file with header. 
+        It will erase existing files!
+    build_one_epoch(raw_data_dir: str, day_of_survey: int, 
+                    time_domain_dir: str, feature_method: str, 
+                    dataset: str)
+        Selects objects with observed points until given MJD, 
+        performs feature extraction and evaluate if query is possible.
+        Save results to file.
     """
     def __init__(self):
-        self.bazin_header = 'id redshift type code orig_sample queryable gA gB gt0 ' + \
+        # header is hard coded! If different telescopes, this needs to be 
+        # changed by hand.
+        self.bazin_header = 'id redshift type code orig_sample queryable ' + \
+                            'cost_4m cost_8m gA gB gt0 ' + \
                             'gtfall gtrise rA rB rt0 rtfall rtrise iA ' + \
                             'iB it0 itfall itrise zA zB zt0 ztfall ztrise\n'
         self.max_epoch = 56352
@@ -129,7 +136,10 @@ class SNPCCPhotometry(object):
 
     def build_one_epoch(self, raw_data_dir: str, day_of_survey: int,
                         time_domain_dir: str, feature_method='Bazin',
-                        dataset='SNPCC', screen=False):
+                        dataset='SNPCC', screen=False, days_since_obs=2,
+                        queryable_criteria=1, get_cost=False,
+                        tel_sizes=[4, 8], tel_names=['4m', '8m'], 
+                        spec_SNR=10, **kwargs):
         """Fit bazin for all objects with enough points in a given day.
 
         Generate 1 file containing best-fit Bazin parameters for a given
@@ -142,16 +152,46 @@ class SNPCCPhotometry(object):
         day_of_survey: int
             Day since the beginning of survey. 
         time_domain_dir: str
-            Output directory to store time domain files. 
-        feature_method: str (optional)
-            Feature extraction method.
-            Only possibility is 'Bazin'.
+            Output directory to store time domain files.
         dataset: str (optional)
             Name of the data set. 
             Only possibility is 'SNPCC'.
+        days_since_obs: int (optional)
+            Day since last observation to consider for spectroscopic
+            follow-up without the need to extrapolate light curve.
+            Only used if "queryable_criteria == 2". Default is 2. 
+        feature_method: str (optional)
+            Feature extraction method.
+            Only possibility is 'Bazin'.
+        get_cost: bool (optional)
+            If True, calculate cost of taking a spectra in the last 
+            observed photometric point. Default is False.
+        queryable_criteria: int [1 or 2] (optional)
+            Criteria to determine if an obj is queryable.
+            1 -> r-band cut on last measured photometric point.
+            2 -> last obs was further than a given limit, 
+                 use Bazin estimate of flux today. Otherwise, use
+                 the last observed point.
+            Default is 1.
         screen: bool (optional)
-            If true, display steps info on screen. Default is False.       
+            If true, display steps info on screen. Default is False.
+        tel_names: list (optional)
+            Names of the telescopes under consideraton for spectroscopy.
+            Only used if "get_cost == True".
+            Default is ["4m", "8m"].
+        tel_sizes: list (optional)
+            Primary mirrors diameters of potential spectroscopic telescopes.
+            Only used if "get_cost == True".
+            Default is [4, 8].
+        kwargs: extra parameters
+            Any input required by ExpTimeCalc.findexptime function.
         """
+        # check if telescope names are ok
+        if tel_names[0] not in self.bazin_header or \
+            tel_names[1] not in self.bazin_header: 
+                raise ValueError('Telescope names are hard coded in ' + \
+                                 'header.\n Change attribute ' + \
+                                 '"bazin_header" to continue!')
 
         # read file names
         file_list_all = os.listdir(raw_data_dir)
@@ -173,7 +213,8 @@ class SNPCCPhotometry(object):
             if dataset == 'SNPCC':
                 lc.load_snpcc_lc(raw_data_dir + lc_list[i])
             else:
-                raise ValueError('Only SNPCC data set is implemented!')
+                raise ValueError('This module only deals with ' + \
+                                 'the SNPCC data set.!')
 
             # see which epochs are observed for until this day
             today = day_of_survey + self.min_epoch
@@ -195,15 +236,26 @@ class SNPCCPhotometry(object):
                 if len(lc.bazin_features) > 0 and \
                         'None' not in lc.bazin_features:
                     count_surv = count_surv + 1
-                    print('... ... ... Survived: ', count_surv)
+
+                    if screen:
+                        print('... ... ... Survived: ', count_surv)
 
                     # see if query is possible
                     queryable = \
                         lc.check_queryable(mjd=self.min_epoch + day_of_survey,
-                                           r_lim=self.rmag_lim)
+                                           r_lim=self.rmag_lim, 
+                                           criteria=queryable_criteria,
+                                           days_since_last_obs=days_since_obs)
 
                     if queryable:
-                        lc.sample = 'queryable'
+                        if get_cost:
+                            for k in range(len(tel_names)):
+                                lc.calc_exp_time(telescope_diam=tel_sizes[k],
+                                                 telescope_name=tel_names[k],
+                                                 SNR=spec_SNR, **kwargs)
+                    elif get_cost:
+                        for k in range(len(tel_names)):
+                            lc.exp_time[tel_names[k]] = 99999                    
                     
                     # save features to file
                     with open(features_file, 'a') as param_file:
@@ -213,6 +265,9 @@ class SNPCCPhotometry(object):
                         param_file.write(str(lc.sncode) + ' ' +
                                          str(lc.sample) + ' ' +
                                          str(queryable) + ' ')
+                        if get_cost:
+                            for k in range(len(tel_names)):
+                                param_file.write(str(lc.exp_time[tel_names[k]]) + ' ')
                         for item in lc.bazin_features[:-1]:
                             param_file.write(str(item) + ' ')
                         param_file.write(str(lc.bazin_features[-1]) + '\n')

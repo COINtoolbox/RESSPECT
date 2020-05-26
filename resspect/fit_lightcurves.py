@@ -16,6 +16,7 @@
 # limitations under the License.
 
 from resspect.bazin import bazin, fit_scipy
+from resspect.exposure_time_calculator import ExpTimeCalc
 from resspect.snana_fits_to_pd import read_fits
 
 import io
@@ -41,6 +42,9 @@ class LightCurve(object):
         Concatenated from blue to red.
     dataset_name: str
         Name of the survey or data set being analyzed.
+    exp_time: dict
+        Exposure time required to take a spectra. 
+        Keywords indicate telescope e.g.['4m', '8m'].
     filters: list
         List of broad band filters.
     full_photometry: pd.DataFrame
@@ -49,8 +53,11 @@ class LightCurve(object):
         SN identification number
     id_name:
         Column name of object identifier.
+    last_mag: float
+        r-band magnitude of last observed epoch.
     photometry: pd.DataFrame
-        Photometry information. Keys --> [mjd, band, flux, fluxerr, SNR, MAG, MAGERR].
+        Photometry information. 
+        Minimum keys --> [mjd, band, flux, fluxerr].
     redshift: float
         Redshift
     sample: str
@@ -66,6 +73,8 @@ class LightCurve(object):
     -------
     check_queryable(mjd: float, r_lim: float)
         Check if this light can be queried in a given day.
+    conv_flux_mag(flux: np.array)
+        Convert positive flux into magnitude.
     evaluate_bazin(param: list, time: np.array) -> np.array
         Evaluate the Bazin function given parameter values.
     load_snpcc_lc(path_to_data: str)
@@ -136,10 +145,12 @@ class LightCurve(object):
         self.bazin_features = []
         self.bazin_features_names = ['a', 'b', 't0', 'tfall', 'trsise']
         self.dataset_name = ' '
+        self.exp_time = {}
         self.filters = []
         self.full_photometry = pd.DataFrame()
         self.id = 0
         self.id_name = None
+        self.last_mag = None
         self.photometry = pd.DataFrame()
         self.redshift = 0
         self.sample = ' '
@@ -357,8 +368,29 @@ class LightCurve(object):
         self.photometry['detected_bool'] = photo['detected_bool'].values
         self.photometry = pd.DataFrame(self.photometry)
 
-    def check_queryable(self, mjd: float, r_lim: float):
-        """Check if this light can be queried in a given day.
+    def conv_flux_mag(self, flux, zpt=27.5):
+        """Convert FLUXCAL to magnitudes.
+
+        Parameters
+        ----------
+        flux: list or np.array
+            Values of flux to be converted into mag.
+        zpt: float (optional)
+            Zero point. Default is 27.5 (from SNANA).
+
+        Returns
+        -------
+        mag: list or np.array
+            Magnitude values. If flux < 1e-5 returns 99.
+        """
+      
+        mag = [zpt - 2.5 * np.log10(f) if f > 1e-5 else 99 for f in flux]
+       
+        return np.array(mag)
+
+    def check_queryable(self, mjd: float, r_lim: float, criteria=1,
+                        days_since_last_obs=2, feature_method='Bazin'):
+        """Check if this object can be queried in a given day.
 
         This checks only r-band mag limit in a given epoch.
         It there is no observation on that day, use the last available
@@ -370,6 +402,20 @@ class LightCurve(object):
             MJD where the query will take place.
         r_lim: float
             r-band magnitude limit below which query is possible.
+        criteria: int [1 or 2] (optional)
+            Criteria to determine if an obj is queryable.
+            1 -> r-band cut on last measured photometric point.
+            2 -> last obs was further than a given limit, 
+                 use Bazin estimate of flux today. Otherwise, use
+                 the last observed point.
+            Default is 1.
+        days_since_last_obs: int (optional)
+            If there is an observation within these days, use the
+            measured value, otherwise estimate current mag.
+            Only used if "criteria == 2". Default is 2.
+        feature_method: str (optional)
+            Feature extraction method. Only 'Bazin' is implemented.
+            Default is 'Bazin'.
 
         Returns
         -------
@@ -382,21 +428,90 @@ class LightCurve(object):
         rband_flag = self.photometry['band'].values == 'r'
         surv_flag = np.logical_and(photo_flag, rband_flag)
 
-        if 'MAG' in self.photometry.keys():
-            # check surviving photometry
-            surv_mag = self.photometry['MAG'].values[surv_flag]
+        if criteria == 1:
+            if 'MAG' in self.photometry.keys():
+                # check surviving photometry
+                self.last_mag = self.photometry['MAG'].values[surv_flag][-1]
+
+            else:
+                surv_flux = self.photometry['flux'].values[surv_flag]
+                self.last_mag = self.conv_flux_mag([surv_flux[-1]])[0]
+
+        elif criteria == 2:
+            # check if there is an observation recently
+            surv_mjd = self.photometry['mjd'].values[surv_flag]
+            gap = mjd - surv_mjd[-1]
+
+            if gap <= days_since_last_obs:
+                if 'MAG' in self.photometry.keys():
+                    # check surviving photometry
+                    self.last_mag = self.photometry['MAG'].values[surv_flag][-1]
+
+                else:
+                    surv_flux = self.photometry['flux'].values[surv_flag]
+                    self.last_mag = self.conv_flux_mag([surv_flux[-1]])[0]
+            
+            elif feature_method == 'Bazin':
+                # get first day of observation in this filter
+                mjd_min = min(self.photometry['mjd'].values[surv_flag])
+            
+                # estimate flux based on Bazin function
+                fitted_flux = self.evaluate_bazin([mjd - mjd_min])['r'][0]
+                self.last_mag = self.conv_flux_mag([fitted_flux])[0]
+
+            else:
+                raise ValueError('Only "Bazin" features are implemented!')
 
         else:
-            surv_flux = self.photometry['flux'].values[surv_flag]
-            if surv_flux[-1] > 0:
-                surv_mag = [2.5 * (11 - np.log10(surv_flux[-1]))]
-            else:
-                surv_mag = []
+            raise ValueError('Criteria needs to be "1" or "2". \n ' + \
+                             'See docstring for further info.')
 
-        if len(surv_mag) > 0 and 0 < surv_mag[-1] <= r_lim:
+        if self.last_mag <= r_lim:
             return True
         else:
             return False
+
+    def calc_exp_time(self, telescope_diam: float, SNR: float,
+                      telescope_name: str, max_exp_time=7200, **kwargs):
+        """Calculates time required to take a spectra in the last obs epoch.
+
+        Populates attribute exp_time.
+
+        Parameters
+        ----------
+        SNR: float
+            Required SNR.
+        telescope_diam: float
+            Diameter of primary mirror for spectroscopic telescope in meters.
+        telescope_name: str
+            Identification for telescope. 
+        max_exp_time: int (optional)
+            If exposure time exceeds this value, returns 99999.
+            Default is 7200s.
+        kwargs: extra parameters
+            Any input required by ExpTimeCalc.findexptime function.
+
+        Returns
+        -------
+        exp_time: float
+            Exposure time require for taking a spectra in seconds.
+        """
+
+        # check if last magnitude was calculated
+        if self.last_mag == None:
+            raise ValueError('Magnitude at last epoch not calculated.\n' + \
+                             'Run the check_queryable function.')
+
+        etc = ExpTimeCalc()
+        etc.diameter = telescope_diam
+        exp_time = etc.findexptime(SNRin=SNR, mag=self.last_mag, **kwargs)
+
+        if exp_time < max_exp_time:
+            self.exp_time[telescope_name] = exp_time
+            return exp_time
+        else:
+            self.exp_time[telescope_name] = 99999
+            return 99999
 
     def fit_bazin(self, band: str):
         """Extract Bazin features for one filter.
@@ -424,45 +539,38 @@ class LightCurve(object):
 
         return bazin_param
 
-    def evaluate_bazin(self, param: list, time: np.array):
+    def evaluate_bazin(self, time: np.array):
         """Evaluate the Bazin function given parameter values.
 
         Parameters
         ----------
-        param: list
-            List of Bazin parameters in order [a, b, t0, tfall, trise] 
-            for all filters, concatenated from blue to red
         time: np.array or list
             Time since maximum where to evaluate the Bazin fit.
 
         Returns
         -------
-        np.array
-            Value of the Bazin function in each required time
+        dict
+            Value of the Bazin flux in each required time per filter.
         """
         # store flux values and starting points
-        flux = []
-        first_obs = []
-        tmax_all = []
+        flux = {}
+ 
+        for k in range(len(self.filters)):            
+            # store flux values per filter
+            flux[self.filters[k]] = []
 
-        for k in range(len(self.filters)):
-            # find day of maximum
-            x = range(400)
-            y = [bazin(epoch, param[0 + k * 5], 
-                      param[1 + k * 5], param[2 + k * 5], param[3 + k * 5], param[4 + k * 5])
-                      for epoch in x]
+            # check if Bazin features exist
+            if 'None' not in self.bazin_features[k * 5 : (k + 1) * 5]:
+                for item in time:
+                    flux[self.filters[k]].append(bazin(item, self.bazin_features[0 + k * 5], 
+                                                       self.bazin_features[1 + k * 5], 
+                                                       self.bazin_features[2 + k * 5],
+                                                       self.bazin_features[3 + k * 5],
+                                                       self.bazin_features[4 + k * 5]))
+            else:
+                flux[self.filters[k]].append(None)
 
-            t_max = x[y.index(max(y))]
-            tmax_all.append(t_max)
-            
-            for item in time:
-                epoch = t_max + item
-                flux.append(bazin(epoch, param[0 + k * 5], 
-                      param[1 + k * 5], param[2 + k * 5], param[3 + k * 5], param[4 + k * 5]))
-
-            first_obs.append(t_max + time[0])
-
-        return np.array(flux), first_obs, tmax_all
+        return flux
         
 
     def fit_bazin_all(self):
@@ -490,20 +598,33 @@ class LightCurve(object):
                 for i in range(5):
                     self.bazin_features.append('None')
 
-    def plot_bazin_fit(self, save=True, show=False, output_file=' ', figscale=1):
+    def plot_bazin_fit(self, save=True, show=False, output_file=' ', figscale=1,
+                       extrapolate=False, time_flux_pred=None, unit='flux'):
         """
         Plot data and Bazin fitted function.
 
         Parameters
         ----------
+        figscale: float (optional)
+            Allow to control the size of the figure.
+        extrapolate: bool (optional)
+            If True, also plot the estimated flux values.
+            Default is False.
+        output_file: str (optional)
+            Name of file to store the plot.
         save: bool (optional)
              Save figure to file. Default is True.
         show: bool (optinal)
              Display plot in windown. Default is False.
-        output_file: str (optional)
-            Name of file to store the plot.
-        figscale: float (optional)
-            Allow to control the size of the figure.
+        time_flux_pred: list (optional)
+            Time since first observation where flux is to be
+            estimated. It is only used if "extrapolate == True".
+            Default is None.
+        unit: str (optional)
+            Unit for plot. Options are 'flux' or 'mag'.
+            Use zero point from SNANA for flux-to-mag conversion
+            ==> mag = 2.5 * (11 - np.log10(flux)).
+            Default is 'flux'.
         """
 
         # number of columns in the plot
@@ -522,30 +643,73 @@ class LightCurve(object):
             y = self.photometry['flux'][filter_flag].values
             yerr = self.photometry['fluxerr'][filter_flag].values
 
-            if len(x) > 4:
-                # shift to avoid large numbers in x-axis
-                time = x - min(x)
-                xaxis = np.linspace(0, max(time), 500)[:, np.newaxis]
-                # calculate fitted function
-                fitted_flux = np.array([bazin(t, self.bazin_features[i * 5],
-                                              self.bazin_features[i * 5 + 1],
-                                              self.bazin_features[i * 5 + 2],
-                                              self.bazin_features[i * 5 + 3],
-                                              self.bazin_features[i * 5 + 4])
-                                        for t in xaxis])
-
-                plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o')
-                plt.plot(xaxis, fitted_flux, color='red', lw=1.5)
-                plt.xlabel('MJD - ' + str(min(x)))
-
+            # check Bazin fit convergence
+            if 'None' in self.bazin_features[i * 5 : (i + 1) * 5]:
+                plot_fit = False
             else:
-                plt.xlabel('MJD')
-            plt.ylabel('FLUXCAL')
+                plot_fit = True
+                
+            # shift to avoid large numbers in x-axis
+            time = x - min(x)
+            
+            if plot_fit:                    
+                xaxis = np.linspace(0, max(time), 500)[:, np.newaxis]
+                fitted_flux = self.evaluate_bazin(xaxis)
+                if unit == 'flux':
+                    plt.plot(xaxis, fitted_flux[self.filters[i]], color='red',
+                             lw=1.5, label='Bazin fit')
+                elif unit == 'mag':
+                    mag = self.conv_flux_mag(fitted_flux[self.filters[i]])
+                    mag_flag = mag < 50
+                    plt.plot(xaxis[mag_flag], mag[mag_flag], color='red', lw=1.5)
+                else:
+                    raise ValueError('Unit can only be "flux" or "mag".')
+
+                if extrapolate:
+                    xaxis_extrap = list(xaxis) + list(time_flux_pred)
+                    xaxis_extrap = np.sort(np.array(xaxis_extrap))
+                    ext_flux = self.evaluate_bazin(xaxis_extrap)
+                    if unit == 'flux':
+                        plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
+                                 color='red', lw=1.5, ls='--', label='Bazin extrap')
+                    elif unit == 'mag':
+                        ext_mag = self.conv_flux_mag(ext_flux[self.filters[i]])
+                        ext_mag_flag = ext_mag < 50
+                        plt.plot(xaxis_extrap[ext_mag_flag], ext_mag[ext_mag_flag],
+                                 color='red', lw=1.5, ls='--')
+            
+            if unit == 'flux':
+                plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o', label='obs')
+                plt.ylabel('FLUXCAL')
+            elif unit == 'mag':
+                mag_obs  = self.conv_flux_mag(y)
+                mag_obs_flag = mag_obs < 50
+                time_mag = time[mag_obs_flag]
+                
+                plt.scatter(time_mag, mag_obs[mag_obs_flag], color='blue',
+                            label='calc mag', marker='s')
+
+                # if MAG is provided in the table, also plot it
+                # this allows checking the flux mag conversion
+                if 'MAG' in self.photometry.keys():
+                    mag_flag = self.photometry['MAG'].values < 50
+                    mag_ff = np.logical_and(filter_flag, mag_flag)
+                    mag_table = self.photometry['MAG'][mag_ff].values
+                    mjd_table = self.photometry['mjd'][mag_ff].values - min(x)
+
+                    plt.scatter(mjd_table, mag_table, color='black', label='table mag',
+                                marker='x')
+
+                ax = plt.gca()
+                ax.set_ylim(ax.get_ylim()[::-1])
+                plt.ylabel('mag')            
+
+            plt.xlabel('days since start')
+            
             plt.tight_layout()
 
         if save:
             plt.savefig(output_file)
-            plt.show('all')
         if show:
             plt.show()
 
