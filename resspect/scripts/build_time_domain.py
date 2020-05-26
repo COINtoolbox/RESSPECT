@@ -33,6 +33,8 @@ def main(user_choice):
         Sequence of days since the begin of the survey to be processed.
     -p: str
         Complete path to raw data directory.
+    -q: int
+        Queryable criteria.
     -o: str
         Complete path to output time domain directory.
 
@@ -41,18 +43,21 @@ def main(user_choice):
     Use it directly from the command line.
 
     >>> build_time_domain.py -d 20 21 22 23 -p <path to raw data dir> 
-    >>>      -o <path to output time domain dir> -c True
+    >>>      -o <path to output time domain dir> -q 2 -c True
     """
     path_to_data = user_choice.raw_data_dir
     output_dir = user_choice.output
     day = user_choice.day_of_survey
     get_cost = user_choice.get_cost
+    queryable_criteria = user_choice.queryable_criteria
 
     for item in day:
         data = SNPCCPhotometry()
         data.create_daily_file(output_dir=output_dir, day=item)
         data.build_one_epoch(raw_data_dir=path_to_data, day_of_survey=int(item),
-                             time_domain_dir=output_dir, get_cost=get_cost)
+                             time_domain_dir=output_dir, 
+                             queryable_criteria=queryable_criteria, 
+                             get_cost=get_cost)
 
 
 if __name__ == '__main__':
@@ -65,6 +70,13 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--path-to-data', required=True, type=str,
                         dest='raw_data_dir',
                         help='Complete path to raw data directory.')
+    parser.add_argument('-q', '--queryable-criteria', required=False, type=int,
+                        dest='queryable_criteria', default=1, 
+                        help='Criteria to determine if an obj is queryable.\n' + \
+                        '1 -> r-band cut on last measured photometric point.\n' + \
+                        '2 -> if last obs was further than a given limit, ' + \
+                        'use Bazin estimate of flux today. Otherwise, use' + \
+                        'the last observed point. Default is 1.')
     parser.add_argument('-o', '--output', dest='output', required=True,
                         type=str, help='Path to output time domain directory.')
     parser.add_argument('-c', '--calculate-cost', dest='get_cost', required=False,
