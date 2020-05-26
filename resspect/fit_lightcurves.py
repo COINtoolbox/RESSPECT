@@ -50,7 +50,7 @@ class LightCurve(object):
     full_photometry: pd.DataFrame
         Photometry for a set of light curves read from file.
     id: int
-        SN identification number
+        SN identification number.
     id_name:
         Column name of object identifier.
     last_mag: float
@@ -61,18 +61,19 @@ class LightCurve(object):
     redshift: float
         Redshift
     sample: str
-        Original sample to which this light curve is assigned
+        Original sample to which this light curve is assigned.
     sim_peakmag: np.array
-        Simulated peak magnitude in each filter
+        Simulated peak magnitude in each filter.
+    sim_pkmjd: float
+        Simulated day of maximum, observer frame.
     sncode: int
-        Number identifying the SN model used in the simulation
+        Number identifying the SN model used in the simulation.
     sntype: str
-        General classification, possibilities are: Ia, II or Ibc
+        General classification, possibilities are: Ia, II or Ibc.
 
     Methods
     -------
-    calc_exp_time(telescope_diam: float, SNR: float,
-                      telescope_name: str, max_exp_time=7200, **kwargs):
+    calc_exp_time(telescope_diam: float, SNR: float, telescope_name: str)
         Calculates time required to take a spectra in the last obs epoch.
     check_queryable(mjd: float, r_lim: float)
         Check if this light can be queried in a given day.
@@ -81,17 +82,17 @@ class LightCurve(object):
     evaluate_bazin(param: list, time: np.array) -> np.array
         Evaluate the Bazin function given parameter values.
     load_snpcc_lc(path_to_data: str)
-        Reads header and photometric information for 1 light curve
+        Reads header and photometric information for 1 light curve.
     load_plasticc_lc(photo_file: str, snid: int)
-	Load photometric information for 1 PLAsTiCC light curve
+	Load photometric information for 1 PLAsTiCC light curve.
     load_resspect_lc(photo_file: str, snid: int)
-	Load photometric information for 1 RESSPECT light curve
+	Load photometric information for 1 RESSPECT light curve.
     fit_bazin(band: str) -> list
-        Calculates best-fit parameters from the Bazin function in 1 filter
+        Calculates best-fit parameters from the Bazin function in 1 filter.
     fit_bazin_all()
-        Calculates  best-fit parameters from the Bazin func for all filters
+        Calculates  best-fit parameters from the Bazin func for all filters.
     plot_bazin_fit(save: bool, show: bool, output_file: srt)
-        Plot photometric points and Bazin fitted curve
+        Plot photometric points and Bazin fitted curve.
 
     Examples
     --------
@@ -158,6 +159,7 @@ class LightCurve(object):
         self.redshift = 0
         self.sample = ' '
         self.sim_peakmag = []
+        self.sim_pkmjd = None
         self.sncode = 0
         self.sntype = ' '
 
@@ -234,6 +236,8 @@ class LightCurve(object):
             elif line[0] == 'SIM_PEAKMAG:':
                 self.sim_peakmag = np.array([float(item) \
                                              for item in line[1:5]])
+            elif line[0] == 'SIM_PEAKMJD:':
+                self.sim_pkmjd = float(line[1])
 
         # transform photometry into array
         photometry_raw = np.array(photometry_raw)
@@ -406,8 +410,9 @@ class LightCurve(object):
        
         return np.array(mag)
 
-    def check_queryable(self, mjd: float, r_lim: float, criteria=1,
-                        days_since_last_obs=2, feature_method='Bazin'):
+    def check_queryable(self, mjd: float, filter_lim: float, criteria=1,
+                        days_since_last_obs=2, feature_method='Bazin',
+                        filter_cut='r'):
         """Check if this object can be queried in a given day.
 
         This checks only r-band mag limit in a given epoch.
@@ -418,14 +423,17 @@ class LightCurve(object):
         ----------
         mjd: float
             MJD where the query will take place.
-        r_lim: float
-            r-band magnitude limit below which query is possible.
-        criteria: int [1 or 2] (optional)
+        filter_lim: float
+            Magnitude limit below which query is possible.
+        criteria: int [1, 2 or 3] (optional)
             Criteria to determine if an obj is queryable.
-            1 -> r-band cut on last measured photometric point.
+            1 -> Cut on last measured photometric point.
             2 -> last obs was further than a given limit, 
                  use Bazin estimate of flux today. Otherwise, use
                  the last observed point.
+            3 -> Cut in mag at peak brightness. This is not realistic
+                 but useful for debugging. Only possible for 
+                 'self.dataset_name == SNPCC'.
             Default is 1.
         days_since_last_obs: int (optional)
             If there is an observation within these days, use the
@@ -434,16 +442,18 @@ class LightCurve(object):
         feature_method: str (optional)
             Feature extraction method. Only 'Bazin' is implemented.
             Default is 'Bazin'.
+        filter_cut: str (optional)
+            Band in which cut is applied. Default is 'r'.
 
         Returns
         -------
         bool
-            If true, sample is changed to `queryable`.
+            True if current magnitude lower than "filter_lim".
         """
 
         # create photo flag
         photo_flag = self.photometry['mjd'].values <= mjd
-        rband_flag = self.photometry['band'].values == 'r'
+        rband_flag = self.photometry['band'].values == filter_cut
         surv_flag = np.logical_and(photo_flag, rband_flag)
 
         if criteria == 1:
@@ -475,17 +485,21 @@ class LightCurve(object):
                 mjd_min = min(self.photometry['mjd'].values[surv_flag])
             
                 # estimate flux based on Bazin function
-                fitted_flux = self.evaluate_bazin([mjd - mjd_min])['r'][0]
+                fitted_flux = self.evaluate_bazin([mjd - mjd_min])[filter_cut][0]
                 self.last_mag = self.conv_flux_mag([fitted_flux])[0]
 
             else:
                 raise ValueError('Only "Bazin" features are implemented!')
 
+        elif criteria == 3 and self.dataset_name == 'SNPCC':
+            indx = list(self.filters).index(filter_cut)
+            self.last_mag = self.peak_mag[indx]
+
         else:
-            raise ValueError('Criteria needs to be "1" or "2". \n ' + \
+            raise ValueError('Criteria needs to be "1", "2" or "3". \n ' + \
                              'See docstring for further info.')
 
-        if self.last_mag <= r_lim:
+        if self.last_mag <= filter_lim:
             return True
         else:
             return False
@@ -741,7 +755,8 @@ class LightCurve(object):
             plt.show()
 
 
-def fit_snpcc_bazin(path_to_data_dir: str, features_file: str):
+def fit_snpcc_bazin(path_to_data_dir: str, features_file: str,
+                    get_cost=False):
     """Perform Bazin fit to all objects in the SNPCC data.
 
     Parameters
@@ -751,6 +766,9 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str):
         one for each light curve.
     features_file: str
         Path to output file where results should be stored.
+    get_cost: bool (optional)
+        If true, calculate cost of spectra taken at peak MJD.
+        Not at all realistic, but useful to debug.
     """
 
     # read file names
@@ -762,10 +780,18 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str):
 
     # add headers to files
     with open(features_file, 'w') as param_file:
-        param_file.write('id redshift type code orig_sample gA gB ' + \
-                         'gt0 gtfall gtrise rA rB rt0 rtfall rtrise' + \
-                         ' iA iB it0 itfall itrise zA zB zt0 ztfall' + \
-                         ' ztrise\n')
+        if get_cost:
+            param_file.write('id redshift type code orig_sample ' + \
+                             'cost_4m cost_8m gA gB ' + \
+                             'gt0 gtfall gtrise rA rB rt0 rtfall rtrise' + \
+                            ' iA iB it0 itfall itrise zA zB zt0 ztfall' + \
+                             ' ztrise\n')
+
+        else:
+            param_file.write('id redshift type code orig_sample gA gB ' + \
+                             'gt0 gtfall gtrise rA rB rt0 rtfall rtrise' + \
+                            ' iA iB it0 itfall itrise zA zB zt0 ztfall' + \
+                             ' ztrise\n')
 
     for file in lc_list:
 
@@ -781,11 +807,22 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str):
             count_surv = count_surv + 1
             print('Survived: ', count_surv)
 
+            if get_cost:
+                queryable = lc.check_queryable(mjd=self.sim_pkmjd, 
+                                               filter_lim=24, criteria=3)
+                cost4m = self.calc_exp_time(telescope_diam=4,
+                                            SNR=10, telescope_name='4m')
+                cost8m = self.calc_exp_time(telescope_diam=8,
+                                            SNR=10, telescope_name='8m')
+
             # save features to file
             with open(features_file, 'a') as param_file:
                 param_file.write(str(lc.id) + ' ' + str(lc.redshift) + ' ' + \
                                  str(lc.sntype) + ' ')
                 param_file.write(str(lc.sncode) + ' ' + str(lc.sample) + ' ')
+                if get_cost:
+                    param_file.write(str(self.exp_time['4m']) + ' ')
+                    param_file.write(str(self.exp_time['8m']) + ' ')
                 for item in lc.bazin_features:
                     param_file.write(str(item) + ' ')
                 param_file.write('\n')
