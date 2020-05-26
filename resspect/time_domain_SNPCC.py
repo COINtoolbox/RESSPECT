@@ -236,7 +236,9 @@ class SNPCCPhotometry(object):
                 if len(lc.bazin_features) > 0 and \
                         'None' not in lc.bazin_features:
                     count_surv = count_surv + 1
-                    print('... ... ... Survived: ', count_surv)
+
+                    if screen:
+                        print('... ... ... Survived: ', count_surv)
 
                     # see if query is possible
                     queryable = \
