@@ -33,7 +33,7 @@ setuptools.setup(
                 'resspect/plot_results',
                 'resspect/query_strategies',
                 'resspect/snana_fits_to_pd',
-                'resspect/time_domain',
+                'resspect/time_domain_SNPCC',
                 'resspect/time_domain_PLAsTiCC'],
     scripts=['resspect/scripts/build_canonical.py',
              'resspect/scripts/build_time_domain.py',
