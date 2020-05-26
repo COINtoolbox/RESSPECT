@@ -731,7 +731,7 @@ class LightCurve(object):
                 ax.set_ylim(ax.get_ylim()[::-1])
                 plt.ylabel('mag')            
 
-            plt.xlabel('days since start')
+            plt.xlabel('days since first observation')
             
             plt.tight_layout()
 
