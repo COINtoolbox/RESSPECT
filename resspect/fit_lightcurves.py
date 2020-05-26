@@ -389,7 +389,7 @@ class LightCurve(object):
         return np.array(mag)
 
     def check_queryable(self, mjd: float, r_lim: float, criteria=1,
-                        days_since_last_obs=2):
+                        days_since_last_obs=2, feature_method='Bazin'):
         """Check if this object can be queried in a given day.
 
         This checks only r-band mag limit in a given epoch.
@@ -413,6 +413,9 @@ class LightCurve(object):
             If there is an observation within these days, use the
             measured value, otherwise estimate current mag.
             Only used if "criteria == 2". Default is 2.
+        feature_method: str (optional)
+            Feature extraction method. Only 'Bazin' is implemented.
+            Default is 'Bazin'.
 
         Returns
         -------
@@ -448,13 +451,16 @@ class LightCurve(object):
                     surv_flux = self.photometry['flux'].values[surv_flag]
                     self.last_mag = self.conv_flux_mag([surv_flux[-1]])[0]
             
-            else:
+            elif feature_method == 'Bazin':
                 # get first day of observation in this filter
                 mjd_min = min(self.photometry['mjd'].values[surv_flag])
             
                 # estimate flux based on Bazin function
                 fitted_flux = self.evaluate_bazin([mjd - mjd_min])['r'][0]
                 self.last_mag = self.conv_flux_mag([fitted_flux])[0]
+
+            else:
+                raise ValueError('Only "Bazin" features are implemented!')
 
         else:
             raise ValueError('Criteria needs to be "1" or "2". \n ' + \
