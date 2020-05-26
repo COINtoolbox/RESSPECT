@@ -493,8 +493,8 @@ class LightCurve(object):
 
         elif criteria == 3 and self.dataset_name == 'SNPCC':
             # get first day of observation in this filter
-            mjd_min = min(self.photometry['mjd'].values[surv_flag])
-            mjd_max = max(self.photometry['mjd'].values[surv_flag])
+            mjd_min = min(self.photometry['mjd'].values)
+            mjd_max = max(self.photometry['mjd'].values)
             xaxis = np.linspace(0, mjd_max - mjd_min, 500)[:, np.newaxis]
             
             # estimate flux based on Bazin function
