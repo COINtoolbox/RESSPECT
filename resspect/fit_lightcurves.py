@@ -499,6 +499,7 @@ class LightCurve(object):
             
             # estimate flux based on Bazin function
             fitted_flux = self.evaluate_bazin(xaxis)
+            print(fitted_flux[filter_cut])
             indx = list(fitted_flux[filter_cut]).index(max(fitted_flux[filter_cut]))
             mag = self.conv_flux_mag([fitted_flux[filter_cut][indx]])[0]
 
