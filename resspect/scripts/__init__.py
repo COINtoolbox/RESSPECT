@@ -16,7 +16,7 @@
 # limitations under the License.
 
 from .build_canonical import main as build_canonical
-from .build_time_domain import main as build_time_domain
+from .build_time_domain_SNPCC import main as build_time_domain
 from .fit_dataset import main as fit_dataset
 from .make_metrics_plots import main as make_metrics_plots
 from .run_loop import main as run_loop
@@ -24,7 +24,7 @@ from .run_time_domain import main as run_time_domain
 
 
 __all__ = ['build_canonical',
-           'build_time_domain',
+           'build_time_domain_SNPCC',
            'fit_dataset',
            'make_metrics_plots',
            'run_loop',
