@@ -188,6 +188,45 @@ It is possible to perform the fit in all filters at once and visualize the resul
    Example of light curve from RESSPECT perfect simulations.
 
 
+This can be done in flux as well as in magnitude:
+
+.. code-block:: python
+    :linenos:
+
+    >>> lc.plot_bazin_fit(save=False, show=True, unit='mag')
+
+.. figure:: images/SN834603.png
+   :align: center
+   :height: 480 px
+   :width: 640 px
+   :alt: Bazing fit to light curve. This is an example from SNPCC data.
+
+    Example of light from SNPCC data.
+
+
+Ocasionally, it is necessary to extrapolate the fitted light curve to a latter epoch -- for example, in case we want to estimate its magnitude at the time of spectroscopic measurement (details in the `time domain preparation section<https://resspect.readthedocs.io/en/latest/prepare_time_domain.html>`_).
+
+Before deploying  large batches for pre-processing, you might want to visualize how the extrapolation behaves for a few light curves. This can be done using:
+
+.. code-block:: python
+    :linenos:
+
+    >>> # define max MJD for this light curve
+    >>> max_mjd = max(lc.photometry['mjd']) - min(lc.photometry['mjd'])
+    
+    >>> lc.plot_bazin_fit(save=False, show=True, extrapolate=True, 
+                          time_flux_pred=[max_mjd+3, max_mjd+5, max_mjd+10])
+
+
+.. figure:: images/SN469949_extrap.png
+   :align: center
+   :height: 480 px
+   :width: 640 px
+   :alt: Bazing fit to light curve. This is an example from SNPCC data.
+
+    Example of extrapolated light from SNPCC data.
+
+
 Processing all light curves in the data set
 -------------------------------------------
 
