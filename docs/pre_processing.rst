@@ -54,7 +54,7 @@ In order to fit a single light curve from the RESSPECT simulations you need to h
     >> snid = header['objid'].values[4]
 
 
-Now that you have selected on object, you can fit its light curve using the `LightCurve class <https://resspect.readthedocs.io/en/resspect/api/resspect.LightCurve.html#resspect.LightCurve>`_ :
+Now that you have selected on object, you can fit its light curve using the `LightCurve class <https://resspect.readthedocs.io/en/latest/api/resspect.LightCurve.html#resspect.LightCurve>`_ :
 
 .. code-block:: python
     :linenos:
