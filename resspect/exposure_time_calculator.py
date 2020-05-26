@@ -83,7 +83,7 @@ class ExpTimeCalc(object):
     -------
     findexptime(mag: float, SNRin:float)
         Calculates required exposure time.
-    findmag(exptime: float)
+    findmag(exptime: float,SNRin:float)
         Calculates magnitude limit.
     FWHM(band: str, airmass: float)
         Computes FWHM.
