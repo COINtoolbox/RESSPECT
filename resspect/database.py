@@ -86,6 +86,12 @@ class DataBase:
 
     Methods
     -------
+    build_orig_samples()
+        Construct train and test samples as given in the original data set.
+    build_random_training(initial_training: int)
+        Construct initial random training and corresponding test sample.
+    build_previous_runs(path_to_train: str, path_to_queried: str)
+        Build train, test and queryable samples from previous runs.
     build_samples(initial_training: str or int, nclass: int)
         Separate train and test samples.
     classify(method: str)
@@ -106,6 +112,8 @@ class DataBase:
         Load features according to the chosen feature extraction method.
     make_query(strategy: str, batch: int) -> list
         Identify new object to be added to the training sample.
+    output_photo_Ia(threshold: float)
+        Returns the metadata for  photometrically classified SN Ia.
     save_metrics(loop: int, output_metrics_file: str)
         Save current metrics to file.
     save_queried_sample(queried_sample_file: str, loop: int, full_sample: str)

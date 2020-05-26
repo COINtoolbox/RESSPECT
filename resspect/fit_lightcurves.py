@@ -71,6 +71,9 @@ class LightCurve(object):
 
     Methods
     -------
+    calc_exp_time(telescope_diam: float, SNR: float,
+                      telescope_name: str, max_exp_time=7200, **kwargs):
+        Calculates time required to take a spectra in the last obs epoch.
     check_queryable(mjd: float, r_lim: float)
         Check if this light can be queried in a given day.
     conv_flux_mag(flux: np.array)

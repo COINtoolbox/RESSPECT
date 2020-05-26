@@ -6,6 +6,7 @@
 # adapted from:
 # modified public DECam exposure time calculator by
 # CC F. Forster, J. Martinez, J.C. Maureira, 
+# https://github.com/fforster/HiTS-public
 # 
 #
 # Licensed GNU General Public License v3.0;
@@ -20,7 +21,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# For more on DECam see: https://www.noao.edu/meetings/decam/media/DECam_Data_Handbook.pdf
+# For more on DECam see: 
+# https://www.noao.edu/meetings/decam/media/DECam_Data_Handbook.pdf
 
 
 __all__ = ['ExpTimeCalc']
