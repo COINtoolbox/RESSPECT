@@ -138,7 +138,7 @@ class SNPCCPhotometry(object):
                         time_domain_dir: str, feature_method='Bazin',
                         dataset='SNPCC', screen=False, days_since_obs=2,
                         queryable_criteria=1, get_cost=False,
-                        tel_sizess=[4, 8], tel_names=['4m', '8m'], 
+                        tel_sizes=[4, 8], tel_names=['4m', '8m'], 
                         spec_SNR=10, **kwargs):
         """Fit bazin for all objects with enough points in a given day.
 
