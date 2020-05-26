@@ -764,7 +764,7 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str):
     with open(features_file, 'w') as param_file:
         param_file.write('id redshift type code orig_sample gA gB ' + \
                          'gt0 gtfall gtrise rA rB rt0 rtfall rtrise' + \
-                         ' iA iB it0 itfall itrise zA zB zt0 ztfall' + \ 
+                         ' iA iB it0 itfall itrise zA zB zt0 ztfall' + \
                          ' ztrise\n')
 
     for file in lc_list:
