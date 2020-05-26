@@ -247,15 +247,11 @@ class SNPCCPhotometry(object):
                                            criteria=queryable_criteria,
                                            days_since_last_obs=days_since_obs)
 
-                    if queryable:
-                        if get_cost:
-                            for k in range(len(tel_names)):
-                                lc.calc_exp_time(telescope_diam=tel_sizes[k],
-                                                 telescope_name=tel_names[k],
-                                                 SNR=spec_SNR, **kwargs)
-                    elif get_cost:
+                    if get_cost:
                         for k in range(len(tel_names)):
-                            lc.exp_time[tel_names[k]] = 99999                    
+                            lc.calc_exp_time(telescope_diam=tel_sizes[k],
+                                             telescope_name=tel_names[k],
+                                             SNR=spec_SNR, **kwargs)                   
                     
                     # save features to file
                     with open(features_file, 'a') as param_file:
