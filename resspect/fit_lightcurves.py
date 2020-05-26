@@ -473,7 +473,7 @@ class LightCurve(object):
 
     def calc_exp_time(self, telescope_diam: float, SNR: float,
                       telescope_name: str, max_exp_time=7200, **kwargs):
-        """Calcualtes time required to take a spectra in the last obs epoch.
+        """Calculates time required to take a spectra in the last obs epoch.
 
         Populates attribute exp_time.
 
