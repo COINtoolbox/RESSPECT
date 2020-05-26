@@ -466,7 +466,7 @@ class LightCurve(object):
             return False
 
     def calc_exp_time(self, telescope_diam: float, SNR: float,
-                      telescope_name: str, **kwargs):
+                      telescope_name: str, max_exp_time=7200, **kwargs):
         """Calcualtes time required to take a spectra in the last obs epoch.
 
         Populates attribute exp_time.
@@ -479,8 +479,16 @@ class LightCurve(object):
             Diameter of primary mirror for spectroscopic telescope in meters.
         telescope_name: str
             Identification for telescope. 
+        max_exp_time: int (optional)
+            If exposure time exceeds this value, returns 99999.
+            Default is 7200s.
         kwargs: extra parameters
             Any input required by ExpTimeCalc.findexptime function.
+
+        Returns
+        -------
+        exp_time: float
+            Exposure time require for taking a spectra in seconds.
         """
 
         # check if last magnitude was calculated
@@ -490,9 +498,14 @@ class LightCurve(object):
 
         etc = ExpTimeCalc()
         etc.diameter = telescope_diam
+        exp_time = etc.findexptime(SNRin=SNR, mag=self.last_mag, **kwargs)
 
-        self.exp_time[telescope_name] = \
-            etc.findexptime(SNRin=SNR, mag=self.last_mag, **kwargs)
+        if time < max_exp_time:
+            self.exp_time[telescope_name] = exp_time
+            return exp_time
+        else:
+            self.exp_time[telescope_name] = 99999
+            return 99999
 
     def fit_bazin(self, band: str):
         """Extract Bazin features for one filter.
