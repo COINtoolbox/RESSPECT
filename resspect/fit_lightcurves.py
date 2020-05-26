@@ -819,9 +819,9 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str,
             if get_cost:
                 queryable = lc.check_queryable(mjd=lc.sim_pkmjd, 
                                                filter_lim=24, criteria=3)
-                cost4m = self.calc_exp_time(telescope_diam=4,
+                cost4m = lc.calc_exp_time(telescope_diam=4,
                                             SNR=10, telescope_name='4m')
-                cost8m = self.calc_exp_time(telescope_diam=8,
+                cost8m = lc.calc_exp_time(telescope_diam=8,
                                             SNR=10, telescope_name='8m')
 
             # save features to file
