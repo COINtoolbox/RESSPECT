@@ -167,7 +167,7 @@ class LightCurve(object):
         """Reads one LC from SNPCC data.
 
         Populates the attributes: dataset_name, id, sample, redshift, sncode,
-        sntype, photometry and sim_peakmag.
+        sntype, photometry, sim_peakmag and sim_pkmjd.
 
         Parameters
         ---------
@@ -493,7 +493,7 @@ class LightCurve(object):
 
         elif criteria == 3 and self.dataset_name == 'SNPCC':
             indx = list(self.filters).index(filter_cut)
-            self.last_mag = self.peak_mag[indx]
+            self.last_mag = self.sim_peakmag[indx]
 
         else:
             raise ValueError('Criteria needs to be "1", "2" or "3". \n ' + \
