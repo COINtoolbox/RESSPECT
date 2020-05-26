@@ -123,7 +123,6 @@ class ExpTimeCalc(object):
         self.seeing['z'] = self.seeing['i'] * (self.i / self.z)**0.2
         self.seeing['Y'] = self.seeing['z'] * (self.z / self.Y)**0.2
 
-
     def FWHM(self, band: str, airmass: float):
         """Computes FWHM.
 
@@ -368,7 +367,6 @@ class ExpTimeCalc(object):
                     bandpass_nm=1.0, band='r', airmass=1.25, skymode='ADU',
                     skymag=22.0, nread=1, skyADU=120, fwhm=1.0):
         """Find required exposure time.
-
     
         Parameters
         ----------
@@ -403,7 +401,6 @@ class ExpTimeCalc(object):
             If ADU-FWHM: use empirical sky in ADU (skyADU), 
                          use empirical FWHM (fwhm)
             Default is 'ADU'.
-
 
         Returns
         -------
