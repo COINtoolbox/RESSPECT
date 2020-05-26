@@ -492,8 +492,17 @@ class LightCurve(object):
                 raise ValueError('Only "Bazin" features are implemented!')
 
         elif criteria == 3 and self.dataset_name == 'SNPCC':
-            indx = list(self.filters).index(filter_cut)
-            self.last_mag = self.sim_peakmag[indx]
+            # get first day of observation in this filter
+            mjd_min = min(self.photometry['mjd'].values[surv_flag])
+            mjd_max = max(self.photometry['mjd'].values[surv_flag])
+            xaxis = np.linspace(0, mjd_max - mjd_min, 500)[:, np.newaxis]
+            
+            # estimate flux based on Bazin function
+            fitted_flux = self.evaluate_bazin(xaxis)[filter_cut]
+            indx = list(fitted_flux).index(max(fitted_flux))
+            mag = self.conv_flux_mag([fitted_flux[indx]])[0]
+
+            self.last_mag = mag
 
         else:
             raise ValueError('Criteria needs to be "1", "2" or "3". \n ' + \
