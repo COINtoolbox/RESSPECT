@@ -7,7 +7,7 @@ Recommendation System for Spectroscopic Follow-up
 
 This tool allows the constructon of an optimized spectroscopic observation strategy which enables photometric supernova cosmology. It was developed as a collaboration between the LSST DESC and the Cosmostatistics Initiative.
 
-This grew from the work presented in `Ishida et al., 2019 <https://cosmostatistics-initiative.org/portfolio-item/active-learning-for-sn-classification/>`_ and implemented in the `actsnclass<https://github.com/COINtoolbox/ActSNClass>`_ package.
+This grew from the work presented in `Ishida et al., 2019 <https://cosmostatistics-initiative.org/portfolio-item/active-learning-for-sn-classification/>`_ and implemented in the `actsnclass <https://github.com/COINtoolbox/ActSNClass>`_ package.
 
 The code has been modify for the task of enabling photometric supernova cosmology.
 
