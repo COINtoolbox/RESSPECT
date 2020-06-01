@@ -844,12 +844,10 @@ class DataBase:
             Parameters required by the chosen classifier.
         """
 
-        if method == 'RandomForest' and str(self.validation_features) != 'None':
-            self.predicted_class,  self.classprob, \
-             self.val_class, self.val_prob = \
+        if method == 'RandomForest':
+            self.predicted_class,  self.classprob = \
                    random_forest(self.train_features, self.train_labels,
-                                  self.test_features, self.pool_features,
-                                  **kwargs)
+                                  self.test_features, **kwargs)
         elif method == 'RandomForest':
             self.predicted_class,  self.classprob = \
                     random_forest(self.train_features, self.train_labels,

@@ -75,8 +75,7 @@ def bootstrap_clf(clf_function, n_ensembles, train_features,
 
 
 def random_forest(train_features:  np.array, train_labels: np.array,
-                  test_features: np.array, validation_features=None,
-                  **kwargs):
+                  test_features: np.array, **kwargs):
     """Random Forest classifier.
 
     Parameters
@@ -112,14 +111,7 @@ def random_forest(train_features:  np.array, train_labels: np.array,
     predictions = clf.predict(test_features)                # predict
     prob = clf.predict_proba(test_features)       # get probabilities
 
-    if str(validation_features) != 'None':
-        val_prob = clf.predict_proba(validation_features)
-        val_pred = clf.predict(validation_features)
-
-        return predictions, prob, val_pred, val_prob
-
-    else:
-        return predictions, prob
+    return predictions, prob
 
 
 def gradient_boosted_trees(train_features: np.array,

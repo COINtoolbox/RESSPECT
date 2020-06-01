@@ -28,7 +28,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                      batch=1, canonical = False,  classifier='RandomForest',
                      cont=False, first_loop=20, features_method='Bazin', nclass=2,
                      Ia_frac=0.5, output_fname="", path_to_canonical="",
-                     path_to_full_lc_features="", path_to_train="",
+                     path_to_ini_train="", path_to_train="",
                      path_to_queried="", queryable=True,
                      query_thre=1.0, save_samples=False, sep_files=False,
                      screen=True, survey='LSST', initial_training='original'):
@@ -77,9 +77,9 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     path_to_canonical: str (optional)
         Path to canonical sample features files.
         It is only used if "strategy==canonical".
-    path_to_full_lc_features: str (optional)
+    path_to_ini_train: str (optional)
         Path to full light curve features file.
-        Only used if training is a number.
+        Only used if "training == 'original'".
     path_to_train: str (optional)
         Path to initial training file from previous run.
         Only used if initial_training == 'previous'.
@@ -120,16 +120,47 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     # load features for the first day
     path_to_features = path_to_features_dir + fname_pattern[0]  + \
                        str(int(days[0])) + fname_pattern[1]
-    data.load_features(path_to_features, method=features_method,
-                       screen=screen, survey=survey)
 
     # constructs training, test and queryable
+    data.load_features(path_to_ini_train, method=features_method,
+                       screen=screen, survey=survey)
+    
     data.build_samples(initial_training=initial_training, nclass=nclass,
-                      screen=screen, Ia_frac=Ia_frac,
-                      queryable=queryable, save_samples=save_samples, 
-                      sep_files=sep_files, survey=survey, 
-                      output_fname=output_fname, path_to_train=path_to_train,
-                      path_to_queried=path_to_queried, method=features_method)
+                       screen=screen, Ia_frac=Ia_frac,
+                       queryable=queryable, save_samples=save_samples,
+                       sep_files=sep_files, survey=survey, 
+                       output_fname=output_fname,
+                       path_to_train=path_to_train,
+                       path_to_queried=path_to_queried,
+                       method=features_method)
+    
+    # load features for the first obs day
+    path_to_features3 = path_to_features_dir + fname_pattern[0] + \
+                                       str(days[0]) + fname_pattern[1]
+    
+    first_loop = DataBase()
+    first_loop.load_features(path_to_features3)
+    first_loop.build_samples(initial_training=initial_training, 
+                             nclass=nclass,
+                             screen=screen, Ia_frac=Ia_frac,
+                             queryable=queryable, 
+                             save_samples=save_samples,
+                             sep_files=sep_files, survey=survey,
+                             output_fname=output_fname,
+                             path_to_train=path_to_train,
+                             path_to_queried=path_to_queried,
+                             method=features_method)
+            
+    # update test sample
+    data.test_features = first_loop.test_features
+    data.test_labels = first_loop.test_labels
+    data.test_metadata = first_loop.test_metadata
+            
+    if queryable:
+        q_flag = first_loop.metadata['queryable'].values
+        t_flag = first_loop.metadata['orig_sample'].values == 'test'
+        q_ids_flag = np.logical_and(q_flag, t_flag)
+        data.queryable_ids = first_loop.metadata['id'].values[q_ids_flag]
 
     # get list of canonical ids
     if canonical:
@@ -138,7 +169,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         data.queryable_ids = canonical.queryable_ids
 
     for night in range(int(days[0]), int(days[-1]) - 1):
-
+            
         if screen:
             print('Processing night: ', night)
 
@@ -158,8 +189,8 @@ def time_domain_loop(days: list,  output_metrics_file: str,
             indx = data.make_query(strategy=strategy, batch=batch, queryable=queryable,
                                    query_thre=query_thre)
 
-        # update training and test samples
-        data.update_samples(indx, loop=loop)
+            # update training and test samples
+            data.update_samples(indx, loop=loop)
 
         # save metrics for current state
         data.save_metrics(loop=loop, output_metrics_file=output_metrics_file,
@@ -182,14 +213,14 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                               for item in data_tomorrow.metadata['id'].values])
    
         # use new data  
-        data.train_metadata = data_tomorrow.metadata[train_flag]
-        data.train_features = data_tomorrow.features.values[train_flag]
+        #data.train_metadata = data_tomorrow.metadata[train_flag]
+        #data.train_features = data_tomorrow.features.values[train_flag]
         data.test_metadata = data_tomorrow.metadata[~train_flag]
         data.test_features = data_tomorrow.features.values[~train_flag]
 
         # new labels
-        data.train_labels = np.array([int(item  == 'Ia') for item in 
-                                     data.train_metadata['type'].values])
+        #data.train_labels = np.array([int(item  == 'Ia') for item in 
+        #                             data.train_metadata['type'].values])
         data.test_labels = np.array([int(item == 'Ia') for item in 
                                     data.test_metadata['type'].values])
 
