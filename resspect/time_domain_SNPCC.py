@@ -243,7 +243,7 @@ class SNPCCPhotometry(object):
                     # see if query is possible
                     queryable = \
                         lc.check_queryable(mjd=self.min_epoch + day_of_survey,
-                                           r_lim=self.rmag_lim, 
+                                           filter_lim=self.rmag_lim, 
                                            criteria=queryable_criteria,
                                            days_since_last_obs=days_since_obs)
 

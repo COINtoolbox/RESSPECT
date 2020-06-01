@@ -84,9 +84,9 @@ class LightCurve(object):
     load_snpcc_lc(path_to_data: str)
         Reads header and photometric information for 1 light curve.
     load_plasticc_lc(photo_file: str, snid: int)
-	Load photometric information for 1 PLAsTiCC light curve.
+    	Load photometric information for 1 PLAsTiCC light curve.
     load_resspect_lc(photo_file: str, snid: int)
-	Load photometric information for 1 RESSPECT light curve.
+    	Load photometric information for 1 RESSPECT light curve.
     fit_bazin(band: str) -> list
         Calculates best-fit parameters from the Bazin function in 1 filter.
     fit_bazin_all()
