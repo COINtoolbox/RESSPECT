@@ -178,6 +178,9 @@ class DataBase:
         self.metadata_names = []
         self.metrics_list_names = []
         self.metrics_list_values = []
+        self.pool_features = np.array([])
+        self.pool_metadata = pd.DataFrame()
+        self.pool_labels = np.array([])
         self.predicted_class = np.array([])
         self.queried_sample = []
         self.queryable_ids = np.array([])
@@ -187,11 +190,11 @@ class DataBase:
         self.train_features = np.array([])
         self.train_metadata = pd.DataFrame()
         self.train_labels = np.array([])
-        self.validation_class = None
-        self.validation_features = None
-        self.validation_labels = None
-        self.validation_metadata = None
-        self.validation_prob = None
+        self.validation_class = np.array([])
+        self.validation_features = np.array([])
+        self.validation_labels = np.array([])
+        self.validation_metadata = pd.DataFrame()
+        self.validation_prob = np.array([])
 
     def load_bazin_features(self, path_to_bazin_file: str, screen=False,
                             survey='DES', sample=None):
@@ -209,7 +212,7 @@ class DataBase:
             Default is False.
         survey: str (optional)
             Name of survey. Used to infer the filter set.
-	    Options are DES or LSST. Default is DES.
+	        Options are DES or LSST. Default is DES.
         sample: str (optional)
             If None, sample is given by a column within the given file.
             else, read independent files for 'train' and 'test'.
@@ -490,8 +493,8 @@ class DataBase:
             self.test_labels = test_labels.astype(int)
 
             # identify queryable objects
-            if 'queryable' in self.test_metadata['orig_sample'].values:
-                queryable_flag = self.test_metadata['orig_sample'] == 'queryable'
+            if 'queryable' in self.test_metadata.keys():
+                queryable_flag = self.test_metadata['queryable'].values
                 self.queryable_ids = self.test_metadata[queryable_flag][id_name].values
 
             else:
@@ -594,8 +597,10 @@ class DataBase:
             all_not_train_ids = data_copy[id_name].values[~train_flag]
 
             # select 25% of the non-train ids, via their indexes
-            indx = np.random.randint(low=0, high=len(all_not_train_ids), size=int(0.25 * len(all_not_train_ids)))
-            validation_flag = np.array([obj in all_not_train_ids[indx] for obj in data_copy[id_name].values])
+            indx = np.random.randint(low=0, high=len(all_not_train_ids), 
+                                     size=int(0.25 * len(all_not_train_ids)))
+            validation_flag = np.array([obj in all_not_train_ids[indx] 
+                                        for obj in data_copy[id_name].values])
             test_flag = np.logical_and(~train_flag, ~validation_flag)
               
             self.validation_metadata = data_copy[validation_flag]
@@ -797,8 +802,10 @@ class DataBase:
         if screen:
             print('Training set size: ', self.train_metadata.shape[0])
             print('Test set size: ', self.test_metadata.shape[0])
-            print('Validation set size: ', self.validation_metadata.shape[0])
-            print('Queryable set size: ', sum(self.metadata['queryable']))
+            if sep_validation:
+                print('Validation set size: ', self.validation_metadata.shape[0])
+            if queryable:
+                print('Queryable set size: ', sum(self.metadata['queryable']))
 
         if save_samples:
 
@@ -841,7 +848,7 @@ class DataBase:
             self.predicted_class,  self.classprob, \
              self.val_class, self.val_prob = \
                    random_forest(self.train_features, self.train_labels,
-                                  self.test_features, self.validation_features,
+                                  self.test_features, self.pool_features,
                                   **kwargs)
         elif method == 'RandomForest':
             self.predicted_class,  self.classprob = \
