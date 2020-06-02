@@ -282,15 +282,6 @@ class DataBase:
             if screen:
                 print('Loaded ', self.metadata.shape[0], ' samples!')
 
-                ntrain = sum(self.metadata['orig_sample'] == 'train')
-                ntest = sum(self.metadata['orig_sample'] == 'test')
-                nquery = sum(self.metadata['queryable'])
-
-                print('   ... of which')
-                print('       original train: ', ntrain)
-                print('       original test: ', ntest)
-                print('       query: ', nquery)
-
         elif sample == 'train':
             self.train_features = data[self.features_names].values
             self.train_metadata = data[self.metadata_names]
@@ -1170,7 +1161,8 @@ class DataBase:
         else:
             raise ValueError('Invalid strategy.')
 
-    def update_samples(self, query_indx: list, loop: int, epoch=0):
+    def update_samples(self, query_indx: list, loop: int, epoch=0,
+                       queryable=False):
         """Add the queried obj(s) to training and remove them from test.
 
         Update properties: train_headers, train_features, train_labels,
@@ -1182,11 +1174,24 @@ class DataBase:
             List of indexes identifying objects to be moved.
         loop: int
             Store number of loop when this query was made.
+        epoch: int (optional)
+            Day of initial loop. Default is 0.
+        queryable: bool (optinal)
+            If True, consider queryable flag. Default is False.
         """
         id_name = self.identify_keywords()
 
         all_queries = []
-
+        
+        ### test ####
+        npool = self.pool_metadata.shape[0]
+        ntrain = self.train_metadata.shape[0]
+        ntest = self.test_metadata.shape[0]
+        nvalidation = self.validation_metadata.shape[0]
+        
+        q2 = np.copy(query_indx)
+        nquery = len(q2)
+        
         while len(query_indx) > 0 and self.pool_metadata.shape[0] > 0:
 
             if self.pool_metadata.shape[0] != self.pool_labels.shape[0]:
@@ -1218,11 +1223,18 @@ class DataBase:
             # remove queried object from test sample
             query_flag = self.pool_metadata[id_name].values == \
                  self.pool_metadata[id_name].iloc[obj]
+
             pool_metadata_temp = self.pool_metadata.copy()
             self.pool_metadata = pool_metadata_temp[~query_flag]
             self.pool_labels = self.pool_labels[~query_flag]
             self.pool_features = self.pool_features[~query_flag]
-            all_queries.append(line)
+            
+            if queryable:
+                qids_flag = self.pool_metadata['queryable'].values
+                self.queryable_ids = self.pool_metadata[id_name].values[qids_flag]
+                all_queries.append(line)
+            else:
+                self.queryable_ides = self.pool_metadata[id_name].values
 
             # check if queried object is also in other samples
             test_ids = self.test_metadata[id_name].values            
@@ -1255,6 +1267,18 @@ class DataBase:
                     new_query_indx.append(item - 1)
 
             query_indx = new_query_indx
+            
+        # test
+        npool2 = self.pool_metadata.shape[0]
+        ntrain2 = self.train_metadata.shape[0]
+        ntest2 = self.test_metadata.shape[0]
+        nvalidation2 = self.validation_metadata.shape[0]
+            
+        if ntrain2 != ntrain + nquery or npool2 != npool - nquery:
+            raise ValueError('Wrong dimensionality for train/pool samples!')
+                
+        if ntest2 > ntest or nvalidation2 > nvalidation:
+            raise ValueError('Wrong dimensionality for test/val samples.')
 
         # update queried samples
         self.queried_sample.append(all_queries)

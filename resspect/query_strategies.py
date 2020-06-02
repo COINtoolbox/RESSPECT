@@ -175,7 +175,9 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
 
     # randomly select indexes to be queried
     np.random.seed(seed)
-    indx = np.random.randint(low=0, high=len(test_ids), size=len(test_ids))
+    indx = np.random.choice(np.arange(0, len(test_ids)), 
+                            size=len(test_ids),
+                            replace=False)
 
     if queryable:
         # flag only the queryable objects

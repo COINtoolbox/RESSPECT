@@ -200,11 +200,13 @@ def time_domain_loop(days: list,  output_metrics_file: str,
             # calculate metrics
             data.evaluate_classification()
         
-            indx = data.make_query(strategy=strategy, batch=batch, queryable=queryable,
+            indx = data.make_query(strategy=strategy, batch=batch, 
+                                   queryable=queryable,
                                    query_thre=query_thre)
 
             # update training and test samples
-            data.update_samples(indx, loop=loop)
+            data.update_samples(indx, loop=loop, queryable=queryable, 
+                                epoch=loop)
             
             if screen:
                 print('After update_samples:')
