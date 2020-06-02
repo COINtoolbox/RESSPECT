@@ -20,7 +20,7 @@ import numpy as np
 import os
 import pandas as pd
 
-from actsnclass.snana_fits_to_pd import *
+from resspect.snana_fits_to_pd import *
 
 
 if __name__ == 'main':

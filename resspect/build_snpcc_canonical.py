@@ -1,8 +1,8 @@
-# Copyright 2019 snactclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
 #         Based on initial prototype developed by the CRP #4 team
 #
-# created on 10 August 2019
+# created on 10 August 2019 for actsnclass
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import matplotlib.pylab as plt
 
 from sklearn.neighbors import NearestNeighbors, KernelDensity
 
-from actsnclass.fit_lightcurves import LightCurve
-from actsnclass.database import DataBase
+from resspect.fit_lightcurves import LightCurve
+from resspect.database import DataBase
 
 __all__ = ['Canonical', 'build_snpcc_canonical', 'plot_snpcc_train_canonical']
 
@@ -288,7 +288,7 @@ def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,
 
     Returns
     -------
-    actsnclass.Canonical: obj
+    resspect.Canonical: obj
         Updated canonical object with the attribute 'canonical_sample'.
     """
 
@@ -330,7 +330,7 @@ def plot_snpcc_train_canonical(sample: Canonical, output_plot_file=False):
 
     Parameters
     ----------
-    sample: actsnclass.Canonical
+    sample: resspect.Canonical
         Canonical object holding infor for canonical sample
     output_plot_file: str (optional)
         Complete path to output plot.

@@ -22,9 +22,9 @@ import os
 import pandas as pd
 import tarfile
 
-from actsnclass.classifiers import *
-from actsnclass.query_strategies import *
-from actsnclass.metrics import get_snpcc_metric
+from resspect.classifiers import *
+from resspect.query_strategies import *
+from resspect.metrics import get_snpcc_metric
 
 from resspect.classifiers import *
 from resspect.query_strategies import *

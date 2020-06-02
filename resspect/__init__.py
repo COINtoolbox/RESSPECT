@@ -1,4 +1,4 @@
-# Copyright 2019 actsnclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
 #         Based on initial prototype developed by the CRP #4 team
 #
@@ -59,6 +59,7 @@ __all__ = ['accuracy',
            'nbg',
            'PLAsTiCCPhotometry',
            'make_metrics_plots',
+           'percentile_sampling',
            'plot_snpcc_train_canonical',
            'purity',
            'save_fits',

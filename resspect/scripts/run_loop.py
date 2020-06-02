@@ -1,8 +1,8 @@
-# Copyright 2019 snactclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
 #         Based on initial prototype developed by the CRP #4 team
 #
-# created on 10 August 2019
+# created on 10 August 2019 for ActSNClass
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 __all__ = ['learn_loop', 'main']
 
-from actsnclass.learn_loop import learn_loop
+from resspect.learn_loop import learn_loop
 
 import argparse
 
@@ -84,7 +84,7 @@ def main(args):
 if __name__ == '__main__':
 
     # get input directory and output file name from user
-    parser = argparse.ArgumentParser(description='actsnclass - '
+    parser = argparse.ArgumentParser(description='resspect - '
                                                  'Learn loop module')
     parser.add_argument('-b', '--batch', dest='batch', required=True,
                         help='Number of samples to query in each loop.',

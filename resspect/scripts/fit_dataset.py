@@ -1,8 +1,8 @@
-# Copyright 2019 actsnclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
 #         Based on initial prototype developed by the CRP #4 team
 #
-# created on 8 August 2019
+# created on 8 August 2019 for ActSNClass
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@
 
 import argparse
 
-from actsnclass.fit_lightcurves import fit_snpcc_bazin
-from actsnclass.fit_lightcurves import fit_resspect_bazin
+from resspect.fit_lightcurves import fit_snpcc_bazin
+from resspect.fit_lightcurves import fit_resspect_bazin
 
 __all__ = ['main']
 
@@ -78,7 +78,7 @@ def main(user_choices):
 if __name__ == '__main__':
 
     # get input directory and output file name from user
-    parser = argparse.ArgumentParser(description='actsnclass - Fit Light curves module')
+    parser = argparse.ArgumentParser(description='resspect - Fit Light curves module')
    
     parser.add_argument('-dd', '--datadir', dest='input',
                         help='Path to directory holding raw data. Only used for SNPCC',

@@ -19,9 +19,40 @@
 __all__ = ['knn']
 
 import numpy as np
-from actsnclass.classifiers import random_forest
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
+
+def random_forest(train_features:  np.array, train_labels: np.array,
+                  test_features: np.array, **kwargs):
+    """Random Forest classifier.
+    Parameters
+    ----------
+    train_features: np.array
+        Training sample features.
+    train_labels: np.array
+        Training sample classes.
+    test_features: np.array
+        Features from sample to be classified.
+    kwargs: extra parameters
+        All keywords required by
+        sklearn.ensemble.RandomForestClassifier function.
+    Returns
+    -------
+    predictions: np.array
+        Predicted classes for test sample.
+    prob: np.array
+        Classification probability for test sample [pIa, pnon-Ia].
+    """
+
+    # create classifier instance
+    clf = RandomForestClassifier(**kwargs)
+
+    clf.fit(train_features, train_labels)                     # train
+    predictions = clf.predict(test_features)                # predict
+    prob = clf.predict_proba(test_features)       # get probabilities
+
+    return predictions, prob
 
 def knn(train_features:  np.array, train_labels: np.array,
                   test_features: np.array, nneighbors=10):

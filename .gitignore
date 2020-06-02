@@ -3,3 +3,10 @@ build/
 dist/
 docs/source/_build
 docs/source/api/
+
+resspect/.ipynb_checkpoints/
+resspect/__pycache__/
+resspect/scripts/.ipynb_checkpoints/
+resspect/scripts/__pycache__/
+resspect/snanapipe/
+				

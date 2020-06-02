@@ -1,4 +1,4 @@
-# Copyright 2020 RESSPECT software
+# Copyright 2020 resspect software
 # Author: The RESSPECT team
 #         Initial skeleton taken from ActSNClass
 #
@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from actsnclass.bazin import bazin, fit_scipy
+from resspect.bazin import bazin, fit_scipy
 
 import io
 import matplotlib.pylab as plt
@@ -80,7 +80,7 @@ class LightCurve(object):
 
     Examples
     --------
-    >>> from actsnclass import LightCurve
+    >>> from resspect import LightCurve
 
     ##### for SNPCC light curves
     define path to light curve file
