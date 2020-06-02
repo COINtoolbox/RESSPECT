@@ -18,6 +18,7 @@
 __all__ = ['time_domain_loop']
 
 import numpy as np
+import pandas as pd
 
 from resspect import DataBase
 
@@ -117,11 +118,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     # initiate object
     data = DataBase()
 
-    # load features for the first day
-    path_to_features = path_to_features_dir + fname_pattern[0]  + \
-                       str(int(days[0])) + fname_pattern[1]
-
-    # constructs training, test and queryable
+    # constructs training, test, validation and pool samples
     data.load_features(path_to_ini_train, method=features_method,
                        screen=screen, survey=survey)
     
@@ -151,22 +148,39 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                              path_to_queried=path_to_queried,
                              method=features_method)
             
-    # update test sample
-    data.test_features = first_loop.test_features
-    data.test_labels = first_loop.test_labels
-    data.test_metadata = first_loop.test_metadata
-            
+    # update test and pool sample
+    data.pool_features = first_loop.pool_features
+    data.pool_labels = first_loop.pool_labels
+    data.pool_metadata = first_loop.pool_metadata
+    
+    if sep_files:
+        pass
+    else:
+        data.test_features = first_loop.features
+        test_labels = first_loop.metadata['type'].values == 'Ia'
+        data.test_labels = test_labels.astype(int)
+        data.test_metadata = first_loop.metadata
+        data.validation_features = first_loop.features
+        data.validation_metadata = first_loop.metadata
+        data.validation_labels = data.test_labels
+                
     if queryable:
-        q_flag = first_loop.metadata['queryable'].values
-        t_flag = first_loop.metadata['orig_sample'].values == 'test'
-        q_ids_flag = np.logical_and(q_flag, t_flag)
-        data.queryable_ids = first_loop.metadata['id'].values[q_ids_flag]
+        q_flag = data.pool_metadata['queryable'].values
+        data.queryable_ids = data.pool_metadata['id'].values[q_flag]
 
     # get list of canonical ids
     if canonical:
         canonical = DataBase()
         canonical.load_features(path_to_file=path_to_canonical)
         data.queryable_ids = canonical.queryable_ids
+        
+    # check if all headers in test exist in train
+    for name in first_loop.metadata_names:
+        if name not in data.metadata_names:
+            data.metadata_names.append(name)
+            data.metadata[name] = None
+            data.train_metadata.insert(len(data.metadata_names) - 1, 
+                                       name, None, True)
 
     for night in range(int(days[0]), int(days[-1]) - 1):
             
@@ -179,7 +193,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         else:
             loop = night - int(days[0])
 
-        if data.test_metadata.shape[0] > 0:
+        if data.pool_metadata.shape[0] > 0:
             # classify
             data.classify(method=classifier)
 
@@ -191,6 +205,11 @@ def time_domain_loop(days: list,  output_metrics_file: str,
 
             # update training and test samples
             data.update_samples(indx, loop=loop)
+            
+            if screen:
+                print('After update_samples:')
+                print('   ... train: ', data.train_metadata.shape[0])
+                print('   ... pool: ', data.pool_metadata.shape[0])
 
         # save metrics for current state
         data.save_metrics(loop=loop, output_metrics_file=output_metrics_file,
@@ -211,28 +230,43 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         # identify objects in the new day which must be in training
         train_flag = np.array([item in data.train_metadata['id'].values 
                               for item in data_tomorrow.metadata['id'].values])
-   
-        # use new data  
-        #data.train_metadata = data_tomorrow.metadata[train_flag]
-        #data.train_features = data_tomorrow.features.values[train_flag]
-        data.test_metadata = data_tomorrow.metadata[~train_flag]
-        data.test_features = data_tomorrow.features.values[~train_flag]
+        train_ids = data_tomorrow.metadata['id'].values[train_flag]
+        
+        # keep objs who were in training but are not in the new day
+        keep_flag = np.array([item not in train_ids 
+                              for item in data.train_metadata['id'].values])
+        
+        # use new data for training (this might have extra obs points)
+        data.train_metadata = pd.concat([data.train_metadata[keep_flag],
+                                         data_tomorrow.metadata[train_flag]])
+        data.train_features = np.append(data.train_features[keep_flag],
+                                        data_tomorrow.features[train_flag],
+                                        axis=0)
+         
+        train_labels = data.train_metadata['type'].values == 'Ia'
+        data.train_labels = train_labels.astype(int)
 
-        # new labels
-        #data.train_labels = np.array([int(item  == 'Ia') for item in 
-        #                             data.train_metadata['type'].values])
-        data.test_labels = np.array([int(item == 'Ia') for item in 
-                                    data.test_metadata['type'].values])
+        # use new data
+        if sep_files:
+            pass
+        else:
+            data.pool_metadata = data_tomorrow.metadata[~train_flag]
+            data.pool_features = data_tomorrow.features.values[~train_flag]
+            data.validation_features = data.pool_features
+            data.validation_metadata = data.pool_metadata
+            
+            pool_labels = data.pool_metadata['type'] == 'Ia'
+            data.pool_labels = pool_labels.astype(int)
+            data.validation_labels = data.pool_labels
 
         if strategy == 'canonical':
             data.queryable_ids = canonical.queryable_ids
 
         if  queryable:
-            queryable_flag = data_tomorrow.metadata['queryable'].values
-            queryable_test_flag = np.logical_and(~train_flag, queryable_flag)
-            data.queryable_ids = data_tomorrow.metadata['id'].values[queryable_test_flag]
+            queryable_flag = data.pool_metadata['queryable'].values
+            data.queryable_ids = data.pool_metadata['id'].values[queryable_flag]
         else:
-            data.queryable_ids = data_tomorrow.metadata['id'].values[~train_flag]
+            data.queryable_ids = data.pool_metadata['id'].values
 
         if screen:
             print('Training set size: ', data.train_metadata.shape[0])

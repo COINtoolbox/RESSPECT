@@ -35,6 +35,8 @@ class DataBase:
 
     Attributes
     ----------
+    classifier: sklearn.classifier
+        Classifier object.
     classprob: np.array
         Classification probability for all objects, [pIa, pnon-Ia].
     data: pd.DataFrame
@@ -61,6 +63,8 @@ class DataBase:
         Complete information of queried objects.
     queryable_ids: np.array
         Flag for objects available to be queried.
+    telescope_names: list
+        Name of telescopes for which costs are given.
     test_features: np.array
         Features matrix for the test sample.
     test_metadata: pd.DataFrame
@@ -169,6 +173,7 @@ class DataBase:
     """
 
     def __init__(self):
+        self.classifier = None
         self.classprob = np.array([])
         self.data = pd.DataFrame()
         self.ensemble_probs = None
@@ -184,6 +189,7 @@ class DataBase:
         self.predicted_class = np.array([])
         self.queried_sample = []
         self.queryable_ids = np.array([])
+        self.telescope_names = ['4m', '8m']
         self.test_features = np.array([])
         self.test_metadata = pd.DataFrame()
         self.test_labels = np.array([])
@@ -212,7 +218,7 @@ class DataBase:
             Default is False.
         survey: str (optional)
             Name of survey. Used to infer the filter set.
-	        Options are DES or LSST. Default is DES.
+            Options are DES or LSST. Default is DES.
         sample: str (optional)
             If None, sample is given by a column within the given file.
             else, read independent files for 'train' and 'test'.
@@ -245,6 +251,10 @@ class DataBase:
 
             self.metadata_names = ['id', 'redshift', 'type', 'code',
                                    'orig_sample', 'queryable']
+            
+            for name in self.telescope_names:
+                if 'cost_' + name in data.keys():
+                    self.metadata_names = self.metadata_names + ['cost_' + name]
 
         elif survey == 'LSST':
             self.features_names = ['uA', 'uB', 'ut0', 'utfall', 'utrise',
@@ -262,7 +272,8 @@ class DataBase:
                                        'orig_sample', 'queryable']
 
         else:
-            raise ValueError('Only "DES" and "LSST" filters are implemented at this point!')
+            raise ValueError('Only "DES" and "LSST" filters are ' + \
+                             'implemented at this point!')
 
         if sample == None:
             self.features = data[self.features_names]
@@ -285,14 +296,32 @@ class DataBase:
             self.train_metadata = data[self.metadata_names]
 
             if screen:
-                print('Loaded ', self.train_metadata.shape[0], ' ' +  sample + ' samples!')
+                print('Loaded ', self.train_metadata.shape[0], ' ' +  \
+                      sample + ' samples!')
 
         elif sample == 'test':
             self.test_features = data[self.features_names].values
             self.test_metadata = data[self.metadata_names]
+            
+            if screen:
+                print('Loaded ', self.test_metadata.shape[0], ' ' + \
+                       sample +  ' samples!')
+
+        elif sample == 'validation':
+            self.validation_features = data[self.features_names].values
+            self.validation_metadata = data[self.metadata_names]
 
             if screen:
-                print('Loaded ', self.test_metadata.shape[0], ' ' + sample +  ' samples!')
+                print('Loaded ', self.validation_metadata.shape[0], ' ' + \
+                       sample +  ' samples!')
+
+        elif sample == 'pool':
+            self.pool_features = data[self.features_names].values
+            self.pool_metadata = data[self.metadata_names]
+
+            if screen:
+                print('Loaded ', self.pool_metadata.shape[0], ' ' + \
+                      sample +  ' samples!')
 
 
     def load_photometry_features(self, path_to_photometry_file: str,
@@ -325,9 +354,11 @@ class DataBase:
             data = pd.read_csv(io.BytesIO(content))
             tar.close()
         else:
-            data = pd.read_csv(path_to_photometry_file, index_col=False)
+            data = pd.read_csv(path_to_photometry_file, 
+                               index_col=False)
             if ' ' in data.keys()[0]:
-                data = pd.read_csv(path_to_photometry_file, sep=' ', index_col=False)
+                data = pd.read_csv(path_to_photometry_file, 
+                                   sep=' ', index_col=False)
 
         # list of features to use
         self.features_names = data.keys()[5:]
@@ -337,7 +368,8 @@ class DataBase:
         elif 'id' in data.keys():
             id_name = 'id'
 
-        self.metadata_names = [id_name, 'redshift', 'type', 'code', 'orig_sample']
+        self.metadata_names = [id_name, 'redshift', 'type', 
+                               'code', 'orig_sample']
 
         if sample == None:
             self.features = data[self.features_names]
@@ -510,23 +542,47 @@ class DataBase:
             self.train_metadata = self.metadata[train_flag]
 
             test_flag = self.metadata['orig_sample'] == 'test'
-
             test_data = self.features[test_flag]
             self.test_features = test_data.values
             self.test_metadata = self.metadata[test_flag]
+            
+            if 'validation' in self.metadata['orig_sample'].values:
+                val_flag = self.metadata['orig_sample'] == 'validation'
+            else:
+                val_flag = test_flag
+                
+            val_data = self.features[val_flag]
+            self.validation_features = val_data.values
+            self.validation_metadata = self.metadata[val_flag]
+            
+            if 'pool' in self.metadata['orig_sample'].values:
+                pool_flag = self.metadata['orig_sample'] == 'pool'
+            else:
+                pool_flag = test_flag
+                
+            pool_data = self.features[pool_flag]
+            self.pool_features = pool_data.values
+            self.pool_metadata = self.metadata[pool_flag]
 
             if queryable:
-                queryable_flag = self.test_metadata['queryable'].values
-                self.queryable_ids = self.test_metadata[queryable_flag][id_name].values
+                queryable_flag = self.pool_metadata['queryable'].values
+                self.queryable_ids = self.pool_metadata[queryable_flag][id_name].values
             else:
-                self.queryable_ids = self.test_metadata[id_name].values
+                self.queryable_ids = self.pool_metadata[id_name].values
 
             if nclass == 2:
                 train_ia_flag = self.train_metadata['type'] == 'Ia'
-                self.train_labels = np.array([int(item) for item in train_ia_flag])
+                self.train_labels = train_ia_flag.astype(int)
 
                 test_ia_flag = self.test_metadata['type'] == 'Ia'
-                self.test_labels = np.array([int(item) for item in test_ia_flag])
+                self.test_labels = test_ia_flag.astype(int)
+                
+                val_ia_flag = self.validation_metadata['type'] == 'Ia'
+                self.validation_labels = val_ia_flag.astype(int)
+                
+                pool_ia_flag = self.pool_metadata['type'] == 'Ia'
+                self.pool_labels = pool_ia_flag.astype(int)
+                
             else:
                 raise ValueError("Only 'Ia x non-Ia' are implemented! "
                                  "\n Feel free to add other options.")
@@ -802,10 +858,10 @@ class DataBase:
         if screen:
             print('Training set size: ', self.train_metadata.shape[0])
             print('Test set size: ', self.test_metadata.shape[0])
-            if sep_validation:
-                print('Validation set size: ', self.validation_metadata.shape[0])
-            if queryable:
-                print('Queryable set size: ', sum(self.metadata['queryable']))
+            print('Validation set size: ', self.validation_metadata.shape[0])
+            print('Pool set size: ', self.pool_metadata.shape[0])
+            print('   From which queryable: ', 
+                  sum(self.pool_metadata['queryable'].values == True))
 
         if save_samples:
 
@@ -845,14 +901,9 @@ class DataBase:
         """
 
         if method == 'RandomForest':
-            self.predicted_class,  self.classprob = \
+            self.predicted_class,  self.classprob, self.classifier = \
                    random_forest(self.train_features, self.train_labels,
-                                  self.test_features, **kwargs)
-        elif method == 'RandomForest':
-            self.predicted_class,  self.classprob = \
-                    random_forest(self.train_features, self.train_labels,
-                                  self.test_features, self.validation_features,
-                                  **kwargs)
+                                 self.pool_features, **kwargs)
 
         elif method == 'GradientBoostedTrees':
             self.predicted_class,  self.classprob = \
@@ -881,20 +932,14 @@ class DataBase:
                               "'RandomForest', 'GradientBoostedTrees'," +
                               "'KNN', 'MLP' and NB'." +
                              "\n Feel free to add other options.")
+            
+        # estimate classification for validation sample
+        self.validation_class = \
+            self.classifier.predict(self.validation_features)
+        self.validation_prob = \
+            self.classifier.predict_proba(self.validation_features)
 
-        if save_predictions and str(self.validation_features) == 'None':
-            id_name = self.identify_keywords()
-
-            out_fname = 'predict_loop_' + str(loop) + '.dat'
-            op = open(pred_dir + '/' + out_fname, 'w')
-            op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
-            for i in range(self.test_metadata.shape[0]):
-                op.write(str(self.test_metadata[id_name].iloc[i]) + ',')
-                op.write(str(self.classprob[i][0]) + ',' + str(self.classprob[i][1]) + ',')
-                op.write(str(self.predicted_class[i]) + '\n')
-            op.close()
-
-        elif save_predictions:
+        if save_predictions:
             id_name = self.identify_keywords()
 
             out_fname = 'predict_loop_' + str(loop) + '.dat'
@@ -902,11 +947,10 @@ class DataBase:
             op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
             for i in range(self.validation_metadata.shape[0]):
                 op.write(str(self.validation_metadata[id_name].iloc[i]) + ',')
-                op.write(str(self.val_prob[i][0]) + ',' + str(self.val_prob[i][1]) + ',')
-                op.write(str(self.val_class[i]) + '\n')
-            op.close()
-                                                                                                                                        
-                
+                op.write(str(self.validatin_prob[i][0]) + ',')
+                op.write(str(self.validation_prob[i][1]) + ',')
+                op.write(str(self.validation_class[i]) + '\n')
+            op.close()         
 
     def classify_bootstrap(self, method: str, save_predictions=False, pred_dir=None,
                            loop=None,**kwargs):
@@ -998,24 +1042,22 @@ class DataBase:
         """
 
         # photo Ia flag
-        photo_flag = self.classprob[:,1] >= threshold
+        photo_flag = self.validation_prob[:,1] >= threshold
 
-        if 'objid' in self.test_metadata.keys():
+        if 'objid' in self.validation_metadata.keys():
             id_name = 'objid'
-        elif 'id' in self.test_metadata.keys():
+        elif 'id' in self.validation_metadata.keys():
             id_name = 'id'
 
         # get ids
-        photo_Ia_metadata = self.test_metadata[photo_flag]
+        photo_Ia_metadata = self.validation_metadata[photo_flag]
         
-
         if to_file:
             photo_Ia_metadata.to_csv(filename, index=False)
         else:
             self.photo_Ia_metadata = photo_Ia_metadata     
 
-    def evaluate_classification(self, metric_label='snpcc', 
-                                sep_validation=False):
+    def evaluate_classification(self, metric_label='snpcc'):
         """Evaluate results from classification.
 
         Populate properties: metric_list_names and metrics_list_values.
@@ -1024,19 +1066,12 @@ class DataBase:
         ----------
         metric_label: str
             Choice of metric. Currenlty only `snpcc` is accepted.
-        sep_validation: bool (optional)
-            If True, construt separated validation sample. Default is False.
         """
 
-        if metric_label == 'snpcc' and sep_validation:
+        if metric_label == 'snpcc':
             self.metrics_list_names, self.metrics_list_values = \
-                get_snpcc_metric(list(self.val_pred),
+                get_snpcc_metric(list(self.validation_class),
                                  list(self.validation_labels))
-
-        elif metric_label == 'snpcc' and not sep_validation:
-            self.metrics_list_names, self.metrics_list_values = \
-                get_snpcc_metric(list(self.predicted_class),
-                                 list(self.test_labels))
         else:
             raise ValueError('Only snpcc metric is implemented!'
                              '\n Feel free to add other options.')
@@ -1076,15 +1111,12 @@ class DataBase:
             If strategy=='RandomSampling' the order is irrelevant.
         """
 
-        if 'objid' in self.test_metadata.keys():
-            id_name = 'objid'
-        elif 'id' in self.test_metadata.keys():
-            id_name = 'id'
+        id_name = self.identify_keywords()
    
         if strategy == 'UncSampling':
             query_indx = uncertainty_sampling(class_prob=self.classprob,
                                               queryable_ids=self.queryable_ids,
-                                              test_ids=self.test_metadata[id_name].values,
+                                              test_ids=self.pool_metadata[id_name].values,
                                               batch=batch, screen=screen,
                                               query_thre=query_thre)
             return query_indx
@@ -1130,7 +1162,7 @@ class DataBase:
                                          query_thre=query_thre)
 
             for n in query_indx:
-                if self.test_metadata[id_name].values[n] not in self.queryable_ids:
+                if self.pool_metadata[id_name].values[n] not in self.queryable_ids:
                     raise ValueError('Chosen object is not available for query!')
 
             return query_indx
@@ -1151,22 +1183,21 @@ class DataBase:
         loop: int
             Store number of loop when this query was made.
         """
-
-        if 'id' in self.train_metadata.keys():
-            id_name = 'id'
-        elif 'objid' in self.train_metadata.keys():
-            id_name = 'objid'
+        id_name = self.identify_keywords()
 
         all_queries = []
 
-        while len(query_indx) > 0 and self.test_metadata.shape[0] > 0:
+        while len(query_indx) > 0 and self.pool_metadata.shape[0] > 0:
+
+            if self.pool_metadata.shape[0] != self.pool_labels.shape[0]:
+                raise ValueError('Missing data in the pool sample!')
 
             # identify queried object index
             obj = query_indx[0]
 
             # add object to the query sample
-            query_header = self.test_metadata.values[obj]
-            query_features = self.test_features[obj]
+            query_header = self.pool_metadata.values[obj]
+            query_features = self.pool_features[obj]
             line = [epoch]
             for item in query_header:
                 line.append(item)
@@ -1178,19 +1209,39 @@ class DataBase:
             self.train_metadata = pd.concat([self.train_metadata, new_header], axis=0,
                                             ignore_index=True)
             self.train_features = np.append(self.train_features,
-                                            np.array([self.test_features[obj]]),
+                                            np.array([self.pool_features[obj]]),
                                             axis=0)
             self.train_labels = np.append(self.train_labels,
-                                          np.array([self.test_labels[obj]]),
+                                          np.array([self.pool_labels.values[obj]]),
                                           axis=0)
 
             # remove queried object from test sample
-            query_flag = self.test_metadata[id_name].values == self.test_metadata[id_name].iloc[obj]
-            test_metadata_temp = self.test_metadata.copy()
-            self.test_metadata = test_metadata_temp[~query_flag]
-            self.test_labels = np.delete(self.test_labels, obj, axis=0)
-            self.test_features = np.delete(self.test_features, obj, axis=0)
+            query_flag = self.pool_metadata[id_name].values == \
+                 self.pool_metadata[id_name].iloc[obj]
+            pool_metadata_temp = self.pool_metadata.copy()
+            self.pool_metadata = pool_metadata_temp[~query_flag]
+            self.pool_labels = self.pool_labels[~query_flag]
+            self.pool_features = self.pool_features[~query_flag]
             all_queries.append(line)
+
+            # check if queried object is also in other samples
+            test_ids = self.test_metadata[id_name].values            
+            if query_header[0] in test_ids:
+                qtest_flag = self.test_metadata[id_name].values == \
+                    query_header[0]
+                test_metadata_temp = self.test_metadata.copy()
+                self.test_metadata = test_metadata_temp[~qtest_flag]
+                self.test_labels = self.test_labels[~qtest_flag]
+                self.test_features = self.test_features[~qtest_flag]
+            
+            validation_ids = self.validation_metadata[id_name].values
+            if query_header[0] in validation_ids:
+                qval_flag = self.validation_metadata[id_name].values == \
+                    query_header[0]
+                validation_metadata_temp = self.validation_metadata.copy()
+                self.validation_metadata = validation_metadata_temp[~qval_flag]
+                self.validation_labels = self.validation_labels[~qval_flag]
+                self.validation_features = self.validation_features[~qval_flag]
 
             # update ids order
             query_indx.remove(obj)
