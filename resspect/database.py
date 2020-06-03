@@ -635,7 +635,7 @@ class DataBase:
                              '\n Feel free to add other options.')
 
     def make_query(self, strategy='UncSampling', batch=1, perc=0.1,
-                   screen=False, query_thre=1.0) -> list:
+                   screen=False, query_thre=1.0, queryable=False) -> list:
         """Identify new object to be added to the training sample.
 
         Parameters
@@ -650,6 +650,9 @@ class DataBase:
         perc: float in [0,1] (optional)
             Uncertainty percentile chosen for query.
             Only used for PercentileSampling. Default is 0.1.
+        queryable: bool (optional)
+            If True, allow queries only on objects flagged as queryable.
+            Default is True.
         query_thre: float (optional)
             Percentile threshold where a query is considered worth it.
             Default is 1 (no limit).
@@ -682,7 +685,7 @@ class DataBase:
         elif strategy == 'RandomSampling':
             query_indx = random_sampling(queryable_ids=self.queryable_ids,
                                          test_ids=self.test_metadata[id_name].values,
-                                         batch=batch)
+                                         batch=batch, queryable=queryable)
 
             for n in query_indx:
                 if self.test_metadata[id_name].values[n] not in self.queryable_ids:

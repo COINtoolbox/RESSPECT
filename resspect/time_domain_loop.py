@@ -32,7 +32,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                      path_to_full_lc_features="", path_to_train="",
                      path_to_queried="", queryable=True,
                      query_thre=1.0, save_samples=False, sep_files=False,
-                     screen=True, survey='LSST', initial_training='original'):
+                     screen=True, survey='LSST', initial_training='original', **kwargs):
     """Perform the active learning loop. All results are saved to file.
     Parameters
     ----------
@@ -148,13 +148,13 @@ def time_domain_loop(days: list,  output_metrics_file: str,
 
         if data.test_metadata.shape[0] > 0:
             # classify
-            data.classify(method=classifier)
+            data.classify(method=classifier, **kwargs)
 
             # calculate metrics
             data.evaluate_classification()
         
             indx = data.make_query(strategy=strategy, batch=batch,
-                                   query_thre=query_thre)
+                                   query_thre=query_thre, queryable=queryable)
 
         # update training and test samples
         data.update_samples(indx, loop=loop)

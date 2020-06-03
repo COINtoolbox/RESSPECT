@@ -128,6 +128,7 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
                             replace=False)
 
     if queryable:
+        print('inside queryable')
         # flag only the queryable objects
         flag = []
         for item in indx:
