@@ -32,7 +32,8 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                      path_to_ini_train="", path_to_train="",
                      path_to_queried="", queryable=True,
                      query_thre=1.0, save_samples=False, sep_files=False,
-                     screen=True, survey='LSST', initial_training='original'):
+                     screen=True, survey='LSST', initial_training='original',
+                    **kwargs):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -122,6 +123,9 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     data.load_features(path_to_ini_train, method=features_method,
                        screen=screen, survey=survey)
     
+     # get identification keyword
+    id_name = data.identify_keywords()
+    
     data.build_samples(initial_training=initial_training, nclass=nclass,
                        screen=screen, Ia_frac=Ia_frac,
                        queryable=queryable, save_samples=save_samples,
@@ -195,7 +199,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
 
         if data.pool_metadata.shape[0] > 0:
             # classify
-            data.classify(method=classifier)
+            data.classify(method=classifier, **kwargs)
 
             # calculate metrics
             data.evaluate_classification()
@@ -230,13 +234,13 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                     screen=screen, survey=survey)
 
         # identify objects in the new day which must be in training
-        train_flag = np.array([item in data.train_metadata['id'].values 
-                              for item in data_tomorrow.metadata['id'].values])
-        train_ids = data_tomorrow.metadata['id'].values[train_flag]
+        train_flag = np.array([item in data.train_metadata[id_name].values 
+                              for item in data_tomorrow.metadata[id_name].values])
+        train_ids = data_tomorrow.metadata[id_name].values[train_flag]
         
         # keep objs who were in training but are not in the new day
         keep_flag = np.array([item not in train_ids 
-                              for item in data.train_metadata['id'].values])
+                              for item in data.train_metadata[id_name].values])
         
         # use new data for training (this might have extra obs points)
         data.train_metadata = pd.concat([data.train_metadata[keep_flag],
@@ -257,7 +261,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
             data.validation_features = data.pool_features
             data.validation_metadata = data.pool_metadata
             
-            pool_labels = data.pool_metadata['type'] == 'Ia'
+            pool_labels = data.pool_metadata['type'].values == 'Ia'
             data.pool_labels = pool_labels.astype(int)
             data.validation_labels = data.pool_labels
 

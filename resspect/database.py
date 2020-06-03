@@ -660,6 +660,8 @@ class DataBase:
             test_flag = ~train_flag
             self.test_metadata = data_copy[test_flag]
             self.test_features = self.features[test_flag].values
+            self.pool_metadata = self.test_metadata
+            self.pool_features = self.test_features
 
         if nclass == 2:
             self.train_labels = data_copy['type'][train_flag].values == 'Ia'
@@ -667,13 +669,15 @@ class DataBase:
           
             if sep_validation:
                 self.validation_labels = data_copy['type'][validation_flag].values == 'Ia'
+            else:
+                self.pool_labels = self.test_labels
         else:
             raise ValueError("Only 'Ia x non-Ia' are implemented! "
                              "\n Feel free to add other options.")
 
         if queryable and not sep_validation:
             queryable_flag = data_copy['queryable'].values
-            combined_flag = np.logical_and(~train_flag, queryable_flag)
+            combined_flag = np.logical_and(test_flag, queryable_flag)
             self.queryable_ids = data_copy[combined_flag][id_name].values
 
         elif sep_validation:
@@ -1110,6 +1114,7 @@ class DataBase:
                                               test_ids=self.pool_metadata[id_name].values,
                                               batch=batch, screen=screen,
                                               query_thre=query_thre)
+           
             return query_indx
         elif strategy == 'UncSamplingEntropy':
             query_indx = uncertainty_sampling_entropy(class_prob=self.classprob,
@@ -1148,7 +1153,7 @@ class DataBase:
             return query_indx
         elif strategy == 'RandomSampling':
             query_indx = random_sampling(queryable_ids=self.queryable_ids,
-                                         test_ids=self.test_metadata[id_name].values,
+                                         test_ids=self.pool_metadata[id_name].values,
                                          queryable=queryable, batch=batch,
                                          query_thre=query_thre)
 
@@ -1217,7 +1222,7 @@ class DataBase:
                                             np.array([self.pool_features[obj]]),
                                             axis=0)
             self.train_labels = np.append(self.train_labels,
-                                          np.array([self.pool_labels.values[obj]]),
+                                          np.array([self.pool_labels[obj]]),
                                           axis=0)
 
             # remove queried object from test sample
