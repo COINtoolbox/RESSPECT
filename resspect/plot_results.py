@@ -1,8 +1,7 @@
 # Copyright 2020 resspect software
 # Author: The RESSPECT team
-#         Initial skeleton taken from ActSNClass
 #
-# created on 2 March 2020
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -23,9 +22,18 @@ import seaborn as sns
 
 __all__ = ['Canvas']
 
+strategies = ['Canonical',
+               'RandomSampling',
+               'UncSampling',
+               'UncSamplingEntropy',
+               'UncSamplingLeastConfident',
+               'UncSamplingMargin',
+               'QBDMI',
+               'QBDEntropy']
+
+
 class Canvas(object):
     """Canvas object, handles and plot information from multiple strategies.
-
     Attributes
     ----------
     axis_label_size: int
@@ -60,16 +68,14 @@ class Canvas(object):
     strategies: dict
         Dictionary connecting each data frame to its
         standard nomenclature (not the plot labels).
-
     Methods
     -------
-    load_diagnostics(path_to_files: list, strategy_list: list)
-        Load figure of merit diagnostics and identify set of metrics.
+    load_metrics(path_to_files: list, strategy_list: list)
+        Load metrics and identify set of metrics.
     set_plot_dimensions()
         Set directives for plot sizes based on number of metrics.
-    plot_diagnostics(output_plot_file: str, strategies_list: list)
+    plot_metrics(output_plot_file: str, strategies_list: list)
         Generate plot for all metrics in files and strategies given as input.
-
     Examples
     --------
     Define input variables
@@ -77,16 +83,15 @@ class Canvas(object):
     >>>                  'results/metrics_random.dat',
     >>>                  'results/metrics_unc.dat']
     >>> strategies_list = ['Canonical', 'RandomSampling', 'UncSampling']
-    >>> output_plot = 'plots/diag1_unc.png'
+    >>> output_plot = 'plots/metrics1_unc.png'
     Initiate the Canvas object, read and plot the results for
-    each diagnostic and strategy.
+    each metric and strategy.
     >>> cv = Canvas()
-    >>> cv.load_diagnostics(path_to_files=path_to_files,
+    >>> cv.load_metrics(path_to_files=path_to_files,
     >>>                    strategies_list=strategies_list)
     >>> cv.set_plot_dimensions()
-    >>> cv.plot_diagnostics(output_plot_file=output_plot,
-    >>>                    strategies_list=strategies_list)
-
+    >>> cv.plot_metrics(output_plot_file=output_plot,
+    >>>                 strategies_list=strategies_list)
     """
 
     def __init__(self):
@@ -100,38 +105,82 @@ class Canvas(object):
         self.line_width = 5
         self.nmetrics = 0
         self.metrics_names = []
-        self.perc_sampling = pd.DataFrame()
         self.unc_sampling = pd.DataFrame()
-        self.colors = {'Canonical': '#dd0100',      # red
-                       'RandomSampling': '#fac901',  # yellow
-                       'UncSampling': '#225095',   # blue
-                       'PercSampling': '#000000'}  # black
+        self.unc_sampling_entropy = pd.DataFrame()
+        self.unc_sampling_least_confident = pd.DataFrame()
+        self.unc_sampling_margin = pd.DataFrame()
+        self.qbd_mi = pd.DataFrame()
+        self.qbd_entropy = pd.DataFrame()
+        self.colors = {'Canonical': '#dd0100',                 # red
+                       'RandomSampling': '#fac901',            # yellow
+                       'UncSampling': '#225095',               # blue
+                       'UncSamplingEntropy': '#74eb34',        # lime green
+                       'UncSamplingLeastConfident': '#eb34de', # pink
+                       'UncSamplingMargin': '#ff8f05',         # orange
+                       'QBDMI': '#0a4f08',                     # dark green
+                       'QBDEntropy': '#434773',                # grey blue
+                       'RandomForest': '#fac901',
+                       'GradientBoostedTrees': '#ff8f05',
+                       'KNN': '#dd0100',
+                       'MLP': '#225095',
+                       'SVM' : '#74eb34',
+                       'NB': '#0a4f08'}
+        self.classifiers = {'RandomForest': 'Random Forest',
+                            'GradientBoostedTrees': 'GBT',
+                            'KNN': 'KNN',
+                            'MLP': 'MLP',
+                            'SVM': 'SVM',
+                            'NB': 'NB'
+                       }
         self.labels = {'Canonical': 'Canonical',
                        'RandomSampling': 'Passive Learning',
                        'UncSampling': 'AL - Uncertainty Sampling',
-                       'PercSampling': 'AL - Percentile Sampling'}
+                       'UncSamplingEntropy': 'Uncertainty Sampling Entropy',
+                       'UncSamplingLeastConfident': 'Uncertainty Sampling LC',
+                       'UncSamplingMargin': 'Uncertainty Sampling Margin',
+                       'QBDMI': 'QBD with MI',
+                       'QBDEntropy': 'QBD with Entropy',
+                       'RandomForest': 'Random Forest',
+                       'GradientBoostedTrees': 'GBT',
+                       'KNN': 'KNN',
+                       'MLP': 'MLP',
+                       'SVM': 'SVM',
+                       'NB': 'NB'}
         self.markers = {'Canonical': '--',
                         'RandomSampling': ':',
                         'UncSampling': '-.',
-                        'PercSampling': '-'}
+                        'UncSamplingEntropy': '-.',
+                        'UncSamplingLeastConfident': '-.',
+                        'UncSamplingMargin': '-.',
+                        'QBDMI': '-.',
+                        'QBDEntropy': '-.',
+                        'RandomForest': '-',
+                        'GradientBoostedTrees': '--',
+                        'KNN': ':',
+                        'MLP': '-.',
+                        'SVM': '-',
+                        'NB': '-.'}
         self.strategies = {'Canonical': self.canonical,
                            'RandomSampling': self.rand_sampling,
                            'UncSampling': self.unc_sampling,
-                           'PercSampling': self.perc_sampling}
+                           'UncSamplingEntropy': self.unc_sampling_entropy,
+                           'UncSamplingLeastConfident': self.unc_sampling_least_confident,
+                           'UncSamplingMargin': self.unc_sampling_margin,
+                           'QBDMI': self.qbd_mi,
+                           'QBDEntropy': self.qbd_entropy}
 
-    def load_diagnostics(self, path_to_files: list, strategies_list: list):
-        """Load figure of merit diagnostics and identify set of metrics.
+    def load_metrics(self, path_to_files: list, strategies_list: list):
+        """Load and identify set of metrics.
         Populates attributes: canonical, unc_sampling or rand_sampling,
         depending on choice of 'sample'.
         Parameters
         ----------
         path_to_files : str
-            List of paths to diagnostic files for different strategies.
+            List of paths to metrics files for different strategies.
         strategies_list: list
             List of all strategies to be included in the same plot.
             Current possibibilities are:
             ['canonical', 'rand_sampling', 'unc_sampling'].
-
         """
 
         # read data
@@ -149,17 +198,18 @@ class Canvas(object):
     def set_plot_dimensions(self):
         """Set directives for plot sizes.
         Populates attributes: nmetrics, ncolumns, and fig_size.
-
         """
 
         # determine number of lines and columns in plot
         self.nmetrics = len(self.metrics_names)
         self.ncolumns = self.nmetrics // self.nlines + self.nmetrics % self.nlines
-        self.fig_size = (10 * self.ncolumns, 7 * self.nlines)
 
-    def plot_diagnostics(self,  output_plot_file: str, strategies_list: list):
-        """Generate plot for all metrics in files and strategies given as input.
+        self.fig_size = (10 * self.ncolumns, 9 * self.nlines)
 
+    def plot_metrics(self,  output_plot_file: str, strategies_list: list,
+                         lim_queries=None):
+        """
+        Generate plot for all metrics in files and strategies given as input.
         Parameters
         ----------
         output_plot_file : str
@@ -168,7 +218,9 @@ class Canvas(object):
             List of all strategies to be included in the same plot.
             Current possibibilities are:
             ['canonical', 'rand_sampling', 'unc_sampling'].
-
+        lim_queries: int or None (optional)
+            If int, maximum number of queries to be plotted.
+            If None no limits are imposed. Default is None.
         """
 
         # set of all matrices to be plotted
@@ -185,15 +237,24 @@ class Canvas(object):
             ax = plt.subplot(self.nlines, self.ncolumns, i + 1)
 
             for j in range(len(all_data)):
+
                 # get data
                 x = all_data[j].values[:, 0]
                 y = all_data[j].values[:, i + 1]
+
+                if isinstance(lim_queries, int):
+                    xflag = x <= lim_queries
+                    xnew = x[xflag]
+                    ynew = y[xflag]
+                else:
+                    xnew = x
+                    ynew = y
 
                 color = self.colors[strategies_list[j]]
                 marker = self.markers[strategies_list[j]]
 
                 # plot
-                ax.plot(x, y, color=color, ls=marker, lw=self.line_width,
+                ax.plot(xnew, ynew, color=color, ls=marker, lw=self.line_width,
                         label=self.labels[strategies_list[j]])
 
             ax.set_yticks(ax.get_yticks())
@@ -206,7 +267,6 @@ class Canvas(object):
 
             ax.set_xlabel('Number of queries', fontsize=self.axis_label_size)
             ax.set_ylabel(self.metrics_names[i], fontsize=self.axis_label_size)
-            ax.set_xlim(0, max(x))
 
             axis.append(ax)
 
@@ -224,13 +284,6 @@ class Canvas(object):
                             wspace=0.35, hspace=0.35)
         plt.savefig(output_plot_file)
 
-
-def main():
-    return None
-
-
-if __name__ == '__main__':
-    main()
 
 def main():
     return None

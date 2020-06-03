@@ -186,7 +186,7 @@ class DataBase:
             Default is False.
         survey: str (optional)
             Name of survey. Used to infer the filter set.
-	    Options are DES or LSST. Default is DES.
+	        Options are DES or LSST. Default is DES.
         sample: str (optional)
             If None, sample is given by a column within the given file.
             else, read independent files for 'train' and 'test'.
@@ -212,7 +212,8 @@ class DataBase:
                                    'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB',
                                    'it0', 'itfall', 'itrise', 'zA', 'zB', 'zt0',
                                    'ztfall', 'ztrise']
-            self.metadata_names = ['id', 'redshift', 'type', 'code', 'sample']
+            self.metadata_names = ['id', 'redshift', 'type', 'code',
+                                   'orig_sample','queryable']
 
         elif survey == 'LSST':
             self.features_names = ['uA', 'uB', 'ut0', 'utfall', 'utrise',
@@ -222,9 +223,11 @@ class DataBase:
                                    'zA', 'zB', 'zt0', 'ztfall', 'ztrise',
                                    'YA', 'YB', 'Yt0', 'Ytfall', 'Ytrise']
 
-            self.metadata_names = ['objid', 'redshift', 'type', 'code', 'sample']
+            self.metadata_names = ['objid', 'redshift', 'type', 'code',
+                                   'orig_sample']
         else:
-            raise ValueError('Only "DES" and "LSST" filters are implemented at this point!')
+            raise ValueError('Only "DES" and "LSST" filters are ' + \
+                             'implemented at this point!')
 
         if sample == None:
             self.features = data[self.features_names]
@@ -238,14 +241,16 @@ class DataBase:
             self.train_metadata = data[self.metadata_names]
 
             if screen:
-                print('Loaded ', self.train_metadata.shape[0], ' ' +  sample + ' samples!')
+                print('Loaded ', self.train_metadata.shape[0], ' ' +  \
+                      sample + ' samples!')
 
         elif sample == 'test':
             self.test_features = data[self.features_names].values
             self.test_metadata = data[self.metadata_names]
 
             if screen:
-                print('Loaded ', self.test_metadata.shape[0], ' ' + sample +  ' samples!')
+                print('Loaded ', self.test_metadata.shape[0], ' ' + \
+                      sample +  ' samples!')
 
     def load_photometry_features(self, path_to_photometry_file: str,
                                  screen=False, sample=None):
@@ -279,7 +284,8 @@ class DataBase:
         else:
             data = pd.read_csv(path_to_photometry_file, index_col=False)
             if ' ' in data.keys()[0]:
-                data = pd.read_csv(path_to_photometry_file, sep=' ', index_col=False)
+                data = pd.read_csv(path_to_photometry_file, sep=' ',
+                                   index_col=False)
         
         # list of features to use
         self.features_names = data.keys()[5:]
@@ -289,7 +295,8 @@ class DataBase:
         elif 'id' in data.keys():
             id_name = 'id'
             
-        self.metadata_names = [id_name, 'redshift', 'type', 'code', 'sample']
+        self.metadata_names = [id_name, 'redshift', 'type', 'code',
+                               'orig_sample']
 
         if sample == None:
             self.features = data[self.features_names]
@@ -394,7 +401,7 @@ class DataBase:
 
     def build_samples(self, initial_training='original', nclass=2,
                       screen=False, Ia_frac=0.1, save_samples=False,
-                      sep_files=False):
+                      sep_files=False, queryable=False):
         """Separate train and test samples.
 
         Populate properties: train_features, train_header, test_features,
@@ -411,6 +418,9 @@ class DataBase:
         nclass: int (optional)
             Number of classes to consider in the classification
             Currently only nclass == 2 is implemented.
+        queryable: bool (optional)
+            If True, allow queries only on objects flagged as queryable.
+            Default is True.
         screen: bool (optional)
             If True display the dimensions of training and test samples.
         save_samples: bool (optional)
@@ -431,19 +441,19 @@ class DataBase:
             
         # separate original training and test samples
         if initial_training == 'original' and not sep_files:
-            train_flag = self.metadata['sample'] == 'train'
+            train_flag = self.metadata['orig_sample'] == 'train'
             train_data = self.features[train_flag]
             self.train_features = train_data.values
             self.train_metadata = self.metadata[train_flag]
 
-            test_flag = np.logical_or(self.metadata['sample'] == 'test',
-                                      self.metadata['sample'] == 'queryable')
+            test_flag = np.logical_or(self.metadata['orig_sample'] == 'test',
+                                      self.metadata['orig_sample'] == 'queryable')
             test_data = self.features[test_flag]
             self.test_features = test_data.values
             self.test_metadata = self.metadata[test_flag]
 
-            if 'queryable' in self.metadata['sample'].values:
-                queryable_flag = self.metadata['sample'].values == 'queryable'
+            if queryable:
+                queryable_flag = self.metadata['queryable'].values
                 self.queryable_ids = self.metadata[queryable_flag][id_name].values
             else:
                 self.queryable_ids = self.test_metadata[id_name].values
@@ -468,8 +478,8 @@ class DataBase:
             self.test_labels = test_labels.astype(int)
 
             # identify queryable objects
-            if 'queryable' in self.test_metadata['sample'].values:
-                queryable_flag = self.test_metadata['sample'] == 'queryable'
+            if queryable:
+                queryable_flag = self.test_metadata['queryable'].values
                 self.queryable_ids = self.test_metadata[queryable_flag][id_name].values
 
             else:
@@ -511,8 +521,8 @@ class DataBase:
             self.test_labels = self.metadata['type'][~train_flag].values == 'Ia'
             self.test_features = self.features[~train_flag]
             
-            if 'queryable' in self.metadata['sample'].values:
-                queryable_flag = self.metadata['sample'] == 'queryable'
+            if queryable:
+                queryable_flag = self.metadata['queryable'].values
                 combined_flag = np.logical_and(~train_flag, queryable_flag)
                 self.queryable_ids = self.metadata[combined_flag][id_name].values
             else:
@@ -537,10 +547,10 @@ class DataBase:
         elif isinstance(initial_training, int):
 
             # get Ia flag
-            data_copy = self.metadata.copy()            
+            data_copy = self.metadata.copy()
             ia_flag = data_copy['type'] == 'Ia'
             
-	    # separate data per class 
+	        # separate data per class 
             Ia_data = data_copy[ia_flag]
             nonIa_data = data_copy[~ia_flag]
 
@@ -563,8 +573,8 @@ class DataBase:
             self.test_labels = data_copy['type'][~train_flag].values == 'Ia'
             self.test_features = self.features[~train_flag].values
             
-            if 'queryable' in self.metadata['sample'].values:
-                queryable_flag = data_copy['sample'] == 'queryable'
+            if queryable:
+                queryable_flag = data_copy['queryable'].values
                 combined_flag = np.logical_and(~train_flag, queryable_flag)
                 self.queryable_ids = data_copy[combined_flag][id_name].values
             else:
@@ -578,7 +588,7 @@ class DataBase:
             print('Training set size: ', self.train_metadata.shape[0])
             print('Test set size: ', self.test_metadata.shape[0])
 
-    def classify(self, method='RandomForest'):
+    def classify(self, method='RandomForest', **kwargs):
         """Apply a machine learning classifier.
 
         Populate properties: predicted_class and class_prob
@@ -594,7 +604,7 @@ class DataBase:
         if method == 'RandomForest':
             self.predicted_class,  self.classprob = \
                 random_forest(self.train_features, self.train_labels,
-                              self.test_features, nest=self.ntrees)
+                              self.test_features, **kwargs)
 
         elif method == 'knn':
             self.predicted_class,  self.classprob = \
@@ -625,7 +635,7 @@ class DataBase:
                              '\n Feel free to add other options.')
 
     def make_query(self, strategy='UncSampling', batch=1, perc=0.1,
-                   dump=False) -> list:
+                   screen=False, query_thre=1.0) -> list:
         """Identify new object to be added to the training sample.
 
         Parameters
@@ -634,20 +644,19 @@ class DataBase:
             Strategy used to choose the most informative object.
             Current implementation accepts 'UncSampling' and
             'RandomSampling'. Default is `UncSampling`.
-
         batch: int (optional)
             Number of objects to be chosen in each batch query.
             Default is 1.
-
         perc: float in [0,1] (optional)
             Uncertainty percentile chosen for query.
-            Only used for PercentileSampling.
-            Default is 0.1.
-
-        dump: bool (optional)
+            Only used for PercentileSampling. Default is 0.1.
+        query_thre: float (optional)
+            Percentile threshold where a query is considered worth it.
+            Default is 1 (no limit).
+        screen: bool (optional)
             If true, display on screen information about the
             displacement in order and classificaion probability due to
-            constraints on queryable sample.
+            constraints on queryable sample. Default is False.
 
         Returns
         -------
@@ -666,7 +675,8 @@ class DataBase:
             query_indx = uncertainty_sampling(class_prob=self.classprob,
                                               queryable_ids=self.queryable_ids,
                                               test_ids=self.test_metadata[id_name].values,
-                                              batch=batch, dump=dump)
+                                              batch=batch, screen=screen,
+                                              query_thre=query_thre)
             return query_indx
 
         elif strategy == 'RandomSampling':

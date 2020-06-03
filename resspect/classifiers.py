@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ['knn']
+__all__ = ['knn', 'random_forest']
 
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
