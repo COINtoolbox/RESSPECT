@@ -406,7 +406,7 @@ class LightCurve(object):
             Magnitude values. If flux < 1e-5 returns 99.
         """
       
-        mag = [zpt - 2.5 * np.log10(f) if f > 1e-5 else 99 for f in flux]
+        mag = [zpt - 2.5 * np.log10(f) if f > 1e-5 else 9999 for f in flux]
        
         return np.array(mag)
 
@@ -493,14 +493,12 @@ class LightCurve(object):
 
         elif criteria == 3 and self.dataset_name == 'SNPCC':
             # get first day of observation in this filter
-            mjd_min = min(self.photometry['mjd'].values)
-            mjd_max = max(self.photometry['mjd'].values)
-            xaxis = np.linspace(0, mjd_max - mjd_min, 500)[:, np.newaxis]
+            mjd_min = min(self.photometry['mjd'].values[surv_flag])
+            day = mjd - mjd_min
             
             # estimate flux based on Bazin function
-            fitted_flux = self.evaluate_bazin(xaxis)
-            indx = list(fitted_flux[filter_cut]).index(max(fitted_flux[filter_cut]))
-            mag = self.conv_flux_mag([fitted_flux[filter_cut][indx][0]])[0]
+            fitted_flux = self.evaluate_bazin(day)
+            mag = self.conv_flux_mag([fitted_flux[filter_cut][0]])[0]
 
             self.last_mag = mag
 
@@ -588,7 +586,7 @@ class LightCurve(object):
         Parameters
         ----------
         time: np.array or list
-            Time since maximum where to evaluate the Bazin fit.
+            Time since first light curve observation.
 
         Returns
         -------

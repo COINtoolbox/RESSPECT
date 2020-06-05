@@ -261,7 +261,7 @@ class SNPCCPhotometry(object):
                         param_file.write(str(lc.sncode) + ' ' +
                                          str(lc.sample) + ' ' +
                                          str(queryable) + ' ')
-                        param_file.write(str(last_mag) + ' ')
+                        param_file.write(str(lc.last_mag) + ' ')
                         if get_cost:
                             for k in range(len(tel_names)):
                                 param_file.write(str(lc.exp_time[tel_names[k]]) + ' ')
