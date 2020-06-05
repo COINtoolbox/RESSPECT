@@ -58,7 +58,7 @@ class SNPCCPhotometry(object):
         # header is hard coded! If different telescopes, this needs to be 
         # changed by hand.
         self.bazin_header = 'id redshift type code orig_sample queryable ' + \
-                            'cost_4m cost_8m gA gB gt0 ' + \
+                            'last_rmag cost_4m cost_8m gA gB gt0 ' + \
                             'gtfall gtrise rA rB rt0 rtfall rtrise iA ' + \
                             'iB it0 itfall itrise zA zB zt0 ztfall ztrise\n'
         self.max_epoch = 56352
@@ -261,6 +261,7 @@ class SNPCCPhotometry(object):
                         param_file.write(str(lc.sncode) + ' ' +
                                          str(lc.sample) + ' ' +
                                          str(queryable) + ' ')
+                        param_file.write(str(last_mag) + ' ')
                         if get_cost:
                             for k in range(len(tel_names)):
                                 param_file.write(str(lc.exp_time[tel_names[k]]) + ' ')

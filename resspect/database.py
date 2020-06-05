@@ -579,8 +579,7 @@ class DataBase:
                                  "\n Feel free to add other options.")
 
     def build_random_training(self, initial_training: int, nclass=2, screen=False,
-                              Ia_frac=0.5, queryable=True, sep_files=False,
-                              sep_validation=False):
+                              Ia_frac=0.5, queryable=True, sep_files=False):
         """Construct initial random training and corresponding test sample.
 
         Populate properties: train_features, train_header, test_features,
@@ -614,10 +613,8 @@ class DataBase:
         id_name = self.identify_keywords()
 
         if sep_files:
-            # build complete metadata object
-            self.metadata = pd.concat([self.train_metadata, self.test_metadata])
-            self.features = np.concatenate((self.train_features, self.test_features))
-
+            pass
+        
         # identify Ia
         data_copy = self.metadata.copy()
         ia_flag = data_copy['type'] == 'Ia'
@@ -639,22 +636,8 @@ class DataBase:
         self.train_metadata = data_copy[train_flag]
         self.train_features = self.features[train_flag].values
 
-        if sep_validation:
-            # get all ids which are not in training 
-            all_not_train_ids = data_copy[id_name].values[~train_flag]
-
-            # select 25% of the non-train ids, via their indexes
-            indx = np.random.randint(low=0, high=len(all_not_train_ids), 
-                                     size=int(0.25 * len(all_not_train_ids)))
-            validation_flag = np.array([obj in all_not_train_ids[indx] 
-                                        for obj in data_copy[id_name].values])
-            test_flag = np.logical_and(~train_flag, ~validation_flag)
-              
-            self.validation_metadata = data_copy[validation_flag]
-            self.validation_features = self.features[validation_flag].values
-            self.test_metadata = data_copy[test_flag]
-            self.test_features = self.features[test_flag].values
- 
+        if sep_files:
+            pass
         else:
             # get test sample
             test_flag = ~train_flag
@@ -662,28 +645,20 @@ class DataBase:
             self.test_features = self.features[test_flag].values
             self.pool_metadata = self.test_metadata
             self.pool_features = self.test_features
+            self.validation_features = self.test_features
+            self.validation_metadata = self.test_metadata
 
-        if nclass == 2:
             self.train_labels = data_copy['type'][train_flag].values == 'Ia'
             self.test_labels = data_copy['type'][test_flag].values == 'Ia'
-          
-            if sep_validation:
-                self.validation_labels = data_copy['type'][validation_flag].values == 'Ia'
+            self.pool_labels = self.test_labels
+            self.validation_labels = self.test_labels
+        
+            if queryable:
+                queryable_flag = data_copy['queryable'].values
+                combined_flag = np.logical_and(~train_flag, queryable_flag)
+                self.queryable_ids = data_copy[combined_flag][id_name].values
             else:
-                self.pool_labels = self.test_labels
-        else:
-            raise ValueError("Only 'Ia x non-Ia' are implemented! "
-                             "\n Feel free to add other options.")
-
-        if queryable and not sep_validation:
-            queryable_flag = data_copy['queryable'].values
-            combined_flag = np.logical_and(test_flag, queryable_flag)
-            self.queryable_ids = data_copy[combined_flag][id_name].values
-
-        elif sep_validation:
-            self.queryable_ids = data_copy[test_flag][id_name].values
-        else:
-            self.queryable_ids = self.test_metadata[id_name].values
+                self.queryable_ids = self.test_metadata[id_name].values
 
         # check if there are repeated ids
         train_test_flag = np.array([True if item in self.test_metadata[id_name].values
@@ -781,7 +756,7 @@ class DataBase:
                       screen=False, Ia_frac=0.5,
                       queryable=False, save_samples=False, sep_files=False,
                       survey='DES', output_fname=' ', path_to_train=' ',
-                      path_to_queried=' ', method='Bazin', sep_validation=False):
+                      path_to_queried=' ', method='Bazin'):
         """Separate train, test and validation samples.
 
         Populate properties: train_features, train_header, test_features,
@@ -830,8 +805,6 @@ class DataBase:
         sep_files: bool (optional)
             If True, consider train and test samples separately read
             from independent files. Default is False.
-        sep_validation: bool (optional)
-            If True, construt separated validation sample. Default is False.
         """
 
         if initial_training == 'original':
@@ -847,8 +820,7 @@ class DataBase:
             self.build_random_training(initial_training=initial_training,
                                        nclass=nclass, screen=screen,
                                        Ia_frac=Ia_frac, queryable=queryable,
-                                       sep_files=sep_files, 
-                                       sep_validation=sep_validation)
+                                       sep_files=sep_files)
 
         if screen:
             print('Training set size: ', self.train_metadata.shape[0])
@@ -1166,7 +1138,7 @@ class DataBase:
         else:
             raise ValueError('Invalid strategy.')
 
-    def update_samples(self, query_indx: list, loop: int, epoch=0,
+    def update_samples(self, query_indx: list, epoch=20,
                        queryable=False):
         """Add the queried obj(s) to training and remove them from test.
 
@@ -1177,10 +1149,8 @@ class DataBase:
         ----------
         query_indx: list
             List of indexes identifying objects to be moved.
-        loop: int
-            Store number of loop when this query was made.
         epoch: int (optional)
-            Day of initial loop. Default is 0.
+            Day since beginning of survey. Default is 20.
         queryable: bool (optinal)
             If True, consider queryable flag. Default is False.
         """
