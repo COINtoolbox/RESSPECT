@@ -403,7 +403,7 @@ class LightCurve(object):
         Returns
         -------
         mag: list or np.array
-            Magnitude values. If flux < 1e-5 returns 99.
+            Magnitude values. If flux < 1e-5 returns 9999.
         """
       
         mag = [zpt - 2.5 * np.log10(f) if f > 1e-5 else 9999 for f in flux]
@@ -546,12 +546,12 @@ class LightCurve(object):
         etc.diameter = telescope_diam
         exp_time = etc.findexptime(SNRin=SNR, mag=self.last_mag, **kwargs)
 
-        if exp_time < max_exp_time:
+        if exp_time > 60 and exp_time < max_exp_time:
             self.exp_time[telescope_name] = exp_time
             return exp_time
         else:
-            self.exp_time[telescope_name] = 99999
-            return 99999
+            self.exp_time[telescope_name] = 9999
+            return 9999
 
     def fit_bazin(self, band: str):
         """Extract Bazin features for one filter.
