@@ -106,7 +106,7 @@ class SNPCCPhotometry(object):
         return [min(min_day), max(max_day)]
 
     def create_daily_file(self, output_dir: str,
-                          day: int, header='Bazin'):
+                          day: int, header='Bazin', get_cost=False):
         """Create one file for a given day of the survey.
 
         The file contains only header for the features file.
@@ -117,6 +117,9 @@ class SNPCCPhotometry(object):
             Complete path to raw data directory.
         day: int
             Day passed since the beginning of the survey.
+        get_cost: bool (optional)
+            If True, calculate cost of taking a spectra in the last 
+            observed photometric point. Default is False.
         header: str (optional)
             List of elements to be added to the header.
             Separate by 1 space.
