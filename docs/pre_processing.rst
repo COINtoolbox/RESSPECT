@@ -204,7 +204,7 @@ This can be done in flux as well as in magnitude:
     Example of light from SNPCC data.
 
 
-Ocasionally, it is necessary to extrapolate the fitted light curve to a latter epoch -- for example, in case we want to estimate its magnitude at the time of spectroscopic measurement (details in the `time domain preparation section<https://resspect.readthedocs.io/en/latest/prepare_time_domain.html>`_).
+Ocasionally, it is necessary to extrapolate the fitted light curve to a latter epoch -- for example, in case we want to estimate its magnitude at the time of spectroscopic measurement (details in the `time domain preparation section <https://resspect.readthedocs.io/en/latest/prepare_time_domain.html>`_ ).
 
 Before deploying  large batches for pre-processing, you might want to visualize how the extrapolation behaves for a few light curves. This can be done using:
 
