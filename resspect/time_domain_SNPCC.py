@@ -131,7 +131,7 @@ class SNPCCPhotometry(object):
                 if get_cost:
                     param_file.write(self.bazin_header)
                 else:
-                    self.bazin_header = 'id redshift type code ' + 
+                    self.bazin_header = 'id redshift type code ' + \
                             'orig_sample queryable ' + \
                             'last_rmag gA gB gt0 ' + \
                             'gtfall gtrise rA rB rt0 rtfall rtrise iA ' + \
