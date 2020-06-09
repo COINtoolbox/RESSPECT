@@ -428,12 +428,9 @@ class LightCurve(object):
         criteria: int [1, 2 or 3] (optional)
             Criteria to determine if an obj is queryable.
             1 -> Cut on last measured photometric point.
-            2 -> last obs was further than a given limit, 
-                 use Bazin estimate of flux today. Otherwise, use
+            2 -> if last obs was further than days_since_last_obs, 
+                 use Bazin estimate for today. Otherwise, use
                  the last observed point.
-            3 -> Cut in mag at peak brightness. This is not realistic
-                 but useful for debugging. Only possible for 
-                 'self.dataset_name == SNPCC'.
             Default is 1.
         days_since_last_obs: int (optional)
             If there is an observation within these days, use the
@@ -490,17 +487,6 @@ class LightCurve(object):
 
             else:
                 raise ValueError('Only "Bazin" features are implemented!')
-
-        elif criteria == 3 and self.dataset_name == 'SNPCC':
-            # get first day of observation in this filter
-            mjd_min = min(self.photometry['mjd'].values[surv_flag])
-            day = mjd - mjd_min
-            
-            # estimate flux based on Bazin function
-            fitted_flux = self.evaluate_bazin(day)
-            mag = self.conv_flux_mag([fitted_flux[filter_cut][0]])[0]
-
-            self.last_mag = mag
 
         else:
             raise ValueError('Criteria needs to be "1", "2" or "3". \n ' + \

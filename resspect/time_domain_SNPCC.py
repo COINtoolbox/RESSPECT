@@ -128,7 +128,15 @@ class SNPCCPhotometry(object):
         if header == 'Bazin':
             # add headers to files
             with open(features_file, 'w') as param_file:
-                param_file.write(self.bazin_header)
+                if get_cost:
+                    param_file.write(self.bazin_header)
+                else:
+                    self.bazin_header = 'id redshift type code ' + 
+                            'orig_sample queryable ' + \
+                            'last_rmag gA gB gt0 ' + \
+                            'gtfall gtrise rA rB rt0 rtfall rtrise iA ' + \
+                            'iB it0 itfall itrise zA zB zt0 ztfall ztrise\n'
+                    param_file.write(self.bazin_header)
 
         else:
             with open(features_file, 'w') as param_file:
