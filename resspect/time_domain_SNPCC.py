@@ -147,7 +147,8 @@ class SNPCCPhotometry(object):
                         dataset='SNPCC', screen=False, days_since_obs=2,
                         queryable_criteria=1, get_cost=False,
                         tel_sizes=[4, 8], tel_names=['4m', '8m'], 
-                        spec_SNR=10, **kwargs):
+                        spec_SNR=10, fname_pattern=['day_', '.dat'],
+                        **kwargs):
         """Fit bazin for all objects with enough points in a given day.
 
         Generate 1 file containing best-fit Bazin parameters for a given
@@ -171,6 +172,9 @@ class SNPCCPhotometry(object):
         feature_method: str (optional)
             Feature extraction method.
             Only possibility is 'Bazin'.
+        fname_pattern: list of str (optional)
+            Pattern for time domain file names.
+            Default is ['day_', '.dat'].
         get_cost: bool (optional)
             If True, calculate cost of taking a spectra in the last 
             observed photometric point. Default is False.
@@ -206,9 +210,10 @@ class SNPCCPhotometry(object):
         lc_list = [elem for elem in file_list_all if 'DES_SN' in elem]
 
         # get name of file to store results of today
-        features_file = time_domain_dir + 'day_' + str(day_of_survey) + '.dat'
+        features_file = time_domain_dir + fname_pattern[0] + \
+                        str(day_of_survey) + fname_pattern[1]
 
-        # count survivers
+        # count survivors
         count_surv = 0
         
         for i in range(len(lc_list)):
