@@ -252,6 +252,9 @@ class DataBase:
             self.metadata_names = ['id', 'redshift', 'type', 'code',
                                    'orig_sample', 'queryable']
             
+            if 'last_rmag' in data.keys():
+                self.metadata_names.append('last_rmag')
+            
             for name in self.telescope_names:
                 if 'cost_' + name in data.keys():
                     self.metadata_names = self.metadata_names + ['cost_' + name]
