@@ -531,12 +531,12 @@ class DataBase:
         else:
             train_flag = self.metadata['orig_sample'] == 'train'
             train_data = self.features[train_flag]
-            self.train_features = train_data.values
+            self.train_features = train_data
             self.train_metadata = self.metadata[train_flag]
 
             test_flag = self.metadata['orig_sample'] == 'test'
             test_data = self.features[test_flag]
-            self.test_features = test_data.values
+            self.test_features = test_data
             self.test_metadata = self.metadata[test_flag]
             
             if 'validation' in self.metadata['orig_sample'].values:
@@ -545,7 +545,7 @@ class DataBase:
                 val_flag = test_flag
                 
             val_data = self.features[val_flag]
-            self.validation_features = val_data.values
+            self.validation_features = val_data
             self.validation_metadata = self.metadata[val_flag]
             
             if 'pool' in self.metadata['orig_sample'].values:
