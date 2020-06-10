@@ -237,7 +237,8 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     for night in range(int(days[0]), int(days[-1]) - 1):
             
         if screen:
-            print('Processing night: ', night)
+            print('****************************')
+            print(' Processing night: ', night)
 
         if data.pool_metadata.shape[0] > 0:
             # classify
@@ -324,9 +325,11 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                 data.queryable_ids = data.pool_metadata['id'].values
 
             if screen:
+                print('After reading tomorrow data:')
                 print('Training set size: ', data.train_metadata.shape[0])
                 print('Test set size: ', data.test_metadata.shape[0])
                 print('Queryable set size: ', len(data.queryable_ids))
+                print('****************************')
 
 
 def main():
