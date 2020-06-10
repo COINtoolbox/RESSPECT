@@ -282,15 +282,14 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                               initial_training=0,
                               ia_frac=ia_frac, queryable=queryable)
 
-            if night > days[0]:
-                # identify objects in the new day which must be in training
-                train_flag = np.array([item in data.train_metadata[id_name].values 
-                                      for item in data_tomorrow.metadata[id_name].values])
-                train_ids = data_tomorrow.metadata[id_name].values[train_flag]
+            # identify objects in the new day which must be in training
+            train_flag = np.array([item in data.train_metadata[id_name].values 
+                                  for item in data_tomorrow.metadata[id_name].values])
+            train_ids = data_tomorrow.metadata[id_name].values[train_flag]
         
-                # keep objs who were in training but are not in the new day
-                keep_flag = np.array([item not in train_ids 
-                                      for item in data.train_metadata[id_name].values])
+            # keep objs who were in training but are not in the new day
+            keep_flag = np.array([item not in train_ids 
+                                  for item in data.train_metadata[id_name].values])
         
             # use new data for training (this might have extra obs points)
             data.train_metadata = pd.concat([data.train_metadata[keep_flag],
