@@ -145,7 +145,8 @@ def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
 
 
 def random_sampling(test_ids: np.array, queryable_ids: np.array,
-                    batch=1, queryable=False, query_thre=1.0, seed=42) -> list:
+                    batch=1, queryable=False, query_thre=1.0, seed=42,
+                    screen=False) -> list:
     """Randomly choose an object from the test sample.
 
     Parameters
@@ -163,6 +164,10 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
     query_thre: float (optinal)
         Threshold where a query is considered worth it.
         Default is 1.0 (no limit).
+    screen: bool (optional)
+        If True display on screen the shift in index and
+        the difference in estimated probabilities of being Ia
+        caused by constraints on the sample available for querying.
     seed: int (optional)
         Seed for random number generator. Default is 42.
 
