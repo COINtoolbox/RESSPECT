@@ -310,10 +310,13 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                 data.pool_features = data_tomorrow.features.values[~train_flag]
                 data.validation_features = data.pool_features
                 data.validation_metadata = data.pool_metadata
+                data.test_metadata = data.pool_metadata
+                data.test_features = data.pool_features
             
                 pool_labels = data.pool_metadata['type'].values == 'Ia'
                 data.pool_labels = pool_labels.astype(int)
                 data.validation_labels = data.pool_labels
+                data.test_labels = data.pool_labels
 
             if strategy == 'canonical':
                 data.queryable_ids = canonical.queryable_ids
