@@ -554,7 +554,7 @@ class DataBase:
                 pool_flag = test_flag
                 
             pool_data = self.features[pool_flag]
-            self.pool_features = pool_data.values
+            self.pool_features = pool_data
             self.pool_metadata = self.metadata[pool_flag]
 
             if queryable:
