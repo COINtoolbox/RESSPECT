@@ -198,10 +198,10 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
 
         if sum(flag[:indx_query]) > 0:
             if screen:
-            print('*** Displacement caused by constraints on query****')
-            print(' 0 -> ', ini_index)
-            print(class_prob[index[0]], '-- > ', class_prob[ini_index],
-                  '\n')
+                print('*** Displacement caused by constraints on query****')
+                print(' 0 -> ', ini_index)
+                print(class_prob[index[0]], '-- > ', class_prob[ini_index],
+                     '\n')
 
             # return the corresponding batch size
             return list(indx[flag])[:batch]
