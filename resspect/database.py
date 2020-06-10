@@ -1129,7 +1129,7 @@ class DataBase:
             query_indx = random_sampling(queryable_ids=self.queryable_ids,
                                          test_ids=self.pool_metadata[id_name].values,
                                          queryable=queryable, batch=batch,
-                                         query_thre=query_thre)
+                                         query_thre=query_thre, screen=screen)
 
         else:
             raise ValueError('Invalid strategy.')
