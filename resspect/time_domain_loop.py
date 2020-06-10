@@ -275,6 +275,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
 
             if screen:
                 print('queried obj index: ', indx)
+                print('Prob [nIa, Ia]: ', data.classprob[indx[0]])
                 print('size of pool: ', data.pool_metadata.shape[0], '\n')
 
             # update training and test samples

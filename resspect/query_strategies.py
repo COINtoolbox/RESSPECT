@@ -134,7 +134,8 @@ def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
         if screen:
             print('*** Displacement caused by constraints on query****')
             print(' 0 -> ', list(order).index(final_order[0]))
-            print(class_prob[order[0]], '-- > ', class_prob[final_order[0]])
+            print(class_prob[order[0]], '-- > ', class_prob[final_order[0]],
+                  '\n')
 
         # return the index of the highest uncertain objects which are queryable
         return list(final_order)[:batch]
@@ -189,12 +190,19 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
             else:
                 flag.append(False)
 
+        ini_index = flag.index(True)
         flag = np.array(flag)
 
         # check if there are queryable objects within threshold
         indx_query = int(len(flag) * query_thre)
 
         if sum(flag[:indx_query]) > 0:
+            if screen:
+            print('*** Displacement caused by constraints on query****')
+            print(' 0 -> ', ini_index)
+            print(class_prob[index[0]], '-- > ', class_prob[ini_index],
+                  '\n')
+
             # return the corresponding batch size
             return list(indx[flag])[:batch]
         else:
