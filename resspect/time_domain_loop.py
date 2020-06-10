@@ -207,7 +207,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
 
         first_loop.pool_metadata = first_loop.metadata[~rep_ids_flag]
         first_loop.pool_features = first_loop.features[~rep_ids_flag]
-        pool_labels = first_loop.pool_metadata[id_name].values == 'Ia'
+        pool_labels = first_loop.pool_metadata['type'].values == 'Ia'
         first_loop.pool_labels = pool_labels.astype(int)
 
         data.pool_features = first_loop.pool_features
