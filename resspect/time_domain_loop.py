@@ -193,26 +193,34 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                               screen=screen,
                               initial_training=0,
                               ia_frac=ia_frac, queryable=queryable)
-    
+
     # get keyword for obj identification
-    id_name = data.identify_keywords()
+    id_name = data.identify_keywords()            
     
     # update test and pool sample    
     if sep_files:
         pass
     else:
+        # remove repeated keywords
+        rep_ids_flag = np.array([item in data.train_metadata[id_name].values
+                                for item in first_loop.pool_metadata[id_name].values])
+
+        first_loop.pool_metadata = first_loop.metadata[~rep_ids_flag]
+        first_loop.pool_features = first_loop.features[~rep_ids_flag]
+        pool_labels = first_loop.pool_metadata[id_name].values == 'Ia'
+        first_loop.pool_labels = pool_labels.astype(int)
+
         data.pool_features = first_loop.pool_features
         data.pool_metadata = first_loop.pool_metadata
         data.pool_labels = first_loop.pool_labels
         
-        data.test_features = first_loop.features
-        data.test_metadata = first_loop.metadata
-        test_labels = first_loop.metadata['type'].values == 'Ia'
-        data.test_labels = test_labels.astype(int)
+        data.test_features = first_loop.pool_features
+        data.test_metadata = first_loop.pool_metadata
+        data.test_labels = first_loop.pool_labels
         
         data.validation_features = first_loop.features
         data.validation_metadata = first_loop.metadata
-        data.validation_labels = data.test_labels
+        data.validation_labels = first_loop.test_labels
                 
     if queryable:
         q_flag = data.pool_metadata['queryable'].values
