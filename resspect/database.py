@@ -279,7 +279,7 @@ class DataBase:
                              'implemented at this point!')
 
         if sample == None:
-            self.features = data[self.features_names]
+            self.features = data[self.features_names].values
             self.metadata = data[self.metadata_names]
 
             if screen:

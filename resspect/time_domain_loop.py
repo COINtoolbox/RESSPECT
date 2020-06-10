@@ -194,6 +194,10 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                               initial_training=0,
                               ia_frac=ia_frac, queryable=queryable)
 
+    if screen:
+        print('Is pool features an array? ', 
+              isinstance(first_loop.pool_features, np.ndarray))
+
     # get keyword for obj identification
     id_name = data.identify_keywords()            
     
@@ -205,8 +209,8 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         rep_ids_flag = np.array([item in data.train_metadata[id_name].values
                                 for item in first_loop.pool_metadata[id_name].values])
 
-        first_loop.pool_metadata = first_loop.metadata[~rep_ids_flag]
-        first_loop.pool_features = first_loop.features[~rep_ids_flag]
+        first_loop.pool_metadata = first_loop.pool_metadata[~rep_ids_flag]
+        first_loop.pool_features = first_loop.pool_features[~rep_ids_flag]
         pool_labels = first_loop.pool_metadata['type'].values == 'Ia'
         first_loop.pool_labels = pool_labels.astype(int)
 
@@ -218,9 +222,13 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         data.test_metadata = first_loop.pool_metadata
         data.test_labels = first_loop.pool_labels
         
-        data.validation_features = first_loop.features
-        data.validation_metadata = first_loop.metadata
-        data.validation_labels = first_loop.test_labels
+        data.validation_features = first_loop.pool_features
+        data.validation_metadata = first_loop.pool_metadata
+        data.validation_labels = first_loop.pool_labels
+
+        if screen:
+            print('Is pool features an array? ', 
+                  isinstance(data.pool_features, np.ndarray))
                 
     if queryable:
         q_flag = data.pool_metadata['queryable'].values
@@ -246,7 +254,12 @@ def time_domain_loop(days: list,  output_metrics_file: str,
             
         if screen:
             print('****************************')
-            print(' Processing night: ', night)
+            print(' Processing night: ', night, '\n\n')
+            print('Before update_samples:')
+            print('   ... train: ', data.train_metadata.shape[0])
+            print('   ... test: ', data.test_metadata.shape[0])
+            print('   ... validation: ', data.validation_metadata.shape[0])
+            print('   ... pool: ', data.pool_metadata.shape[0], '\n')
 
         if data.pool_metadata.shape[0] > 0:
             # classify
@@ -260,6 +273,10 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                    queryable=queryable,
                                    query_thre=query_thre)
 
+            if screen:
+                print('queried obj index: ', indx)
+                print('size of pool: ', data.pool_metadata.shape[0], '\n')
+
             # update training and test samples
             data.update_samples(indx, queryable=queryable, 
                                 epoch=night)
@@ -269,7 +286,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                 print('   ... train: ', data.train_metadata.shape[0])
                 print('   ... test: ', data.test_metadata.shape[0])
                 print('   ... validation: ', data.validation_metadata.shape[0])
-                print('   ... pool: ', data.pool_metadata.shape[0])
+                print('   ... pool: ', data.pool_metadata.shape[0], '\n')
                 
 
             # save metrics for current state
