@@ -644,7 +644,7 @@ class DataBase:
             # get test sample
             test_flag = ~train_flag
             self.test_metadata = data_copy[test_flag]
-            self.test_features = self.features[test_flag].values
+            self.test_features = self.features[test_flag]
             self.pool_metadata = self.test_metadata
             self.pool_features = self.test_features
             self.validation_features = self.test_features
@@ -734,9 +734,9 @@ class DataBase:
 
         # populate sample properties
         self.train_metadata = data_copy[train_flag]
-        self.train_features = self.features[train_flag].values
+        self.train_features = self.features[train_flag]
         self.test_metadata = data_copy[~train_flag]
-        self.test_features = self.features[~train_flag].values
+        self.test_features = self.features[~train_flag]
 
         if queryable:
             queryable_flag = self.test_metadata['queryable'].values
