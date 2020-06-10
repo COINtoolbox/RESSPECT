@@ -332,7 +332,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                 pass
             else: 
                 data.pool_metadata = data_tomorrow.metadata[~train_flag]
-                data.pool_features = data_tomorrow.features.values[~train_flag]
+                data.pool_features = data_tomorrow.features[~train_flag]
                 data.validation_features = data.pool_features
                 data.validation_metadata = data.pool_metadata
                 data.test_metadata = data.pool_metadata
