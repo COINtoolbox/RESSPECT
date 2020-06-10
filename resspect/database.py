@@ -636,7 +636,7 @@ class DataBase:
                                for i in range(data_copy.shape[0])])
 
         self.train_metadata = data_copy[train_flag]
-        self.train_features = self.features[train_flag].values
+        self.train_features = self.features[train_flag]
 
         if sep_files:
             pass
