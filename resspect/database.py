@@ -498,8 +498,7 @@ class DataBase:
             Number of classes to consider in the classification
             Currently only nclass == 2 is implemented.
         queryable: bool (optional)
-            If True build also queryable sample for time domain analysis.
-            Default is False.
+            If True use queryable flag from file. Default is False.
         screen: bool (optional)
             If True display the dimensions of training and test samples.
         sep_files: bool (optional)
@@ -518,8 +517,8 @@ class DataBase:
             test_labels = self.test_metadata['type'].values == 'Ia'
             self.test_labels = test_labels.astype(int)
 
-            # identify queryable objects
-            if 'queryable' in self.test_metadata.keys():
+            # identify asked to consider queryable flag
+            if queryable:
                 queryable_flag = self.test_metadata['queryable'].values
                 self.queryable_ids = self.test_metadata[queryable_flag][id_name].values
 
@@ -1090,21 +1089,21 @@ class DataBase:
                                               batch=batch, screen=screen,
                                               query_thre=query_thre)
            
-            return query_indx
+
         elif strategy == 'UncSamplingEntropy':
             query_indx = uncertainty_sampling_entropy(class_prob=self.classprob,
                                               queryable_ids=self.queryable_ids,
                                               test_ids=self.test_metadata[id_name].values,
                                               batch=batch, screen=screen,
                                               query_thre=query_thre)
-            return query_indx
+
         elif strategy == 'UncSamplingLeastConfident':
             query_indx = uncertainty_sampling_least_confident(class_prob=self.classprob,
                                               queryable_ids=self.queryable_ids,
                                               test_ids=self.test_metadata[id_name].values,
                                               batch=batch, screen=screen,
                                               query_thre=query_thre)
-            return query_indx
+
         elif strategy == 'UncSamplingMargin':
             query_indx = uncertainty_sampling_margin(class_prob=self.classprob,
                                               queryable_ids=self.queryable_ids,
@@ -1118,28 +1117,31 @@ class DataBase:
                                 test_ids=self.test_metadata[id_name].values,
                                 batch=batch, screen=screen,
                                 query_thre=query_thre)
-            return query_indx
+
         elif strategy =='QBDEntropy':
             query_indx = qbd_entropy(ensemble_probs=self.ensemble_probs,
                                     queryable_ids=self.queryable_ids,
                                     test_ids=self.test_metadata[id_name].values,
                                     batch=batch, screen=screen,
                                     query_thre=query_thre)
-            return query_indx
+
         elif strategy == 'RandomSampling':
             query_indx = random_sampling(queryable_ids=self.queryable_ids,
                                          test_ids=self.pool_metadata[id_name].values,
                                          queryable=queryable, batch=batch,
                                          query_thre=query_thre)
 
-            for n in query_indx:
-                if self.pool_metadata[id_name].values[n] not in self.queryable_ids:
-                    raise ValueError('Chosen object is not available for query!')
-
-            return query_indx
-
         else:
             raise ValueError('Invalid strategy.')
+
+        # check if there are repeated ids
+        for n in query_indx:
+            if self.pool_metadata[id_name].values[n] not in self.queryable_ids:
+                raise ValueError('Chosen object is not available for query!')
+
+        return query_indx
+
+        
 
     def update_samples(self, query_indx: list, epoch=20,
                        queryable=False):

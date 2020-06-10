@@ -26,7 +26,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                training='original', batch=1, screen=True, survey='DES',
                nclass=2, photo_class_thr=0.5, photo_ids=False, photo_ids_tofile = False,
                photo_ids_froot=' ', classifier_bootstrap=False, save_predictions=False,
-               pred_dir=None, sep_validation=False, **kwargs):
+               pred_dir=None, **kwargs):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -74,8 +74,6 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     save_predictions: bool (optional)
         If True, save classification predictions to file in each loop.
         Default is False.
-    sep_validation: bool (optional)
-        If True, construt separated validation sample. Default is False.
     screen: bool (optional)
         If True, print on screen number of light curves processed.
     survey: str (optional)
@@ -91,7 +89,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         All keywords required by the classifier function.
     """
     if 'QBD' in strategy and not classifier_bootstrap:
-        raise ValueError('bootstrap must be true when using disagreement strategy')
+        raise ValueError('Bootstrap must be true when using ' + \
+                         'disagreement strategy.')
 
     # initiate object
     data = DataBase()
@@ -102,8 +101,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                            screen=screen, survey=survey)
 
         # separate training and test samples
-        data.build_samples(initial_training=training, nclass=nclass,
-                           sep_validation=sep_validation)
+        data.build_samples(initial_training=training, nclass=nclass)
 
     else:
         data.load_features(path_to_features['train'], method=features_method,
