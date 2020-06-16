@@ -24,7 +24,7 @@ from resspect import DataBase
 
 def load_dataset(fname: str, features_method='Bazin', survey='DES',
                          screen=False, initial_training='original',
-                         ia_frac=0.5, queryable=False):
+                         ia_frac=0.5, queryable=False, sep_files=False):
     """Read a data sample from file.
     
     Parameters
@@ -47,6 +47,9 @@ def load_dataset(fname: str, features_method='Bazin', survey='DES',
     queryable: bool (optional)
         If True, allow queries only on objects flagged as queryable.
         Default is True.
+    sep_files: bool (optional)
+            If True, consider samples separately read
+            from independent files. Default is False.
     screen: bool (optional)
         If True, print on screen number of light curves processed.
     survey: str (optional)
@@ -71,7 +74,7 @@ def load_dataset(fname: str, features_method='Bazin', survey='DES',
     data.build_samples(initial_training=initial_training, nclass=2,
                        screen=screen, Ia_frac=ia_frac,
                        queryable=queryable, save_samples=False,
-                       sep_files=None, survey=survey, 
+                       sep_files=sep_files, survey=survey, 
                        method=features_method)
     
     return data
@@ -137,7 +140,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     screen: bool (optional)
         If True, print on screen number of light curves processed.
     sep_files: bool (optional)
-        If True, consider train and test samples separately read 
+        If True, consider samples separately read 
         from independent files. Default is False.
     survey: str (optional)
         Name of survey to be analyzed. Accepts 'DES' or 'LSST'.
@@ -177,10 +180,16 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     # read initial training
     data = load_dataset(fname=path_to_ini_train, 
                         features_method=features_method,
-                        survey=survey,
+                        survey=survey, sep_files=sep_files,
                         screen=screen,
                         initial_training=initial_training,
                         ia_frac=ia_frac, queryable=queryable)
+    
+    # get keyword for obj identification
+    id_name = data.identify_keywords() 
+    
+    # get ids from initial training
+    ini_train_ids = data.train_metadata[id_name].values
     
     # load features for the first obs day
     path_to_first_loop = path_to_features_dir + fname_pattern[0] + \
@@ -189,23 +198,20 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     # read data from fist loop
     first_loop = load_dataset(fname=path_to_first_loop, 
                               features_method=features_method,
-                              survey=survey,
+                              survey=survey, sep_files=sep_files,
                               screen=screen,
                               initial_training=0,
                               ia_frac=ia_frac, queryable=queryable)
 
     if screen:
         print('Is pool features an array? ', 
-              isinstance(first_loop.pool_features, np.ndarray))
-
-    # get keyword for obj identification
-    id_name = data.identify_keywords()            
+              isinstance(first_loop.pool_features, np.ndarray))           
     
-    # update test and pool sample    
+    # update samples    
     if sep_files:
         pass
     else:
-        # remove repeated keywords
+        # remove repeated ids
         rep_ids_flag = np.array([item in data.train_metadata[id_name].values
                                 for item in first_loop.pool_metadata[id_name].values])
 
@@ -253,9 +259,9 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     for night in range(int(days[0]), int(days[-1]) - 1):
             
         if screen:
-            print('****************************')
+            print('\n ****************************')
             print(' Processing night: ', night, '\n\n')
-            print('Before update_samples:')
+            print(' Before update_samples:')
             print('   ... train: ', data.train_metadata.shape[0])
             print('   ... test: ', data.test_metadata.shape[0])
             print('   ... validation: ', data.validation_metadata.shape[0])
@@ -266,7 +272,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
             data.classify(method=classifier, **kwargs)
 
             # calculate metrics
-            data.evaluate_classification()
+            data.evaluate_classification(screen=screen)
         
             # get index of object to be queried
             indx = data.make_query(strategy=strategy, batch=batch, 
@@ -274,7 +280,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                    query_thre=query_thre, screen=screen)
 
             if screen:
-                print('queried obj index: ', indx)
+                print('\n queried obj index: ', indx)
                 print('Prob [nIa, Ia]: ', data.classprob[indx[0]])
                 print('size of pool: ', data.pool_metadata.shape[0], '\n')
 
@@ -283,7 +289,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                 epoch=night)
             
             if screen:
-                print('After update_samples:')
+                print('\n After update_samples:')
                 print('   ... train: ', data.train_metadata.shape[0])
                 print('   ... test: ', data.test_metadata.shape[0])
                 print('   ... validation: ', data.validation_metadata.shape[0])
@@ -308,41 +314,67 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                               screen=screen,
                               initial_training=0,
                               ia_frac=ia_frac, queryable=queryable)
-
-            # identify objects in the new day which must be in training
-            train_flag = np.array([item in data.train_metadata[id_name].values 
-                                  for item in data_tomorrow.metadata[id_name].values])
-            train_ids = data_tomorrow.metadata[id_name].values[train_flag]
-        
-            # keep objs who were in training but are not in the new day
-            keep_flag = np.array([item not in train_ids 
-                                  for item in data.train_metadata[id_name].values])
-        
-            # use new data for training (this might have extra obs points)
-            data.train_metadata = pd.concat([data.train_metadata[keep_flag],
-                                         data_tomorrow.metadata[train_flag]])
-            data.train_features = np.append(data.train_features[keep_flag],
-                                            data_tomorrow.features[train_flag],
-                                            axis=0)
-         
-            train_labels = data.train_metadata['type'].values == 'Ia'
-            data.train_labels = train_labels.astype(int)
+            
+            for obj in data.train_metadata[id_name].values:
+                if obj in data_tomorrow.pool_metadata[id_name].values:
+                    
+                    indx_tomorrow = list(data_tomorrow.pool_metadata[id_name].values).indx(obj)
+                    
+                    if obj not in ini_train_ids:
+                        # remove old features from training
+                        indx_today = list(data.train_metadata[id_name].values).index(obj)
+                        data.train_metadata = data.train_metadata.drop(data.train_metadata.index[indx_today])
+                        data.train_labels = np.delete(data.train_labels, indx_today, axis=0)
+                        data.train_features = np.delete(data.train_features, indx_today, axis=0)
+                        
+                        # update new features of the training with new obs
+                        flag = data_tomorrow.pool_metadata[id_name].values == obj
+                        data.train_metadata = pd.concat([data.train_metadata,
+                                                         data_tomorrow.pool_metadata[flag]],
+                                                         axis=0)
+                        data.train_features = np.append(data.train_features,
+                                                        data_tomorrow.pool_features[flag], axis=0)
+                        data.train_labels = np.append(data.train_labels,
+                                                      data_tomorrow.pool_labels[flag], axis=0)
+                        
+                    # remove obj from pool sample
+                    data_tomorrow.pool_metadata = data_tomorrow.pool_metadata.drop(\
+                                             data_tomorrow.pool_metadata.index[indx_tomorrow])
+                    data_tomorrow.pool_labels = np.delete(data_tomorrow.pool_labels, indx_tomorrow, axis=0)
+                    data_tomorrow.pool_features = np.delete(data_tomorrow.pool_features, indx_tomorrow, axis=0)
+                    
+                # remove object from other samples
+                if obj in data_tomorrow.validation_metadata[id_name].values:
+                    indx_val =  list(data_tomorrow.validation_metadata[id_name].values).indx(obj)
+                    
+                    data_tomorrow.validation_metadata = data_tomorrow.validation_metadata.drop(\
+                                             data_tomorrow.validation_metadata.index[indx_val])
+                    data_tomorrow.validation_labels = np.delete(data_tomorrow.validation_labels, 
+                                                                indx_val, axis=0)
+                    data_tomorrow.validation_features = np.delete(data_tomorrow.validation_features,
+                                                                  indx_val, axis=0)
+                    
+                if obj in data_tomorrow.test_metadata[id_name].values:
+                    indx_test = list(data_tomorrow.test_metadata[id_name].values).indx(obj)
+                    
+                    data_tomorrow.test_metadata = data_tomorrow.test_metadata.drop(\
+                                             data_tomorrow.test_metadata.index[indx_test])
+                    data_tomorrow.test_labels = np.delete(data_tomorrow.test_labels, 
+                                                                indx_test, axis=0)
+                    data_tomorrow.test_features = np.delete(data_tomorrow.test_features,
+                                                                  indx_test, axis=0)
 
             # use new data
-            if sep_files:
-                pass
-            else: 
-                data.pool_metadata = data_tomorrow.metadata[~train_flag]
-                data.pool_features = data_tomorrow.features[~train_flag]
-                data.validation_features = data.pool_features
-                data.validation_metadata = data.pool_metadata
-                data.test_metadata = data.pool_metadata
-                data.test_features = data.pool_features
+            data.pool_metadata = data_tomorrow.pool_metadata
+            data.pool_features = data_tomorrow.pool_features
+            data.validation_features = data.validation_features
+            data.validation_metadata = data.validation_metadata
+            data.test_metadata = data.test_metadata
+            data.test_features = data.test_features
             
-                pool_labels = data.pool_metadata['type'].values == 'Ia'
-                data.pool_labels = pool_labels.astype(int)
-                data.validation_labels = data.pool_labels
-                data.test_labels = data.pool_labels
+            data.pool_labels = data_tomorrow.pool_labels
+            data.validation_labels = data_tomorrow.validation_labels
+            data.test_labels = data_tomorrow.test_labels
 
             if strategy == 'canonical':
                 data.queryable_ids = canonical.queryable_ids
@@ -352,15 +384,27 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                 data.queryable_ids = data.pool_metadata['id'].values[queryable_flag]
             else:
                 data.queryable_ids = data.pool_metadata['id'].values
+                
+        if screen:
+            print('\n After reading tomorrow data:')
+            print('Training set size: ', data.train_metadata.shape[0])
+            print('Test set size: ', data.test_metadata.shape[0])
+            print('Validation set size: ', data.validation_metadata.shape[0])
+            print('Pool set size: ', data.pool_metadata.shape[0])
+            print('    From which queryable: ', len(data.queryable_ids))
+            print('**************************** \n')
+                
+        # check if there are repeated ids
+        for name in data.train_metadata['id'].values:
+            if name in data.pool_metadata['id'].values:
+                raise ValueError('End of time_domain_loop: ' + \
+                                 'Object ', name, ' found in pool and training sample!')
 
-            if screen:
-                print('After reading tomorrow data:')
-                print('Training set size: ', data.train_metadata.shape[0])
-                print('Test set size: ', data.test_metadata.shape[0])
-                print('Validation set size: ', data.validation_metadata.shape[0])
-                print('Pool set size: ', data.pool_metadata.shape[0])
-                print('    From which queryable: ', len(data.queryable_ids))
-                print('****************************')
+        # check if all queried samples are in the training sample
+        for i in range(len(data.queried_sample)):
+            for j in range(len(data.queried_sample[i])):
+                if data.queried_sample[i][j][1] not in data.train_metadata['id'].values:
+                    raise ValueError('Object ', name, 'was queried but is missing from training!')
 
 
 def main():

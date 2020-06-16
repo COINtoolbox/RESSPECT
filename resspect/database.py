@@ -412,8 +412,7 @@ class DataBase:
             Default is 'DES'.
         sample: str (optional)
             If None, sample is given by a column within the given file.
-            else, read independent files for 'train' and 'test'.
-            Default is None.
+            else, read independent files. Default is None.
         """
 
         if method == 'Bazin':
@@ -734,7 +733,7 @@ class DataBase:
             Survey used to obtain the data. The current implementation
             only accepts survey='DES' or 'LSST'. Default is 'DES'.
         sep_files: bool (optional)
-            If True, consider train and test samples separately read
+            If True, consider samples separately read
             from independent files. Default is False.
         """
 
