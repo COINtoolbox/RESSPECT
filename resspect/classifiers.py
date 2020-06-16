@@ -75,7 +75,7 @@ def bootstrap_clf(clf_function, n_ensembles, train_features,
 
 
 def random_forest(train_features:  np.array, train_labels: np.array,
-                  test_features: np.array, **kwargs):
+                  test_features: np.array, n_estimators=100, **kwargs):
     """Random Forest classifier.
 
     Parameters
@@ -86,6 +86,8 @@ def random_forest(train_features:  np.array, train_labels: np.array,
         Training sample classes.
     test_features: np.array
         Features from sample to be classified.
+    n_estimators: int (optional)
+        Number of trees in the forest. Default is 1000.
     kwargs: extra parameters
         All keywords required by
         sklearn.ensemble.RandomForestClassifier function.
@@ -100,7 +102,7 @@ def random_forest(train_features:  np.array, train_labels: np.array,
     """
 
     # create classifier instance
-    clf = RandomForestClassifier(**kwargs)
+    clf = RandomForestClassifier(n_estimators=n_estimators, **kwargs)
 
     clf.fit(train_features, train_labels)                     # train
     predictions = clf.predict(test_features)                # predict
