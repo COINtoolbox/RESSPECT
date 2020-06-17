@@ -181,7 +181,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     
     # read data from fist loop
     first_loop = load_dataset(fname=path_to_first_loop, 
-                              survey=survey, sep_files=sep_files,
+                              survey=survey, sep_files=False,
                               screen=screen,
                               initial_training=0,
                               ia_frac=ia_frac, queryable=queryable)
@@ -227,7 +227,11 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     data.pool_metadata = first_loop.pool_metadata
     data.pool_labels = first_loop.pool_labels
     
-    if not sep_files:
+    if sep_files:
+        data.build_orig_samples(nclass=2, screen=screen, 
+                                queryable=queryable,
+                                sep_files=True)
+    else:
         data.test_features = first_loop.pool_features
         data.test_metadata = first_loop.pool_metadata
         data.test_labels = first_loop.pool_labels
@@ -235,10 +239,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         data.validation_features = first_loop.pool_features
         data.validation_metadata = first_loop.pool_metadata
         data.validation_labels = first_loop.pool_labels
-
-    if screen:
-        print('Is pool features an array? ', 
-              isinstance(data.pool_features, np.ndarray))
+        
                 
     if queryable:
         q_flag = data.pool_metadata['queryable'].values
@@ -273,7 +274,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
 
         if data.pool_metadata.shape[0] > 0:
             # classify
-            data.classify(method=classifier, **kwargs)
+            data.classify(method=classifier, screen=screen, **kwargs)
 
             # calculate metrics
             data.evaluate_classification(screen=screen)
