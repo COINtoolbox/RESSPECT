@@ -206,11 +206,12 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
 
         if sum(flag[:indx_query]) > 0:
             
-             if screen:
+            if screen:
                 print('\n Inside RandomSampling: ')
                 print('       query_ids: ', test_ids[indx[flag]][:batch], '\n')
                 print('   number of test_ids: ', test_ids.shape[0])
-                print('   number of queryable_ids: ', len(queryable_ids), '\n')   
+                print('   number of queryable_ids: ', len(queryable_ids), '\n')
+                print('   inedex of queried ids: ', indx[flag][:batch])
             
             # return the corresponding batch size
             return list(indx[flag])[:batch]

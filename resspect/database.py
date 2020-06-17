@@ -516,6 +516,12 @@ class DataBase:
 
             test_labels = self.test_metadata['type'].values == 'Ia'
             self.test_labels = test_labels.astype(int)
+            
+            validation_labels = self.validation_metadata['type'].values == 'Ia'
+            self.validation_labels = validation_labels.astype(int)
+            
+            pool_labels = self.pool_metadata['type'].values == 'Ia'
+            self.pool_labels = pool_labels.astype(int)
 
             # identify asked to consider queryable flag
             if queryable:
@@ -526,7 +532,13 @@ class DataBase:
                 self.queryable_ids = self.test_metadata[id_name].values
 
             # build complete metadata object
-            self.metadata = pd.concat([self.train_metadata, self.test_metadata])
+            self.metadata = pd.concat([self.train_metadata, self.test_metadata,
+                                      self.validation_metadata, self.pool_metadata],
+                                      ignore_index=True, axis=0)
+            
+            self.features = np.append(self.train_features, self.test_features,
+                                      self.validation_features, 
+                                      self.pool_features, axis=0)
 
         else:
             train_flag = self.metadata['orig_sample'] == 'train'
@@ -629,9 +641,6 @@ class DataBase:
         # object if keyword
         id_name = self.identify_keywords()
 
-        if sep_files:
-            pass
-        
         # identify Ia
         data_copy = self.metadata.copy()
         ia_flag = data_copy['type'] == 'Ia'
@@ -646,7 +655,7 @@ class DataBase:
 
         # join classes
         frames_train = [temp_train_ia, temp_train_nonia]
-        temp_train = pd.concat(frames_train, ignore_index=True)
+        temp_train = pd.concat(frames_train, ignore_index=True, axis=0)
         train_flag = np.array([data_copy[id_name].values[i] in temp_train[id_name].values
                                for i in range(data_copy.shape[0])])
 
@@ -654,7 +663,8 @@ class DataBase:
         self.train_features = self.features[train_flag]
 
         if sep_files:
-            pass
+            raise ValueError('Random training from separate files are not ' + \
+                             'implemented at this point.')
         else:
             # get test sample
             test_flag = ~train_flag
@@ -774,7 +784,7 @@ class DataBase:
             wsample.close()
 
     def classify(self, method: str, save_predictions=False, pred_dir=None,
-                 loop=None,  **kwargs):
+                 loop=None, screen=False, **kwargs):
         """Apply a machine learning classifier.
 
         Populate properties: predicted_class and class_prob
@@ -785,6 +795,9 @@ class DataBase:
             Chosen classifier.
             The current implementation accepts `RandomForest`,
             'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
+        screen: bool (optional)
+            If True, print debug statements to screen.
+            Default is False.
         save_predictions: bool (optional)
             Save predictions to file. Default is False.
         pred_dir: str (optional)
@@ -1082,6 +1095,9 @@ class DataBase:
 
         else:
             raise ValueError('Invalid strategy.')
+            
+        if screen:
+            print('       ... queried obj id: ', self.pool_metadata[id_name].values[query_indx[0]])
 
         # check if there are repeated ids
         for n in query_indx:
@@ -1176,18 +1192,18 @@ class DataBase:
                 qtest_flag = self.test_metadata[id_name].values == \
                     query_header[0]
                 test_metadata_temp = self.test_metadata.copy()
-                self.test_metadata = test_metadata_temp[~qtest_flag]
                 self.test_labels = self.test_labels[~qtest_flag]
                 self.test_features = self.test_features[~qtest_flag]
+                self.test_metadata = test_metadata_temp[~qtest_flag]
             
             validation_ids = self.validation_metadata[id_name].values
             if query_header[0] in validation_ids:
                 qval_flag = self.validation_metadata[id_name].values == \
                     query_header[0]
                 validation_metadata_temp = self.validation_metadata.copy()
-                self.validation_metadata = validation_metadata_temp[~qval_flag]
                 self.validation_labels = self.validation_labels[~qval_flag]
                 self.validation_features = self.validation_features[~qval_flag]
+                self.validation_metadata = validation_metadata_temp[~qval_flag]
 
             # update ids order
             query_indx.remove(obj)
