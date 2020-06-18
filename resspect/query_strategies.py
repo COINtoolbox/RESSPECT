@@ -132,10 +132,13 @@ def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
         final_order = order[flag]
 
         if screen:
-            print('*** Displacement caused by constraints on query****')
-            print(' 0 -> ', list(order).index(final_order[0]))
-            print(class_prob[order[0]], '-- > ', class_prob[final_order[0]],
-                  '\n')
+            print('\n Inside UncSampling: ')
+            print('       query_ids: ', test_ids[final_order][:batch], '\n')
+            print('   number of test_ids: ', test_ids.shape[0])
+            print('   number of queryable_ids: ', len(queryable_ids), '\n')
+            print('   *** Displacement caused by constraints on query****')
+            print('   0 -> ', list(order).index(final_order[0]))
+            print('   ', class_prob[order[0]], '-- > ', class_prob[final_order[0]], '\n')
 
         # return the index of the highest uncertain objects which are queryable
         return list(final_order)[:batch]
@@ -202,16 +205,19 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
         indx_query = int(len(flag) * query_thre)
 
         if sum(flag[:indx_query]) > 0:
+            
             if screen:
-                print('*** Displacement caused by constraints on query****')
-                print(' 0 -> ', ini_index)
-
+                print('\n Inside RandomSampling: ')
+                print('       query_ids: ', test_ids[indx[flag]][:batch], '\n')
+                print('   number of test_ids: ', test_ids.shape[0])
+                print('   number of queryable_ids: ', len(queryable_ids), '\n')
+                print('   inedex of queried ids: ', indx[flag][:batch])
+            
             # return the corresponding batch size
             return list(indx[flag])[:batch]
         else:
             # return empty list
             return list([])
-
     else:
         return list(indx)[:batch]
 

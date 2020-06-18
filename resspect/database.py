@@ -384,7 +384,8 @@ class DataBase:
             self.test_metadata = data[self.metadata_names]
 
             if screen:
-                print('Loaded ', self.test_metadata.shape[0], ' samples!')
+                print('\n Loaded ', self.test_metadata.shape[0],
+                      ' samples! \n')
 
 
     def load_features(self, path_to_file: str, method='Bazin', screen=False,
@@ -411,8 +412,7 @@ class DataBase:
             Default is 'DES'.
         sample: str (optional)
             If None, sample is given by a column within the given file.
-            else, read independent files for 'train' and 'test'.
-            Default is None.
+            else, read independent files. Default is None.
         """
 
         if method == 'Bazin':
@@ -516,6 +516,13 @@ class DataBase:
 
             test_labels = self.test_metadata['type'].values == 'Ia'
             self.test_labels = test_labels.astype(int)
+            
+            validation_labels = self.validation_metadata['type'].values == 'Ia'
+            self.validation_labels = validation_labels.astype(int)
+            
+            if self.pool_metadata.shape[0] > 0:
+                pool_labels = self.pool_metadata['type'].values == 'Ia'
+                self.pool_labels = pool_labels.astype(int)
 
             # identify asked to consider queryable flag
             if queryable:
@@ -524,10 +531,16 @@ class DataBase:
 
             else:
                 self.queryable_ids = self.test_metadata[id_name].values
-
+            """
             # build complete metadata object
-            self.metadata = pd.concat([self.train_metadata, self.test_metadata])
-
+            self.metadata = pd.concat([self.train_metadata, self.test_metadata,
+                                      self.validation_metadata, self.pool_metadata],
+                                      ignore_index=True, axis=0)
+            
+            self.features = np.concatenate([self.train_features, self.test_features,
+                                      self.validation_features, 
+                                      self.pool_features], axis=0)
+             """
         else:
             train_flag = self.metadata['orig_sample'] == 'train'
             train_data = self.features[train_flag]
@@ -579,6 +592,21 @@ class DataBase:
             else:
                 raise ValueError("Only 'Ia x non-Ia' are implemented! "
                                  "\n Feel free to add other options.")
+                
+        if screen:
+            print('\n')
+            print('** Inside build_orig_samples: **')
+            print('Training set size: ', self.train_metadata.shape[0])
+            print('Test set size: ', self.test_metadata.shape[0])
+            print('Validation set size: ', self.validation_metadata.shape[0])
+            print('Pool set size: ', self.pool_metadata.shape[0])
+            print('   From which queryable: ', self.queryable_ids.shape[0], '\n')
+            
+        # check repeated ids between training and pool
+        for name in self.train_metadata[id_name].values:
+            if name in self.pool_metadata[id_name].values:
+                raise ValueError('Object ', name, 'found in both, training ' +\
+                                'and pool samples!')
 
     def build_random_training(self, initial_training: int, nclass=2, screen=False,
                               Ia_frac=0.5, queryable=True, sep_files=False):
@@ -610,13 +638,14 @@ class DataBase:
         sep_validation: bool (optional)
             Separate validation sample. Default is False.
         """
+        
+        if sep_files:
+            raise ValueError('Random training from separate files are not ' + \
+                             'implemented at this point.')
 
         # object if keyword
         id_name = self.identify_keywords()
 
-        if sep_files:
-            pass
-        
         # identify Ia
         data_copy = self.metadata.copy()
         ia_flag = data_copy['type'] == 'Ia'
@@ -631,134 +660,55 @@ class DataBase:
 
         # join classes
         frames_train = [temp_train_ia, temp_train_nonia]
-        temp_train = pd.concat(frames_train, ignore_index=True)
+        temp_train = pd.concat(frames_train, ignore_index=True, axis=0)
         train_flag = np.array([data_copy[id_name].values[i] in temp_train[id_name].values
                                for i in range(data_copy.shape[0])])
 
         self.train_metadata = data_copy[train_flag]
         self.train_features = self.features[train_flag]
 
-        if sep_files:
-            pass
-        else:
-            # get test sample
-            test_flag = ~train_flag
-            self.test_metadata = data_copy[test_flag]
-            self.test_features = self.features[test_flag]
-            self.pool_metadata = self.test_metadata
-            self.pool_features = self.test_features
-            self.validation_features = self.test_features
-            self.validation_metadata = self.test_metadata
+        # get test sample
+        test_flag = ~train_flag
+        self.test_metadata = data_copy[test_flag]
+        self.test_features = self.features[test_flag]
+        self.pool_metadata = self.test_metadata
+        self.pool_features = self.test_features
+        self.validation_features = self.test_features
+        self.validation_metadata = self.test_metadata
 
-            self.train_labels = data_copy['type'][train_flag].values == 'Ia'
-            self.test_labels = data_copy['type'][test_flag].values == 'Ia'
-            self.pool_labels = self.test_labels
-            self.validation_labels = self.test_labels
+        train_label_flag = data_copy['type'][train_flag].values == 'Ia'
+        self.train_labels = train_label_flag.astype(int)
+        test_label_flag = data_copy['type'][test_flag].values == 'Ia'
+        self.test_labels = test_label_flag.astype(int)
+        self.pool_labels = self.test_labels
+        self.validation_labels = self.test_labels
         
-            if queryable:
-                queryable_flag = data_copy['queryable'].values
-                combined_flag = np.logical_and(~train_flag, queryable_flag)
-                self.queryable_ids = data_copy[combined_flag][id_name].values
-            else:
-                self.queryable_ids = self.test_metadata[id_name].values
-
-        # check if there are repeated ids
-        train_test_flag = np.array([True if item in self.test_metadata[id_name].values
-                                    else False for item in
-                                    self.train_metadata[id_name].values])
-
-        if sum(train_test_flag) > 0:
-            raise ValueError('There are repeated ids!!')
-
-        test_train_flag = np.array([True if item in self.train_metadata[id_name].values
-                                    else False for item in
-                                    self.test_metadata[id_name].values])
-
-        if sum(test_train_flag) > 0:
-            raise ValueError('There are repeated ids!!')
-
-    def build_previous_runs(self, path_to_train: str,
-                            path_to_queried: str, nclass=2,
-                            sep_files=False, queryable=False):
-        """Build train, test and queryable samples from previous runs.
-
-        Populate properties: train_features, train_header, test_features,
-        test_header, queryable_ids (if flag available), train_labels and
-        test_labels.
-
-        Parameters
-        ----------
-        path_to_train: str
-            Full path to initial training sample file from a previous run.
-        path_to_queried: str
-            Full path to queried sample file from a previous run.
-        nclass: int (optional)
-            Number of classes to consider in the classification
-            Currently only nclass == 2 is implemented.
-        queryable: bool (optional)
-            If True build also queryable sample for time domain analysis.
-            Default is False.
-        sep_files: bool (optional)
-            If True, consider train and test samples separately read
-            from independent files. Default is False.
-        """
-
-        # read initial training data from a previous run
-        train_previous = pd.read_csv(path_to_train, index_col=False, sep=' ')
-
-        # read all queried objects in previous loops
-        queried_previous = pd.read_csv(path_to_queried, index_col=False,
-                                       sep=' ')
-
-        for i in range(queried_previous.shape[0]):
-            self.queried_sample.append(queried_previous.iloc[i].values[:-1])
-
-        # object if keyword
-        id_name = self.identify_keywords()
-
-        # join train and queried data
-        train_ids = list(train_previous[id_name].values) + \
-                    list(queried_previous[id_name].values)
-
-        if sep_files:
-            # build complete metadata object
-            self.metadata = pd.concat([self.train_metadata, self.test_metadata])
-            self.features = np.concatenate((self.train_features, self.test_features))
-
-        # make a copy of the metadata to avoid warnings
-        data_copy = self.metadata.copy()
-
-        # identify training sample
-        train_flag = np.array([data_copy[id_name].values[i] in train_ids
-                               for i in range(data_copy.shape[0])])
-
-        # populate sample properties
-        self.train_metadata = data_copy[train_flag]
-        self.train_features = self.features[train_flag]
-        self.test_metadata = data_copy[~train_flag]
-        self.test_features = self.features[~train_flag]
-
         if queryable:
-            queryable_flag = self.test_metadata['queryable'].values
-            self.queryable_ids = self.test_metadata[queryable_flag][id_name].values
+            queryable_flag = data_copy['queryable'].values
+            combined_flag = np.logical_and(~train_flag, queryable_flag)
+            self.queryable_ids = data_copy[combined_flag][id_name].values
         else:
             self.queryable_ids = self.test_metadata[id_name].values
+                
+        if screen:
+            print('\n')
+            print('** Inside build_random_training: **')
+            print('Training set size: ', self.train_metadata.shape[0])
+            print('Test set size: ', self.test_metadata.shape[0])
+            print('Validation set size: ', self.validation_metadata.shape[0])
+            print('Pool set size: ', self.pool_metadata.shape[0])
+            print('   From which queryable: ', self.queryable_ids.shape[0], '\n')
 
-        if nclass == 2:
-            train_ia_flag = self.train_metadata['type'] == 'Ia'
-            self.train_labels = np.array([int(item) for item in train_ia_flag])
-
-            test_ia_flag = self.test_metadata['type'] == 'Ia'
-            self.test_labels = np.array([int(item) for item in test_ia_flag])
-        else:
-            raise ValueError("Only 'Ia x non-Ia' are implemented! "
-                             "\n Feel free to add other options.")
-
+        # check if there are repeated ids
+        for name in self.train_metadata[id_name].values:
+            if name in self.pool_metadata[id_name].values:
+                raise ValueError('Object ', name, ' present in both, ' + \
+                                 'training and pool samples!')
+  
     def build_samples(self, initial_training='original', nclass=2,
                       screen=False, Ia_frac=0.5,
                       queryable=False, save_samples=False, sep_files=False,
-                      survey='DES', output_fname=' ', path_to_train=' ',
-                      path_to_queried=' ', method='Bazin'):
+                      survey='DES', output_fname=' '):
         """Separate train, test and validation samples.
 
         Populate properties: train_features, train_header, test_features,
@@ -776,22 +726,12 @@ class DataBase:
         Ia_frac: float in [0,1] (optional)
             Fraction of Ia required in initial training sample.
             Default is 0.5.
-        method: str (optional)
-            Feature extraction method. The current implementation only
-            accepts method=='Bazin' or 'photometry'.
-            Default is 'Bazin'. Only used if initial_training == 'previous'.
         nclass: int (optional)
             Number of classes to consider in the classification
             Currently only nclass == 2 is implemented.
         output_fname: str (optional)
             Complete path to output file where initial training will be stored.
             Only used if save_samples == True.
-        path_to_train: str (optional)
-            Path to initial training file from previous run.
-            Only used if initial_training == 'previous'.
-        path_to_queried: str(optional)
-            Path to queried sample from previous run.
-            Only used if initial_training == 'previous'.
         queryable: bool (optional)
             If True build also queryable sample for time domain analysis.
             Default is False.
@@ -802,21 +742,15 @@ class DataBase:
             Default is False.
         survey: str (optional)
             Survey used to obtain the data. The current implementation
-            only accepts survey='DES' or 'LSST'.
-            Default is 'DES'.
+            only accepts survey='DES' or 'LSST'. Default is 'DES'.
         sep_files: bool (optional)
-            If True, consider train and test samples separately read
+            If True, consider samples separately read
             from independent files. Default is False.
         """
 
         if initial_training == 'original':
             self.build_orig_samples(nclass=nclass, screen=screen,
                                     queryable=queryable, sep_files=sep_files)
-
-        elif initial_training == 'previous':
-            self.build_previous_runs(path_to_train=path_to_train,
-                                    path_to_queried=path_to_queried,
-                                    sep_files=sep_files, nclass=nclass)
 
         elif isinstance(initial_training, int):
             self.build_random_training(initial_training=initial_training,
@@ -825,12 +759,14 @@ class DataBase:
                                        sep_files=sep_files)
 
         if screen:
+            print('\n')
+            print('** Inside build_samples ** : ')
             print('Training set size: ', self.train_metadata.shape[0])
             print('Test set size: ', self.test_metadata.shape[0])
             print('Validation set size: ', self.validation_metadata.shape[0])
             print('Pool set size: ', self.pool_metadata.shape[0])
             print('   From which queryable: ', 
-                  sum(self.pool_metadata['queryable'].values == True))
+                  sum(self.pool_metadata['queryable'].values == True), '\n')
 
         if save_samples:
 
@@ -849,7 +785,7 @@ class DataBase:
             wsample.close()
 
     def classify(self, method: str, save_predictions=False, pred_dir=None,
-                 loop=None,  **kwargs):
+                 loop=None, screen=False, **kwargs):
         """Apply a machine learning classifier.
 
         Populate properties: predicted_class and class_prob
@@ -860,6 +796,9 @@ class DataBase:
             Chosen classifier.
             The current implementation accepts `RandomForest`,
             'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
+        screen: bool (optional)
+            If True, print debug statements to screen.
+            Default is False.
         save_predictions: bool (optional)
             Save predictions to file. Default is False.
         pred_dir: str (optional)
@@ -868,6 +807,12 @@ class DataBase:
         kwargs: extra parameters
             Parameters required by the chosen classifier.
         """
+        
+        if screen:
+            print('\n Inside classify: ')
+            print('   ... train_features: ', self.train_features.shape)
+            print('   ... train_labels: ', self.train_labels.shape)
+            print('   ... pool_features: ', self.pool_features.shape)
 
         if method == 'RandomForest':
             self.predicted_class,  self.classprob, self.classifier = \
@@ -901,12 +846,16 @@ class DataBase:
                               "'RandomForest', 'GradientBoostedTrees'," +
                               "'KNN', 'MLP' and NB'." +
                              "\n Feel free to add other options.")
+        
+        if method == 'RandomForest':
+            # estimate classification for validation sample
+            self.validation_class = \
+                self.classifier.predict(self.validation_features)
+            self.validation_prob = \
+                self.classifier.predict_proba(self.validation_features)
             
-        # estimate classification for validation sample
-        self.validation_class = \
-            self.classifier.predict(self.validation_features)
-        self.validation_prob = \
-            self.classifier.predict_proba(self.validation_features)
+        else:
+            raise ValueError('Only RandomForest classifier was fully tested!')
 
         if save_predictions:
             id_name = self.identify_keywords()
@@ -1026,15 +975,18 @@ class DataBase:
         else:
             self.photo_Ia_metadata = photo_Ia_metadata     
 
-    def evaluate_classification(self, metric_label='snpcc'):
+    def evaluate_classification(self, metric_label='snpcc', screen=False):
         """Evaluate results from classification.
 
         Populate properties: metric_list_names and metrics_list_values.
 
         Parameters
         ----------
-        metric_label: str
+        metric_label: str (optional)
             Choice of metric. Currenlty only `snpcc` is accepted.
+        screen: bool (optional)
+            If True, display debug comments on screen. 
+            Default is False.
         """
 
         if metric_label == 'snpcc':
@@ -1044,6 +996,11 @@ class DataBase:
         else:
             raise ValueError('Only snpcc metric is implemented!'
                              '\n Feel free to add other options.')
+            
+        if screen:
+            print('\n Metrics names: ', self.metrics_list_names)
+            print('Metrics values: ', self.metrics_list_values)
+
 
     def make_query(self, strategy='UncSampling', batch=1,
                    screen=False, queryable=False, query_thre=1.0) -> list:
@@ -1079,6 +1036,12 @@ class DataBase:
             order of importance.
             If strategy=='RandomSampling' the order is irrelevant.
         """
+
+        if screen:
+            print('\n Inside make_query: ')
+            print('       ... classprob: ', self.classprob.shape[0])
+            print('       ... queryable_ids: ', self.queryable_ids.shape[0])
+            print('       ... pool_ids: ', self.pool_metadata.shape[0])
 
         id_name = self.identify_keywords()
    
@@ -1133,18 +1096,19 @@ class DataBase:
 
         else:
             raise ValueError('Invalid strategy.')
+            
+        if screen:
+            print('       ... queried obj id: ', self.pool_metadata[id_name].values[query_indx[0]])
 
         # check if there are repeated ids
         for n in query_indx:
             if self.pool_metadata[id_name].values[n] not in self.queryable_ids:
                 raise ValueError('Chosen object is not available for query!')
 
-        return query_indx
-
-        
+        return query_indx        
 
     def update_samples(self, query_indx: list, epoch=20,
-                       queryable=False):
+                       queryable=False, screen=False):
         """Add the queried obj(s) to training and remove them from test.
 
         Update properties: train_headers, train_features, train_labels,
@@ -1158,12 +1122,15 @@ class DataBase:
             Day since beginning of survey. Default is 20.
         queryable: bool (optinal)
             If True, consider queryable flag. Default is False.
+        screen: bool (optional)
+            If True, display debug comments on screen. 
+            Default is False.
         """
         id_name = self.identify_keywords()
 
         all_queries = []
         
-        ### test ####
+        ### keep track of number evolution ####
         npool = self.pool_metadata.shape[0]
         ntrain = self.train_metadata.shape[0]
         ntest = self.test_metadata.shape[0]
@@ -1171,6 +1138,9 @@ class DataBase:
         
         q2 = np.copy(query_indx)
         nquery = len(q2)
+        
+        data_copy = self.pool_metadata.copy()
+        query_ids = [data_copy['id'].values[item] for item in query_indx]
         
         while len(query_indx) > 0 and self.pool_metadata.shape[0] > 0:
 
@@ -1188,6 +1158,8 @@ class DataBase:
                 line.append(item)
             for item1 in query_features:
                 line.append(item1)
+                
+            all_queries.append(line)
 
             # add object to the training sample
             new_header = pd.DataFrame([query_header], columns=self.metadata_names)
@@ -1200,7 +1172,7 @@ class DataBase:
                                           np.array([self.pool_labels[obj]]),
                                           axis=0)
 
-            # remove queried object from test sample
+            # remove queried object from pool sample
             query_flag = self.pool_metadata[id_name].values == \
                  self.pool_metadata[id_name].iloc[obj]
 
@@ -1212,9 +1184,8 @@ class DataBase:
             if queryable:
                 qids_flag = self.pool_metadata['queryable'].values
                 self.queryable_ids = self.pool_metadata[id_name].values[qids_flag]
-                all_queries.append(line)
             else:
-                self.queryable_ides = self.pool_metadata[id_name].values
+                self.queryable_ids = self.pool_metadata[id_name].values
 
             # check if queried object is also in other samples
             test_ids = self.test_metadata[id_name].values            
@@ -1222,18 +1193,18 @@ class DataBase:
                 qtest_flag = self.test_metadata[id_name].values == \
                     query_header[0]
                 test_metadata_temp = self.test_metadata.copy()
-                self.test_metadata = test_metadata_temp[~qtest_flag]
                 self.test_labels = self.test_labels[~qtest_flag]
                 self.test_features = self.test_features[~qtest_flag]
+                self.test_metadata = test_metadata_temp[~qtest_flag]
             
             validation_ids = self.validation_metadata[id_name].values
             if query_header[0] in validation_ids:
                 qval_flag = self.validation_metadata[id_name].values == \
                     query_header[0]
                 validation_metadata_temp = self.validation_metadata.copy()
-                self.validation_metadata = validation_metadata_temp[~qval_flag]
                 self.validation_labels = self.validation_labels[~qval_flag]
                 self.validation_features = self.validation_features[~qval_flag]
+                self.validation_metadata = validation_metadata_temp[~qval_flag]
 
             # update ids order
             query_indx.remove(obj)
@@ -1248,20 +1219,48 @@ class DataBase:
 
             query_indx = new_query_indx
             
+            if screen: 
+                print('  query_indx: ', query_indx)
+            
         # test
         npool2 = self.pool_metadata.shape[0]
         ntrain2 = self.train_metadata.shape[0]
         ntest2 = self.test_metadata.shape[0]
         nvalidation2 = self.validation_metadata.shape[0]
+        
+        # update queried samples
+        self.queried_sample.append(all_queries)
+        
+        if screen:
+            print('query_ids: ', query_ids)
+            print('queried sample: ', self.queried_sample[-1][-1][1])
             
         if ntrain2 != ntrain + nquery or npool2 != npool - nquery:
             raise ValueError('Wrong dimensionality for train/pool samples!')
                 
         if ntest2 > ntest or nvalidation2 > nvalidation:
-            raise ValueError('Wrong dimensionality for test/val samples.')
+            raise ValueError('Wrong dimensionality for test/val samples.')       
+       
+        for name in query_ids:
+            if name in self.pool_metadata['id'].values:
+                raise ValueError('Queried object ', name, ' is still in pool sample!')
 
-        # update queried samples
-        self.queried_sample.append(all_queries)
+            if name not in self.train_metadata['id'].values:
+                raise ValueError('Queried object ', name, ' not in training!')
+
+        # check if there are repeated ids
+        for name in self.train_metadata['id'].values:
+            if name in self.pool_metadata['id'].values:
+                raise ValueError('After update! Object ', name, 
+                                 ' found in pool and training samples!')
+                
+            if name in self.test_metadata['id'].values:
+                raise ValueError('After update! Object ', name, 
+                                 ' found in test and training samples!')
+                
+            if name in self.validation_metadata['id'].values:
+                raise ValueError('After update! Object ', name, 
+                                 ' found in validation and training samples!')
 
     def save_metrics(self, loop: int, output_metrics_file: str, epoch: int, batch=1):
         """Save current metrics to file.
