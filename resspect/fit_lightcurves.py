@@ -489,7 +489,7 @@ class LightCurve(object):
                 raise ValueError('Only "Bazin" features are implemented!')
 
         else:
-            raise ValueError('Criteria needs to be "1", "2" or "3". \n ' + \
+            raise ValueError('Criteria needs to be "1" or "2". \n ' + \
                              'See docstring for further info.')
 
         if self.last_mag <= filter_lim:
@@ -748,8 +748,7 @@ class LightCurve(object):
             plt.show()
 
 
-def fit_snpcc_bazin(path_to_data_dir: str, features_file: str,
-                    get_cost=False):
+def fit_snpcc_bazin(path_to_data_dir: str, features_file: str):
     """Perform Bazin fit to all objects in the SNPCC data.
 
     Parameters
@@ -759,9 +758,6 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str,
         one for each light curve.
     features_file: str
         Path to output file where results should be stored.
-    get_cost: bool (optional)
-        If true, calculate cost of spectra taken at peak MJD.
-        Not at all realistic, but useful to debug.
     """
 
     # read file names
@@ -773,18 +769,10 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str,
 
     # add headers to files
     with open(features_file, 'w') as param_file:
-        if get_cost:
-            param_file.write('id redshift type code orig_sample ' + \
-                             'cost_4m cost_8m gA gB ' + \
-                             'gt0 gtfall gtrise rA rB rt0 rtfall rtrise' + \
-                            ' iA iB it0 itfall itrise zA zB zt0 ztfall' + \
-                             ' ztrise\n')
-
-        else:
-            param_file.write('id redshift type code orig_sample gA gB ' + \
-                             'gt0 gtfall gtrise rA rB rt0 rtfall rtrise' + \
-                            ' iA iB it0 itfall itrise zA zB zt0 ztfall' + \
-                             ' ztrise\n')
+        param_file.write('id redshift type code orig_sample gA gB ' + \
+                         'gt0 gtfall gtrise rA rB rt0 rtfall rtrise' + \
+                         ' iA iB it0 itfall itrise zA zB zt0 ztfall' + \
+                         ' ztrise\n')
 
     for file in lc_list:
 
@@ -800,22 +788,11 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str,
             count_surv = count_surv + 1
             print('Survived: ', count_surv)
 
-            if get_cost:
-                queryable = lc.check_queryable(mjd=lc.sim_pkmjd, 
-                                               filter_lim=24, criteria=3)
-                cost4m = lc.calc_exp_time(telescope_diam=4,
-                                            SNR=10, telescope_name='4m')
-                cost8m = lc.calc_exp_time(telescope_diam=8,
-                                            SNR=10, telescope_name='8m')
-
             # save features to file
             with open(features_file, 'a') as param_file:
                 param_file.write(str(lc.id) + ' ' + str(lc.redshift) + ' ' + \
                                  str(lc.sntype) + ' ')
                 param_file.write(str(lc.sncode) + ' ' + str(lc.sample) + ' ')
-                if get_cost:
-                    param_file.write(str(lc.exp_time['4m']) + ' ')
-                    param_file.write(str(lc.exp_time['8m']) + ' ')
                 for item in lc.bazin_features:
                     param_file.write(str(item) + ' ')
                 param_file.write('\n')
