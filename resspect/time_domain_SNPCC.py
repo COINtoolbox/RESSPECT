@@ -190,6 +190,8 @@ class SNPCCPhotometry(object):
             Default is 1.
         screen: bool (optional)
             If true, display steps info on screen. Default is False.
+        spec_SNR: float (optional)
+            SNR required for spectroscopic follow-up. Default is 10.
         tel_names: list (optional)
             Names of the telescopes under consideraton for spectroscopy.
             Only used if "get_cost == True".
