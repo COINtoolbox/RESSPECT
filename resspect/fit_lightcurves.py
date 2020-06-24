@@ -498,7 +498,7 @@ class LightCurve(object):
             return False
 
     def calc_exp_time(self, telescope_diam: float, SNR: float,
-                      telescope_name: str, max_exp_time=7200, **kwargs):
+                      telescope_name: str, **kwargs):
         """Calculates time required to take a spectra in the last obs epoch.
 
         Populates attribute exp_time.
@@ -510,10 +510,7 @@ class LightCurve(object):
         telescope_diam: float
             Diameter of primary mirror for spectroscopic telescope in meters.
         telescope_name: str
-            Identification for telescope. 
-        max_exp_time: int (optional)
-            If exposure time exceeds this value, returns 99999.
-            Default is 7200s.
+            Identification for telescope.
         kwargs: extra parameters
             Any input required by ExpTimeCalc.findexptime function.
 
@@ -532,7 +529,7 @@ class LightCurve(object):
         etc.diameter = telescope_diam
         exp_time = etc.findexptime(SNRin=SNR, mag=self.last_mag, **kwargs)
 
-        if exp_time > 60 and exp_time < max_exp_time:
+        if exp_time > 60 and exp_time < 7000 and self.last_mag < 30:
             self.exp_time[telescope_name] = exp_time
             return exp_time
         else:
