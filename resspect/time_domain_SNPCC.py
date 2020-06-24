@@ -204,8 +204,8 @@ class SNPCCPhotometry(object):
             Any input required by ExpTimeCalc.findexptime function.
         """
         # check if telescope names are ok
-        if (tel_names[0] not in self.bazin_header or \
-            tel_names[1] not in self.bazin_header) and get_cost: 
+        if ('cost_' + tel_names[0] not in self.bazin_header or \
+            'cost_' + tel_names[1] not in self.bazin_header) and get_cost: 
                 raise ValueError('Telescope names are hard coded in ' + \
                                  'header.\n Change attribute ' + \
                                  '"bazin_header" to continue!')
