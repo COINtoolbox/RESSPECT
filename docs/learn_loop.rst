@@ -99,7 +99,7 @@ In interactive mode, you must define the required variables and use the :py:mod:
 
    >>> nloops = 1000                                  # number of iterations
    >>> method = 'Bazin'                               # only option in v1.0
-   >>> ml = 'RandomForest'                            # only option in v1.0
+   >>> ml = 'RandomForest'                            # classifier
    >>> strategy = 'RandomSampling'                    # learning strategy
    >>> input_file = 'results/Bazin.dat'               # input features file
    >>> metric = 'results/metrics.dat'                 # output metrics file

@@ -102,14 +102,14 @@ class ExpTimeCalc(object):
         self.diameter = 4.0             # in meters  (DEcam default)
         self.gain = 4.0                 # DECam typical gain
         self.hPlanck_MKS = 6.62606957e-34 
-        self.magsarray = np.linspace(15., 27., 100000)
+        self.magsarray = np.linspace(15., 30., 100000)
         self.num_atm_eff = np.array([0.7,0.8,0.9,0.9,0.9,0.95])
         self.pixelsize = 0.264          # arcsec/pix (DECam default)
         self.prim_refl_filt = np.asarray([0.89,0.89,0.88,0.87,0.88,0.9])
         self.RON_pix = 7.0
         self.seeing = {}                # store all seeing values
         self.seeing['r'] = 0.75         # median value at CTIO
-        self.texparray = np.linspace(60., 7200., 100000)  # 60s - 2h
+        self.texparray = np.linspace(60., 18000., 100000)  # 60s - 5h
         self.vig = 1.0
         self.u = 375                    # DECam defaults
         self.g = 473.5 
