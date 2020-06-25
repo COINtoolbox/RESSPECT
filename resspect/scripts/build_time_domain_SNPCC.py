@@ -37,6 +37,20 @@ def main(user_choice):
         Queryable criteria.
     -o: str
         Complete path to output time domain directory.
+    -f: str (optional)
+        Feature method. Only 'Bazin' is accepted at the moment.
+    -g: int (optional)
+        Gap in days since last observation when the measured magnitude
+        can be used for spectroscopic time estimation. Default is 2.
+    -n: sequence (optional)
+        Sequence with telescope names. Default is ["4m", "8m"].
+    -s: bool (optional)
+        If True print debug statements to screen. Default is False.
+    -snr: float (optional)
+        SNR required for spectroscopic follow-up. Default is 10.
+    -t: sequence (optional)
+        Primary mirrors diameters of potential spectroscopic telescopes.
+        Only used if "get_cost == True". Default is [4, 8].
 
     Examples
     -------
@@ -50,14 +64,25 @@ def main(user_choice):
     day = user_choice.day_of_survey
     get_cost = user_choice.get_cost
     queryable_criteria = user_choice.queryable_criteria
+    feature_method = user_choice.feature_method
+    screen = user_choice.screen
+    days_since_obs = user_choice.days_since_obs
+    tel_sizes = user_choices.tel_sizes
+    tel_names = user_choices.tel_names
+    spec_SNR = user_choices.spec_SNR
+    fname_pattern = user_choices.fname_pattern
 
     for item in day:
         data = SNPCCPhotometry()
         data.create_daily_file(output_dir=output_dir, day=item)
         data.build_one_epoch(raw_data_dir=path_to_data, day_of_survey=int(item),
-                             time_domain_dir=output_dir, 
+                             time_domain_dir=output_dir,
+                             feature_method=feature_method, screen=screen,
+                             days_since_obs=days_since_obs,
                              queryable_criteria=queryable_criteria, 
-                             get_cost=get_cost)
+                             get_cost=get_cost, tel_sizes=tel_sizes,
+                             tel_names=tel_names, spec_SNR=spec_SNR,
+                             fname_pattern=fname_pattern)
 
 
 if __name__ == '__main__':
@@ -80,7 +105,31 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', dest='output', required=True,
                         type=str, help='Path to output time domain directory.')
     parser.add_argument('-c', '--calculate-cost', dest='get_cost', required=False,
-                        default=False, help='Calculate cost of spectra in each day.')
+                        type=bool, default=False, 
+                        help='Calculate cost of spectra in each day.')
+    parser.add_argument('-f', '--feature-method', dest='feature_method', type=str,
+                        required=False, default='Bazin', help='Feature extraction method. ' + \
+                        'Only "Bazin" is accepted at the moment.')
+    parser.add_argument('-s', '--screen', dest='screen', type=bool, required=False,
+                        default=True, help='If True, print debug statements to scree. ' + \
+                        'Default is False.')
+    parser.add_argument('-g', '--days-since-obs', dest='days_since_obs', required=False,
+                        type=int, default=2, help='Gap in days since last observation ' + \
+                        'when the measured magnitude can be used for spectroscopic ' + \
+                        'time estimation. Default is 2.')
+    parser.add_argument('-t', '--telescope-sizes', dest='tel_sizes', required=False,
+                        nargs='+', default=[4, 8], help='Primary mirrors diameters ' + \
+                        'of potential spectroscopic telescopes. Only used if ' + \
+                        '"get_cost == True". Default is [4, 8].')
+    parser.add_argument('-n', '--telescope-names', dest='tel_names', required=False,
+                        nargs='+', default=['4m', '8m'], help='Sequence of telescope ' + \
+                        'names. Default is ["4m", "8m"].')
+    parser.add_argument('-snr', '--spec-SNR', dest='spec_SNR', required=False,
+                        default=10, help='SNR required for spectroscopic follow-up. ' + \
+                        'Default is 10.')
+    parser.add_argument('-np', '--fname-pattern', dest='fname_pattern', required=False,
+                        default=['day_', '.dat'], nargs='+',
+                        help='Pattern for time domain file names. Default is ["day_", ".dat"].')
 
     # get input directory and output file name from user
     from_user = parser.parse_args()

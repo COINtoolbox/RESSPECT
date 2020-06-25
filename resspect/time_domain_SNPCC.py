@@ -190,6 +190,8 @@ class SNPCCPhotometry(object):
             Default is 1.
         screen: bool (optional)
             If true, display steps info on screen. Default is False.
+        spec_SNR: float (optional)
+            SNR required for spectroscopic follow-up. Default is 10.
         tel_names: list (optional)
             Names of the telescopes under consideraton for spectroscopy.
             Only used if "get_cost == True".
@@ -202,8 +204,8 @@ class SNPCCPhotometry(object):
             Any input required by ExpTimeCalc.findexptime function.
         """
         # check if telescope names are ok
-        if (tel_names[0] not in self.bazin_header or \
-            tel_names[1] not in self.bazin_header) and get_cost: 
+        if ('cost_' + tel_names[0] not in self.bazin_header or \
+            'cost_' + tel_names[1] not in self.bazin_header) and get_cost: 
                 raise ValueError('Telescope names are hard coded in ' + \
                                  'header.\n Change attribute ' + \
                                  '"bazin_header" to continue!')
@@ -255,19 +257,28 @@ class SNPCCPhotometry(object):
 
                     if screen:
                         print('... ... ... Survived: ', count_surv)
-
-                    # see if query is possible
-                    queryable = \
-                        lc.check_queryable(mjd=self.min_epoch + day_of_survey,
-                                           filter_lim=self.rmag_lim, 
-                                           criteria=queryable_criteria,
-                                           days_since_last_obs=days_since_obs)
+                        
+                    # calculate r-mag today
+                    lc.check_queryable(mjd=self.min_epoch + day_of_survey,
+                                       filter_lim=self.rmag_lim, 
+                                       criteria=queryable_criteria,
+                                       days_since_last_obs=days_since_obs)
 
                     if get_cost:
                         for k in range(len(tel_names)):
                             lc.calc_exp_time(telescope_diam=tel_sizes[k],
                                              telescope_name=tel_names[k],
-                                             SNR=spec_SNR, **kwargs)                   
+                                             SNR=spec_SNR, **kwargs)
+                            
+                    # see if query is possible
+                    query_flags = []
+                    for item in tel_names:
+                        if lc.exp_time[item] < 7200:
+                            query_flags.append(True)
+                        else:
+                            query_flags.append(False)
+                            
+                    queryable = bool(sum(query_flags))
                     
                     # save features to file
                     with open(features_file, 'a') as param_file:
