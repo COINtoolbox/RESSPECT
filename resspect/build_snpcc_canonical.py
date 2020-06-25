@@ -94,7 +94,7 @@ class Canonical(object):
     def snpcc_get_canonical_info(self, path_to_rawdata_dir: str,
                                  canonical_output_file: str,
                                  compute=True, save=True,
-                                 canonical_input_file='', scree=False):
+                                 canonical_input_file='', screen=False):
         """
         Load SNPCC metada data required to characterize objects.
 
