@@ -257,19 +257,28 @@ class SNPCCPhotometry(object):
 
                     if screen:
                         print('... ... ... Survived: ', count_surv)
-
-                    # see if query is possible
-                    queryable = \
-                        lc.check_queryable(mjd=self.min_epoch + day_of_survey,
-                                           filter_lim=self.rmag_lim, 
-                                           criteria=queryable_criteria,
-                                           days_since_last_obs=days_since_obs)
+                        
+                    # calculate r-mag today
+                    lc.check_queryable(mjd=self.min_epoch + day_of_survey,
+                                       filter_lim=self.rmag_lim, 
+                                       criteria=queryable_criteria,
+                                       days_since_last_obs=days_since_obs)
 
                     if get_cost:
                         for k in range(len(tel_names)):
                             lc.calc_exp_time(telescope_diam=tel_sizes[k],
                                              telescope_name=tel_names[k],
-                                             SNR=spec_SNR, **kwargs)                   
+                                             SNR=spec_SNR, **kwargs)
+                            
+                    # see if query is possible
+                    query_flags = []
+                    for item in tel_names:
+                        if lc.exp_time[item] < 7200:
+                            query_flags.append(True)
+                        else:
+                            query_flags.append(False)
+                            
+                    queryable = bool(sum(query_flags))
                     
                     # save features to file
                     with open(features_file, 'a') as param_file:
