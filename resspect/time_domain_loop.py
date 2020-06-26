@@ -81,9 +81,9 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                      path_to_features_dir: str, strategy: str,
                      fname_pattern: list, path_to_ini_files: dict,
                      batch=1, canonical = False,  classifier='RandomForest',
-                     cont=False, first_loop=20, nclass=2,
-                     ia_frac=0.5, output_fname="", path_to_canonical="",
-                     path_to_train="",
+                     clf_bootstrap=False, budgets=None ,cont=False,
+                     first_loop=20, nclass=2, ia_frac=0.5, output_fname="",
+                     path_to_canonical="", path_to_train="",
                      path_to_queried="", queryable=True,
                      query_thre=1.0, save_samples=False, sep_files=False,
                      screen=True, survey='LSST', initial_training='original',
@@ -102,7 +102,14 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     path_to_features_dir: str
         Complete path to directory holding features files for all days.
     strategy: str
-        Query strategy. Options are 'UncSampling' and 'RandomSampling'.
+        Query strategy. Options are (all can be run with budget):
+        "UncSampling",
+        "UncSamplingEntropy",
+        "UncSamplingLeastConfident",
+        "UncSamplingMargin",
+        "QBDMI",
+        "QBDEntropy",
+        "RandomSampling",
     fname_pattern: str
         List of strings. Set the pattern for filename, except day of
         survey. If file name is 'day_1_vx.dat' -> ['day_', '_vx.dat']
@@ -119,6 +126,10 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         Currently 'RandomForest', 'GradientBoostedTrees',
         'KNN', 'MLP', 'SVM' and 'NB' are implemented.
         Default is 'RandomForest'.
+    clf_bootstrap: bool (default: False)
+        If true build a boostrap ensemble of the classifier.
+    budgets: tuple of floats (default: None)
+        Budgets for each of the telescopes
     features_method: str (optional)
         Feature extraction method. Currently only 'Bazin' is implemented.
     ia_frac: float in [0,1] (optional)
@@ -174,7 +185,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                        path_to_queried=path_to_queried,
                        method=features_method)
     """
-    
+
     # load features for the first obs day
     path_to_first_loop = path_to_features_dir + fname_pattern[0] + \
                                      str(days[0]) + fname_pattern[1]
@@ -274,15 +285,22 @@ def time_domain_loop(days: list,  output_metrics_file: str,
 
         if data.pool_metadata.shape[0] > 0:
             # classify
-            data.classify(method=classifier, screen=screen, **kwargs)
+            if clf_bootstrap:
+                data.classify_bootstrap(method=classifier, screen=screen, **kwargs)
+            else:
+                data.classify(method=classifier, screen=screen, **kwargs)
 
             # calculate metrics
             data.evaluate_classification(screen=screen)
 
             # get index of object to be queried
-            indx = data.make_query(strategy=strategy, batch=batch,
-                                   queryable=queryable,
-                                   query_thre=query_thre, screen=screen)
+            if budgets:
+                indx = data.make_query_budget(budgets=budgets, strategy=strategy,
+                                              screen=False)
+            else:
+                indx = data.make_query(strategy=strategy, batch=batch,
+                                       queryable=queryable,
+                                       query_thre=query_thre, screen=screen)
 
             if screen:
                 print('\n queried obj index: ', indx)
@@ -303,7 +321,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
 
             # save metrics for current state
             data.save_metrics(loop=night - days[0], output_metrics_file=output_metrics_file,
-                              batch=batch, epoch=night)
+                              batch=len(indx), epoch=night)
 
             # save query sample to file
             data.save_queried_sample(output_queried_file, loop=night - days[0],

@@ -131,7 +131,7 @@ def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
     is_time = True
     i = 0
     while is_time:
-        print(i)
+        #print(i)
         exact_samples = C ** i
         if exact_samples <= num_samples:
             if len(acquistions) == 0:
@@ -147,9 +147,9 @@ def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
 
         if criteria == 'MI':
             batch_scores = joint_entropies_B - conditional_entropies_B
-            print(batch_scores.max())
+            #print(batch_scores.max())
             batch_scores = batch_scores - np.sum(conditional_entropies_B[acquistions])
-            print(batch_scores.max())
+            #print(batch_scores.max())
         elif criteria == 'entropy':
             batch_scores = joint_entropies_B
 
@@ -175,24 +175,24 @@ def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
         possible_8m_order = np.where(possible_8m[sorted_8m_idx])[0]
 
         if np.any(possible_4m) and np.any(possible_8m):
-            print("BOTH POSSIBLE")
+            #print("BOTH POSSIBLE")
             top_4m_score = scores_4m[sorted_4m_idx[possible_4m_order]][0]
             top_8m_score = scores_8m[sorted_8m_idx[possible_8m_order]][0]
             if top_4m_score >= top_8m_score:
-                print("Choose 4m")
+                #print("Choose 4m")
                 top_score = top_4m_score
                 selection = sorted_4m_idx[possible_4m_order][0]
                 acquistions_4m.append(selection)
                 total_cost_4m += cost_4m[selection]
             else:
-                print("Choose 8m")
+                #print("Choose 8m")
                 top_score = top_8m_score
                 selection = sorted_8m_idx[possible_8m_order][0]
                 acquistions_8m.append(selection)
                 total_cost_8m += cost_8m[selection]
 
         elif np.any(possible_4m) and not np.any(possible_8m):
-            print("Only 4m possible")
+            #print("Only 4m possible")
             top_4m_score = scores_4m[sorted_4m_idx[possible_4m_order]][0]
             top_score = top_4m_score
             selection = sorted_4m_idx[possible_4m_order][0]
@@ -200,7 +200,7 @@ def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
             total_cost_4m += cost_4m[selection]
 
         elif not np.any(possible_4m) and np.any(possible_8m):
-            print("Only 8m possible")
+            #print("Only 8m possible")
             top_8m_score = scores_8m[sorted_8m_idx[possible_8m_order]][0]
             top_score = top_8m_score
             selection = sorted_8m_idx[possible_8m_order][0]
@@ -208,7 +208,7 @@ def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
             total_cost_8m += cost_8m[selection]
 
         elif not np.any(possible_4m) and not np.any(possible_8m):
-            print("Budget Full")
+            #print("Budget Full")
             is_time = False
             continue
 
@@ -216,9 +216,9 @@ def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
         scores.append(batch_scores[selection])
         i += 1
         top_scores.append(top_score)
-        print("TOP SCORE: {}".format(top_score))
-        print(acquistions[-1], total_cost_4m, total_cost_8m)
-        print()
+        #print("TOP SCORE: {}".format(top_score))
+        #print(acquistions[-1], total_cost_4m, total_cost_8m)
+        #print()
 
     if total_cost_4m > budget_4m:
         raise RuntimeError("4m Budget exceeded")

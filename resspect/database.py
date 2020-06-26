@@ -872,7 +872,7 @@ class DataBase:
             op.close()
 
     def classify_bootstrap(self, method: str, save_predictions=False, pred_dir=None,
-                           loop=None, screen=False, **kwargs):
+                           loop=None, n_ensembles=10, screen=False, **kwargs):
         """Apply a machine learning classifier bootstrapping the classifier.
 
         Populate properties: predicted_class, class_prob and ensemble_probs.
@@ -898,8 +898,6 @@ class DataBase:
             print('   ... train_features: ', self.train_features.shape)
             print('   ... train_labels: ', self.train_labels.shape)
             print('   ... pool_features: ', self.pool_features.shape)
-
-        n_ensembles = 10
 
         if method == 'RandomForest' and str(self.validation_features) != 'None':
             self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
