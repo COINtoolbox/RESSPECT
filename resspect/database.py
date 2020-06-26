@@ -511,15 +511,18 @@ class DataBase:
 
         if sep_files:
             # get samples labels in a separate object
-            train_labels = self.train_metadata['type'].values == 'Ia'
-            self.train_labels = train_labels.astype(int)
+            if self.train_metadata.shape[0] > 0:
+                train_labels = self.train_metadata['type'].values == 'Ia'
+                self.train_labels = train_labels.astype(int)
+                
+            if self.test.metadata.shape[0] > 0:
+                test_labels = self.test_metadata['type'].values == 'Ia'
+                self.test_labels = test_labels.astype(int)
+                
+            if self.validation_metadata.shape[0] > 0:
+                validation_labels = self.validation_metadata['type'].values == 'Ia'
+                self.validation_labels = validation_labels.astype(int)
 
-            test_labels = self.test_metadata['type'].values == 'Ia'
-            self.test_labels = test_labels.astype(int)
-            
-            validation_labels = self.validation_metadata['type'].values == 'Ia'
-            self.validation_labels = validation_labels.astype(int)
-            
             if self.pool_metadata.shape[0] > 0:
                 pool_labels = self.pool_metadata['type'].values == 'Ia'
                 self.pool_labels = pool_labels.astype(int)
