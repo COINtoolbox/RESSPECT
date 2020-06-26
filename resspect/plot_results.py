@@ -209,7 +209,7 @@ class Canvas(object):
             self.strategies[name] = pd.read_csv(path_to_files[i],
                                                 sep=' ',
                                                 index_col=False,
-                                                usecols=self.metrics_names)
+                                                usecols=self.metrics_names.insert(0, 'loop'))
 
     def set_plot_dimensions(self):
         """Set directives for plot sizes.
