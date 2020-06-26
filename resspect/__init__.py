@@ -1,6 +1,6 @@
 # Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#      
+#
 # created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
@@ -34,6 +34,8 @@ from .scripts.run_loop import main as run_loop
 from .scripts.run_time_domain import main as run_time_domain
 from .time_domain_SNPCC import *
 from .time_domain_loop import *
+from .batch_functions import *
+from .query_budget_strategies import *
 
 __all__ = ['accuracy',
            'bazin',
@@ -63,7 +65,7 @@ __all__ = ['accuracy',
            'make_metrics_plots',
            'plot_snpcc_train_canonical',
            'purity',
-           'random_forest',           
+           'random_forest',
            'random_sampling',
            'read_fits',
            'run_loop',

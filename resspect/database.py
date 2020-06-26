@@ -24,6 +24,7 @@ import tarfile
 from resspect.classifiers import *
 
 from resspect.query_strategies import *
+from resspect.query_budget_strategies import *
 from resspect.metrics import *
 
 
@@ -52,7 +53,7 @@ class DataBase:
     metrics_list_names: list
         Values for metric elements.
     output_photo_Ia: pd.DataFrame
-        Returns metadata for photometrically classified Ia. 
+        Returns metadata for photometrically classified Ia.
     photo_Ia_metadata: pd.DataFrame
         Metadata for photometrically classified object ids.
     plasticc_mjd_lim: list
@@ -80,7 +81,7 @@ class DataBase:
     validation_class: np.array
         Estimated classes for validation sample.
     validation_features: np.array
-        Features matrix for the validation sample. 
+        Features matrix for the validation sample.
     validation_labels: np.array
         Classes for the validation sample.
     validation_metadata: pd.DataFrame
@@ -251,10 +252,10 @@ class DataBase:
 
             self.metadata_names = ['id', 'redshift', 'type', 'code',
                                    'orig_sample', 'queryable']
-            
+
             if 'last_rmag' in data.keys():
                 self.metadata_names.append('last_rmag')
-            
+
             for name in self.telescope_names:
                 if 'cost_' + name in data.keys():
                     self.metadata_names = self.metadata_names + ['cost_' + name]
@@ -296,7 +297,7 @@ class DataBase:
         elif sample == 'test':
             self.test_features = data[self.features_names].values
             self.test_metadata = data[self.metadata_names]
-            
+
             if screen:
                 print('Loaded ', self.test_metadata.shape[0], ' ' + \
                        sample +  ' samples!')
@@ -348,10 +349,10 @@ class DataBase:
             data = pd.read_csv(io.BytesIO(content))
             tar.close()
         else:
-            data = pd.read_csv(path_to_photometry_file, 
+            data = pd.read_csv(path_to_photometry_file,
                                index_col=False)
             if ' ' in data.keys()[0]:
-                data = pd.read_csv(path_to_photometry_file, 
+                data = pd.read_csv(path_to_photometry_file,
                                    sep=' ', index_col=False)
 
         # list of features to use
@@ -362,7 +363,7 @@ class DataBase:
         elif 'id' in data.keys():
             id_name = 'id'
 
-        self.metadata_names = [id_name, 'redshift', 'type', 
+        self.metadata_names = [id_name, 'redshift', 'type',
                                'code', 'orig_sample']
 
         if sample == None:
@@ -516,10 +517,10 @@ class DataBase:
 
             test_labels = self.test_metadata['type'].values == 'Ia'
             self.test_labels = test_labels.astype(int)
-            
+
             validation_labels = self.validation_metadata['type'].values == 'Ia'
             self.validation_labels = validation_labels.astype(int)
-            
+
             if self.pool_metadata.shape[0] > 0:
                 pool_labels = self.pool_metadata['type'].values == 'Ia'
                 self.pool_labels = pool_labels.astype(int)
@@ -536,9 +537,9 @@ class DataBase:
             self.metadata = pd.concat([self.train_metadata, self.test_metadata,
                                       self.validation_metadata, self.pool_metadata],
                                       ignore_index=True, axis=0)
-            
+
             self.features = np.concatenate([self.train_features, self.test_features,
-                                      self.validation_features, 
+                                      self.validation_features,
                                       self.pool_features], axis=0)
              """
         else:
@@ -551,21 +552,21 @@ class DataBase:
             test_data = self.features[test_flag]
             self.test_features = test_data
             self.test_metadata = self.metadata[test_flag]
-            
+
             if 'validation' in self.metadata['orig_sample'].values:
                 val_flag = self.metadata['orig_sample'] == 'validation'
             else:
                 val_flag = test_flag
-                
+
             val_data = self.features[val_flag]
             self.validation_features = val_data
             self.validation_metadata = self.metadata[val_flag]
-            
+
             if 'pool' in self.metadata['orig_sample'].values:
                 pool_flag = self.metadata['orig_sample'] == 'pool'
             else:
                 pool_flag = test_flag
-                
+
             pool_data = self.features[pool_flag]
             self.pool_features = pool_data
             self.pool_metadata = self.metadata[pool_flag]
@@ -582,17 +583,17 @@ class DataBase:
 
                 test_ia_flag = self.test_metadata['type'] == 'Ia'
                 self.test_labels = test_ia_flag.astype(int)
-                
+
                 val_ia_flag = self.validation_metadata['type'] == 'Ia'
                 self.validation_labels = val_ia_flag.astype(int)
-                
+
                 pool_ia_flag = self.pool_metadata['type'] == 'Ia'
                 self.pool_labels = pool_ia_flag.astype(int)
-                
+
             else:
                 raise ValueError("Only 'Ia x non-Ia' are implemented! "
                                  "\n Feel free to add other options.")
-                
+
         if screen:
             print('\n')
             print('** Inside build_orig_samples: **')
@@ -601,7 +602,7 @@ class DataBase:
             print('Validation set size: ', self.validation_metadata.shape[0])
             print('Pool set size: ', self.pool_metadata.shape[0])
             print('   From which queryable: ', self.queryable_ids.shape[0], '\n')
-            
+
         # check repeated ids between training and pool
         for name in self.train_metadata[id_name].values:
             if name in self.pool_metadata[id_name].values:
@@ -638,7 +639,7 @@ class DataBase:
         sep_validation: bool (optional)
             Separate validation sample. Default is False.
         """
-        
+
         if sep_files:
             raise ValueError('Random training from separate files are not ' + \
                              'implemented at this point.')
@@ -682,14 +683,14 @@ class DataBase:
         self.test_labels = test_label_flag.astype(int)
         self.pool_labels = self.test_labels
         self.validation_labels = self.test_labels
-        
+
         if queryable:
             queryable_flag = data_copy['queryable'].values
             combined_flag = np.logical_and(~train_flag, queryable_flag)
             self.queryable_ids = data_copy[combined_flag][id_name].values
         else:
             self.queryable_ids = self.test_metadata[id_name].values
-                
+
         if screen:
             print('\n')
             print('** Inside build_random_training: **')
@@ -704,7 +705,7 @@ class DataBase:
             if name in self.pool_metadata[id_name].values:
                 raise ValueError('Object ', name, ' present in both, ' + \
                                  'training and pool samples!')
-  
+
     def build_samples(self, initial_training='original', nclass=2,
                       screen=False, Ia_frac=0.5,
                       queryable=False, save_samples=False, sep_files=False,
@@ -765,7 +766,7 @@ class DataBase:
             print('Test set size: ', self.test_metadata.shape[0])
             print('Validation set size: ', self.validation_metadata.shape[0])
             print('Pool set size: ', self.pool_metadata.shape[0])
-            print('   From which queryable: ', 
+            print('   From which queryable: ',
                   sum(self.pool_metadata['queryable'].values == True), '\n')
 
         if save_samples:
@@ -807,7 +808,7 @@ class DataBase:
         kwargs: extra parameters
             Parameters required by the chosen classifier.
         """
-        
+
         if screen:
             print('\n Inside classify: ')
             print('   ... train_features: ', self.train_features.shape)
@@ -820,25 +821,25 @@ class DataBase:
                                  self.pool_features, **kwargs)
 
         elif method == 'GradientBoostedTrees':
-            self.predicted_class,  self.classprob = \
+            self.predicted_class,  self.classprob, self.classifier = \
                 gradient_boosted_trees(self.train_features, self.train_labels,
-                                       self.test_features, **kwargs)
+                                       self.pool_features, **kwargs)
         elif method == 'KNN':
-            self.predicted_class,  self.classprob = \
+            self.predicted_class,  self.classprob, self.classifier = \
                 knn(self.train_features, self.train_labels,
-                               self.test_features, **kwargs)
+                               self.pool_features, **kwargs)
         elif method == 'MLP':
-            self.predicted_class,  self.classprob = \
+            self.predicted_class,  self.classprob, self.classifier = \
                 mlp(self.train_features, self.train_labels,
-                               self.test_features, **kwargs)
+                               self.pool_features, **kwargs)
         elif method == 'SVM':
-            self.predicted_class, self.classprob = \
+            self.predicted_class, self.classprob, self.classifier = \
                 svm(self.train_features, self.train_labels,
-                               self.test_features, **kwargs)
+                               self.pool_features, **kwargs)
         elif method == 'NB':
-            self.predicted_class, self.classprob = \
+            self.predicted_class, self.classprob, self.classifier = \
                 nbg(self.train_features, self.train_labels,
-                          self.test_features, **kwargs)
+                          self.pool_features, **kwargs)
 
 
         else:
@@ -846,14 +847,14 @@ class DataBase:
                               "'RandomForest', 'GradientBoostedTrees'," +
                               "'KNN', 'MLP' and NB'." +
                              "\n Feel free to add other options.")
-        
+
         if method == 'RandomForest':
             # estimate classification for validation sample
             self.validation_class = \
                 self.classifier.predict(self.validation_features)
             self.validation_prob = \
                 self.classifier.predict_proba(self.validation_features)
-            
+
         else:
             raise ValueError('Only RandomForest classifier was fully tested!')
 
@@ -868,10 +869,10 @@ class DataBase:
                 op.write(str(self.validatin_prob[i][0]) + ',')
                 op.write(str(self.validation_prob[i][1]) + ',')
                 op.write(str(self.validation_class[i]) + '\n')
-            op.close()         
+            op.close()
 
     def classify_bootstrap(self, method: str, save_predictions=False, pred_dir=None,
-                           loop=None,**kwargs):
+                           loop=None, screen=False, **kwargs):
         """Apply a machine learning classifier bootstrapping the classifier.
 
         Populate properties: predicted_class, class_prob and ensemble_probs.
@@ -892,45 +893,51 @@ class DataBase:
         kwargs: extra parameters
             Parameters required by the chosen classifier.
         """
+        if screen:
+            print('\n Inside classify_bootstrap: ')
+            print('   ... train_features: ', self.train_features.shape)
+            print('   ... train_labels: ', self.train_labels.shape)
+            print('   ... pool_features: ', self.pool_features.shape)
+
         n_ensembles = 10
-        
+
         if method == 'RandomForest' and str(self.validation_features) != 'None':
-            self.predicted_class, self.class_prob, self.ensemble_probs = \
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
                 bootstrap_clf(random_forest, n_ensembles,
                               self.train_features, self.train_labels,
-                              self.validation_features, **kwargs)
+                              self.pool_features, **kwargs)
 
         elif method == 'RandomForest':
-            self.predicted_class, self.class_prob, self.ensemble_probs = \
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
             bootstrap_clf(random_forest, n_ensembles,
                           self.train_features, self.train_labels,
-                          self.test_features, **kwargs)
+                          self.pool_features, **kwargs)
 
         elif method == 'GradientBoostedTrees':
-            self.predicted_class, self.class_prob, self.ensemble_probs = \
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
             bootstrap_clf(gradient_boosted_trees, n_ensembles,
                           self.train_features, self.train_labels,
-                          self.test_features, **kwargs)
+                          self.pool_features, **kwargs)
         elif method == 'KNN':
-            self.predicted_class, self.class_prob, self.ensemble_probs = \
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
             bootstrap_clf(knn, n_ensembles,
                           self.train_features, self.train_labels,
-                          self.test_features, **kwargs)
+                          self.pool_features, **kwargs)
         elif method == 'MLP':
-            self.predicted_class, self.class_prob, self.ensemble_probs = \
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
             bootstrap_clf(mlp, n_ensembles,
                           self.train_features, self.train_labels,
-                          self.test_features, **kwargs)
+                          self.pool_features **kwargs)
         elif method == 'SVM':
-            self.predicted_class, self.class_prob, self.ensemble_probs = \
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
             bootstrap_clf(svm, n_ensembles,
                           self.train_features, self.train_labels,
-                          self.test_features, **kwargs)
+                          self.pool_features, **kwargs)
         elif method == 'NB':
-            self.predicted_class, self.class_prob, self.ensemble_probs = \
+            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
             bootstrap_clf(nbg, n_ensembles,
                           self.train_features, self.train_labels,
-                          self.test_features, **kwargs)
+                          self.pool_features, **kwargs)
 
 
         else:
@@ -939,7 +946,30 @@ class DataBase:
                               "'KNN', 'MLP' and NB'." +
                              "\n Feel free to add other options.")
 
-    def output_photo_Ia(self, threshold: float, to_file=True, 
+        if method == 'RandomForest':
+            # estimate classification for validation sample
+            self.validation_class = \
+                self.classifier.predict(self.validation_features)
+            self.validation_prob = \
+                self.classifier.predict_proba(self.validation_features)
+
+        else:
+            raise ValueError('Only RandomForest classifier was fully tested!')
+
+        if save_predictions:
+            id_name = self.identify_keywords()
+
+            out_fname = 'predict_loop_' + str(loop) + '.dat'
+            op = open(pred_dir + '/' + out_fname, 'w')
+            op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
+            for i in range(self.validation_metadata.shape[0]):
+                op.write(str(self.validation_metadata[id_name].iloc[i]) + ',')
+                op.write(str(self.validatin_prob[i][0]) + ',')
+                op.write(str(self.validation_prob[i][1]) + ',')
+                op.write(str(self.validation_class[i]) + '\n')
+            op.close()
+
+    def output_photo_Ia(self, threshold: float, to_file=True,
                         filename=' '):
         """Returns the metadata for  photometrically classified SN Ia.
 
@@ -969,11 +999,11 @@ class DataBase:
 
         # get ids
         photo_Ia_metadata = self.validation_metadata[photo_flag]
-        
+
         if to_file:
             photo_Ia_metadata.to_csv(filename, index=False)
         else:
-            self.photo_Ia_metadata = photo_Ia_metadata     
+            self.photo_Ia_metadata = photo_Ia_metadata
 
     def evaluate_classification(self, metric_label='snpcc', screen=False):
         """Evaluate results from classification.
@@ -985,7 +1015,7 @@ class DataBase:
         metric_label: str (optional)
             Choice of metric. Currenlty only `snpcc` is accepted.
         screen: bool (optional)
-            If True, display debug comments on screen. 
+            If True, display debug comments on screen.
             Default is False.
         """
 
@@ -996,11 +1026,80 @@ class DataBase:
         else:
             raise ValueError('Only snpcc metric is implemented!'
                              '\n Feel free to add other options.')
-            
+
         if screen:
             print('\n Metrics names: ', self.metrics_list_names)
             print('Metrics values: ', self.metrics_list_values)
 
+
+    def make_query_budget(self, budgets, strategy='UncSampling', screen=False) -> list:
+        id_name = self.identify_keywords()
+        queryable_ids = self.queryable_ids
+        pool_metadata = self.pool_metadata
+        if strategy == 'UncSampling':
+            query_indx = batch_queries_uncertainty(class_probs=self.classprob,
+                                                   id_name=id_name,
+                                                   queryable_ids=queryable_ids,
+                                                   pool_metadata=pool_metadata,
+                                                   budgets=budgets,
+                                                   criteria="uncertainty" )
+
+        elif strategy == 'UncSamplingEntropy':
+            query_indx = batch_queries_uncertainty(class_probs=self.classprob,
+                                                   id_name=id_name,
+                                                   queryable_ids=queryable_ids,
+                                                   pool_metadata=pool_metadata,
+                                                   budgets=budgets,
+                                                   criteria="entropy" )
+
+        elif strategy == 'UncSamplingLeastConfident':
+            query_indx = batch_queries_uncertainty(class_probs=self.classprob,
+                                                   id_name=id_name,
+                                                   queryable_ids=queryable_ids,
+                                                   pool_metadata=pool_metadata,
+                                                   budgets=budgets,
+                                                   criteria="least_confident" )
+
+        elif strategy == 'UncSamplingMargin':
+            query_indx = batch_queries_uncertainty(class_probs=self.classprob,
+                                                   id_name=id_name,
+                                                   queryable_ids=queryable_ids,
+                                                   pool_metadata=pool_metadata,
+                                                   budgets=budgets,
+                                                   criteria="margin" )
+
+        elif strategy == 'QBDMI':
+            query_indx = batch_queries_mi_entropy(probs_B_K_C=self.ensemble_probs,
+                                                  id_name=id_name,
+                                                  queryable_ids=queryable_ids,
+                                                  pool_metadata=pool_metadata,
+                                                  budgets=budgets,
+                                                  criteria="MI" )
+
+        elif strategy =='QBDEntropy':
+            query_indx = batch_queries_mi_entropy(probs_B_K_C=self.ensemble_probs,
+                                                  id_name=id_name,
+                                                  queryable_ids=queryable_ids,
+                                                  pool_metadata=pool_metadata,
+                                                  budgets=budgets,
+                                                  criteria="entropy" )
+
+        elif strategy == 'RandomSampling':
+            query_indx = batch_queries_uncertainty(class_probs=self.classprob,
+                                                   id_name=id_name,
+                                                   queryable_ids=queryable_ids,
+                                                   pool_metadata=pool_metadata,
+                                                   budgets=budgets,
+                                                   criteria="random" )
+
+        else:
+            raise ValueError('Invalid strategy.')
+
+        for n in query_indx:
+            if self.pool_metadata[id_name].values[n] not in self.queryable_ids:
+                raise ValueError('Chosen object is not available for query!')
+
+        return query_indx
 
     def make_query(self, strategy='UncSampling', batch=1,
                    screen=False, queryable=False, query_thre=1.0) -> list:
@@ -1011,7 +1110,7 @@ class DataBase:
         strategy: str (optional)
             Strategy used to choose the most informative object.
             Current implementation accepts 'UncSampling' and
-            'RandomSampling', 'UncSamplingEntropy', 
+            'RandomSampling', 'UncSamplingEntropy',
             'UncSamplingLeastConfident', 'UncSamplingMargin',
             'QBDMI', 'QBDEntropy', . Default is `UncSampling`.
 
@@ -1044,47 +1143,47 @@ class DataBase:
             print('       ... pool_ids: ', self.pool_metadata.shape[0])
 
         id_name = self.identify_keywords()
-   
+
         if strategy == 'UncSampling':
             query_indx = uncertainty_sampling(class_prob=self.classprob,
                                               queryable_ids=self.queryable_ids,
                                               test_ids=self.pool_metadata[id_name].values,
                                               batch=batch, screen=screen,
                                               query_thre=query_thre)
-           
+
 
         elif strategy == 'UncSamplingEntropy':
             query_indx = uncertainty_sampling_entropy(class_prob=self.classprob,
                                               queryable_ids=self.queryable_ids,
-                                              test_ids=self.test_metadata[id_name].values,
+                                              test_ids=self.pool_metadata[id_name].values,
                                               batch=batch, screen=screen,
                                               query_thre=query_thre)
 
         elif strategy == 'UncSamplingLeastConfident':
             query_indx = uncertainty_sampling_least_confident(class_prob=self.classprob,
                                               queryable_ids=self.queryable_ids,
-                                              test_ids=self.test_metadata[id_name].values,
+                                              test_ids=self.pool_metadata[id_name].values,
                                               batch=batch, screen=screen,
                                               query_thre=query_thre)
 
         elif strategy == 'UncSamplingMargin':
             query_indx = uncertainty_sampling_margin(class_prob=self.classprob,
                                               queryable_ids=self.queryable_ids,
-                                              test_ids=self.test_metadata[id_name].values,
+                                              test_ids=self.pool_metadata[id_name].values,
                                               batch=batch, screen=screen,
                                               query_thre=query_thre)
             return query_indx
         elif strategy == 'QBDMI':
             query_indx = qbd_mi(ensemble_probs=self.ensemble_probs,
                                 queryable_ids=self.queryable_ids,
-                                test_ids=self.test_metadata[id_name].values,
+                                test_ids=self.pool_metadata[id_name].values,
                                 batch=batch, screen=screen,
                                 query_thre=query_thre)
 
         elif strategy =='QBDEntropy':
             query_indx = qbd_entropy(ensemble_probs=self.ensemble_probs,
                                     queryable_ids=self.queryable_ids,
-                                    test_ids=self.test_metadata[id_name].values,
+                                    test_ids=self.pool_metadata[id_name].values,
                                     batch=batch, screen=screen,
                                     query_thre=query_thre)
 
@@ -1096,7 +1195,7 @@ class DataBase:
 
         else:
             raise ValueError('Invalid strategy.')
-            
+
         if screen:
             print('       ... queried obj id: ', self.pool_metadata[id_name].values[query_indx[0]])
 
@@ -1105,7 +1204,7 @@ class DataBase:
             if self.pool_metadata[id_name].values[n] not in self.queryable_ids:
                 raise ValueError('Chosen object is not available for query!')
 
-        return query_indx        
+        return query_indx
 
     def update_samples(self, query_indx: list, epoch=20,
                        queryable=False, screen=False):
@@ -1123,25 +1222,25 @@ class DataBase:
         queryable: bool (optinal)
             If True, consider queryable flag. Default is False.
         screen: bool (optional)
-            If True, display debug comments on screen. 
+            If True, display debug comments on screen.
             Default is False.
         """
         id_name = self.identify_keywords()
 
         all_queries = []
-        
+
         ### keep track of number evolution ####
         npool = self.pool_metadata.shape[0]
         ntrain = self.train_metadata.shape[0]
         ntest = self.test_metadata.shape[0]
         nvalidation = self.validation_metadata.shape[0]
-        
+
         q2 = np.copy(query_indx)
         nquery = len(q2)
-        
+
         data_copy = self.pool_metadata.copy()
         query_ids = [data_copy['id'].values[item] for item in query_indx]
-        
+
         while len(query_indx) > 0 and self.pool_metadata.shape[0] > 0:
 
             if self.pool_metadata.shape[0] != self.pool_labels.shape[0]:
@@ -1158,7 +1257,7 @@ class DataBase:
                 line.append(item)
             for item1 in query_features:
                 line.append(item1)
-                
+
             all_queries.append(line)
 
             # add object to the training sample
@@ -1180,7 +1279,7 @@ class DataBase:
             self.pool_metadata = pool_metadata_temp[~query_flag]
             self.pool_labels = self.pool_labels[~query_flag]
             self.pool_features = self.pool_features[~query_flag]
-            
+
             if queryable:
                 qids_flag = self.pool_metadata['queryable'].values
                 self.queryable_ids = self.pool_metadata[id_name].values[qids_flag]
@@ -1188,7 +1287,7 @@ class DataBase:
                 self.queryable_ids = self.pool_metadata[id_name].values
 
             # check if queried object is also in other samples
-            test_ids = self.test_metadata[id_name].values            
+            test_ids = self.test_metadata[id_name].values
             if query_header[0] in test_ids:
                 qtest_flag = self.test_metadata[id_name].values == \
                     query_header[0]
@@ -1196,7 +1295,7 @@ class DataBase:
                 self.test_labels = self.test_labels[~qtest_flag]
                 self.test_features = self.test_features[~qtest_flag]
                 self.test_metadata = test_metadata_temp[~qtest_flag]
-            
+
             validation_ids = self.validation_metadata[id_name].values
             if query_header[0] in validation_ids:
                 qval_flag = self.validation_metadata[id_name].values == \
@@ -1218,29 +1317,29 @@ class DataBase:
                     new_query_indx.append(item - 1)
 
             query_indx = new_query_indx
-            
-            if screen: 
+
+            if screen:
                 print('  query_indx: ', query_indx)
-            
+
         # test
         npool2 = self.pool_metadata.shape[0]
         ntrain2 = self.train_metadata.shape[0]
         ntest2 = self.test_metadata.shape[0]
         nvalidation2 = self.validation_metadata.shape[0]
-        
+
         # update queried samples
         self.queried_sample.append(all_queries)
-        
+
         if screen:
             print('query_ids: ', query_ids)
             print('queried sample: ', self.queried_sample[-1][-1][1])
-            
+
         if ntrain2 != ntrain + nquery or npool2 != npool - nquery:
             raise ValueError('Wrong dimensionality for train/pool samples!')
-                
+
         if ntest2 > ntest or nvalidation2 > nvalidation:
-            raise ValueError('Wrong dimensionality for test/val samples.')       
-       
+            raise ValueError('Wrong dimensionality for test/val samples.')
+
         for name in query_ids:
             if name in self.pool_metadata['id'].values:
                 raise ValueError('Queried object ', name, ' is still in pool sample!')
@@ -1251,15 +1350,15 @@ class DataBase:
         # check if there are repeated ids
         for name in self.train_metadata['id'].values:
             if name in self.pool_metadata['id'].values:
-                raise ValueError('After update! Object ', name, 
+                raise ValueError('After update! Object ', name,
                                  ' found in pool and training samples!')
-                
+
             if name in self.test_metadata['id'].values:
-                raise ValueError('After update! Object ', name, 
+                raise ValueError('After update! Object ', name,
                                  ' found in test and training samples!')
-                
+
             if name in self.validation_metadata['id'].values:
-                raise ValueError('After update! Object ', name, 
+                raise ValueError('After update! Object ', name,
                                  ' found in validation and training samples!')
 
     def save_metrics(self, loop: int, output_metrics_file: str, epoch: int, batch=1):
