@@ -203,13 +203,15 @@ class Canvas(object):
             if metrics_name == 'snpcc':
                 self.metrics_names = ['accuracy', 'efficiency',
                                       'purity', 'fom']
+                names_list = ['loop', 'accuracy', 'efficiency',
+                                      'purity', 'fom']
             else:
                 raise ValueError('Invalid metric choice!')
                 
             self.strategies[name] = pd.read_csv(path_to_files[i],
                                                 sep=' ',
                                                 index_col=False,
-                                                usecols=self.metrics_names.insert(0, 'loop'))
+                                                usecols=names_list)
 
     def set_plot_dimensions(self):
         """Set directives for plot sizes.
