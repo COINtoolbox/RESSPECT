@@ -180,12 +180,23 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                      str(days[0]) + fname_pattern[1]
     
     # read data from fist loop
-    first_loop = load_dataset(fname=path_to_first_loop, 
-                              survey=survey, sep_files=False,
-                              screen=screen,
-                              initial_training=0,
-                              ia_frac=ia_frac, queryable=queryable)
-       
+    if not sep_files:
+        first_loop = load_dataset(fname=path_to_first_loop,
+                                 survey=survey, sep_files=False,
+                                 screen=screen,
+                                 initial_training=0,
+                                 ia_frac=ia_frac, queryable=queryable)
+        
+    else:
+        first_loop = DataBase()
+        first_loop.load_features(path_to_file=path_to_first_loop,
+                                 survey=survey, screen=screen, method='Bazin',
+                                 sample='pool')
+        first_loop.build_samples(initial_training='original', nclass=2,
+                                 screen=screen, queryable=queryable,
+                                 save_samples=False, sep_files=sep_files,
+                                 survey=survey)
+
     if sep_files:
         # initiate object
         data = DataBase()
@@ -199,8 +210,14 @@ def time_domain_loop(days: list,  output_metrics_file: str,
             data.load_features(path_to_file=path_to_ini_files[s], 
                                method='Bazin', screen=screen,
                                survey=survey, sample=s)
-        
-    else:     
+            
+        data.build_samples(initial_training='original', nclass=2,
+                           screen=screen,
+                           queryable=queryable, save_samples=save_samples,
+                           sep_files=sep_files, survey=survey)
+
+
+    else:
         # read initial training
         data = load_dataset(fname=path_to_ini_files['train'], 
                             survey=survey, sep_files=sep_files,
@@ -261,6 +278,10 @@ def time_domain_loop(days: list,  output_metrics_file: str,
             data.train_metadata.insert(len(data.metadata_names) - 1, 
                                        name, None, True)
 
+
+    # get validation ids
+    validation_ids = data.validation_metadata[id_name].values
+
     for night in range(int(days[0]), int(days[-1]) - 1):
             
         if screen:
@@ -274,15 +295,22 @@ def time_domain_loop(days: list,  output_metrics_file: str,
 
         if data.pool_metadata.shape[0] > 0:
             # classify
-            data.classify(method=classifier, screen=screen, **kwargs)
+            if clf_bootstrap:
+                data.classify_bootstrap(method=classifier, screen=screen, **kwargs)
+            else:
+                data.classify(method=classifier, screen=screen, **kwargs)
 
             # calculate metrics
             data.evaluate_classification(screen=screen)
-        
-            # get index of object to be queried
-            indx = data.make_query(strategy=strategy, batch=batch, 
-                                   queryable=queryable,
-                                   query_thre=query_thre, screen=screen)
+
+            if budgets:
+                indx = data.make_query_budget(budgets=budgets, strategy=strategy,
+                                              screen=False)
+            else:
+                # get index of object to be queried
+                indx = data.make_query(strategy=strategy, batch=batch, 
+                                       queryable=queryable,
+                                       query_thre=query_thre, screen=screen)
 
             if screen:
                 print('\n queried obj index: ', indx)
@@ -290,8 +318,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                 print('size of pool: ', data.pool_metadata.shape[0], '\n')
 
             # update training and test samples
-            data.update_samples(indx, queryable=queryable, 
-                                epoch=night)
+            data.update_samples(indx, queryable=queryable, epoch=night)
             
             if screen:
                 print('\n After update_samples:')
@@ -299,7 +326,6 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                 print('   ... test: ', data.test_metadata.shape[0])
                 print('   ... validation: ', data.validation_metadata.shape[0])
                 print('   ... pool: ', data.pool_metadata.shape[0], '\n')
-                
 
             # save metrics for current state
             data.save_metrics(loop=night - days[0], output_metrics_file=output_metrics_file,
@@ -313,11 +339,22 @@ def time_domain_loop(days: list,  output_metrics_file: str,
             path_to_features2 = path_to_features_dir + fname_pattern[0] + \
                                 str(night + 1) + fname_pattern[1]
 
-            data_tomorrow = load_dataset(fname=path_to_features2, 
-                              survey=survey,
-                              screen=screen,
-                              initial_training=0,
-                              ia_frac=ia_frac, queryable=queryable)
+            if sep_files:
+                data_tomorrow = DataBase()
+                data_tomorrow.load_features(path_to_file=path_to_features2,
+                                            screen=screen, method='Bazin',
+                                            survey=survey, sample='pool')
+                data_tomorrow.build_samples(initial_training='original',
+                                            screen=screen, queryable=queryable,
+                                            save_samples=False,
+                                            sep_files=sep_files, survey=survey)
+
+            else:
+                data_tomorrow = load_dataset(fname=path_to_features2,
+                                             survey=survey,
+                                             screen=screen,
+                                             initial_training=0,
+                                             ia_frac=ia_frac, queryable=queryable)
             
             for obj in data.train_metadata[id_name].values:
                 if obj in data_tomorrow.pool_metadata[id_name].values:
@@ -351,7 +388,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                     data_tomorrow.pool_features = np.delete(data_tomorrow.pool_features, indx_tomorrow, axis=0)
                     
                 # remove object from other samples
-                if obj in data_tomorrow.validation_metadata[id_name].values:
+                if len(data_tomorrow.validation_metadata) > 0 and  obj in data_tomorrow.validation_metadata[id_name].values:
                     indx_val =  list(data_tomorrow.validation_metadata[id_name].values).index(obj)
                     
                     data_tomorrow.validation_metadata = data_tomorrow.validation_metadata.drop(\
@@ -360,8 +397,8 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                                                 indx_val, axis=0)
                     data_tomorrow.validation_features = np.delete(data_tomorrow.validation_features,
                                                                   indx_val, axis=0)
-                    
-                if obj in data_tomorrow.test_metadata[id_name].values:
+
+                if len(data_tomorrow.test_metadata) > 0 and obj in data_tomorrow.test_metadata[id_name].values:
                     indx_test = list(data_tomorrow.test_metadata[id_name].values).index(obj)
                     
                     data_tomorrow.test_metadata = data_tomorrow.test_metadata.drop(\
@@ -375,14 +412,16 @@ def time_domain_loop(days: list,  output_metrics_file: str,
             # use new data
             data.pool_metadata = data_tomorrow.pool_metadata
             data.pool_features = data_tomorrow.pool_features
-            data.validation_features = data_tomorrow.validation_features
-            data.validation_metadata = data_tomorrow.validation_metadata
-            data.test_metadata = data_tomorrow.test_metadata
-            data.test_features = data_tomorrow.test_features
-            
             data.pool_labels = data_tomorrow.pool_labels
-            data.validation_labels = data_tomorrow.validation_labels
-            data.test_labels = data_tomorrow.test_labels
+
+            if not sep_files:
+                data.test_metadata = data_tomorrow.test_metadata
+                data.test_features = data_tomorrow.test_features
+                data.test_labels = data_tomorrow.test_labels
+
+                data.validation_metadata = data_tomorrow.validation_metadata
+                data.validation_features = data_tomorrow.validation_features
+                data.validation_labels = data_tomorrow.validation_labels
 
             if strategy == 'canonical':
                 data.queryable_ids = canonical.queryable_ids
@@ -415,6 +454,11 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                     raise ValueError('End of time_domain_loop : Object '+ \
                                      str(data.queried_sample[i][j][1]) + \
                                      ' was queried but is missing from training!')
+
+        # check if validation sample continues the same
+        for name in data.validation_metadata[id_name].values:
+            if name not in validation_ids:
+                raise ValueError('There was a change in the validation sample!')
 
 
 def main():

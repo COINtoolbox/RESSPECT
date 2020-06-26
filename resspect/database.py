@@ -515,7 +515,7 @@ class DataBase:
                 train_labels = self.train_metadata['type'].values == 'Ia'
                 self.train_labels = train_labels.astype(int)
                 
-            if self.test.metadata.shape[0] > 0:
+            if self.test_metadata.shape[0] > 0:
                 test_labels = self.test_metadata['type'].values == 'Ia'
                 self.test_labels = test_labels.astype(int)
                 
@@ -528,11 +528,11 @@ class DataBase:
                 self.pool_labels = pool_labels.astype(int)
 
             # identify asked to consider queryable flag
-            if queryable:
-                queryable_flag = self.test_metadata['queryable'].values
-                self.queryable_ids = self.test_metadata[queryable_flag][id_name].values
+            if queryable and len(self.pool_metadata) > 0:
+                queryable_flag = self.pool_metadata['queryable'].values
+                self.queryable_ids = self.pool_metadata[queryable_flag][id_name].values
 
-            else:
+            elif len(self.test_metadata) > 0:
                 self.queryable_ids = self.test_metadata[id_name].values
             """
             # build complete metadata object
@@ -599,17 +599,18 @@ class DataBase:
         if screen:
             print('\n')
             print('** Inside build_orig_samples: **')
-            print('Training set size: ', self.train_metadata.shape[0])
-            print('Test set size: ', self.test_metadata.shape[0])
-            print('Validation set size: ', self.validation_metadata.shape[0])
-            print('Pool set size: ', self.pool_metadata.shape[0])
-            print('   From which queryable: ', self.queryable_ids.shape[0], '\n')
-            
+            print('Training set size: ', len(self.train_metadata))
+            print('Test set size: ', len(self.test_metadata))
+            print('Validation set size: ', len(self.validation_metadata))
+            print('Pool set size: ', len(self.pool_metadata))
+            print('   From which queryable: ', len(self.queryable_ids), '\n')
+
         # check repeated ids between training and pool
-        for name in self.train_metadata[id_name].values:
-            if name in self.pool_metadata[id_name].values:
-                raise ValueError('Object ', name, 'found in both, training ' +\
-                                'and pool samples!')
+        if len(self.train_metadata) > 0 and len(self.pool_metadata) > 0:
+            for name in self.train_metadata[id_name].values:
+                if name in self.pool_metadata[id_name].values:
+                    raise ValueError('Object ', name, 'found in both, training ' +\
+                                    'and pool samples!')
 
     def build_random_training(self, initial_training: int, nclass=2, screen=False,
                               Ia_frac=0.5, queryable=True, sep_files=False):
@@ -768,8 +769,9 @@ class DataBase:
             print('Test set size: ', self.test_metadata.shape[0])
             print('Validation set size: ', self.validation_metadata.shape[0])
             print('Pool set size: ', self.pool_metadata.shape[0])
-            print('   From which queryable: ', 
-                  sum(self.pool_metadata['queryable'].values == True), '\n')
+            if len(self.pool_metadata) > 0:
+                print('   From which queryable: ',
+                      sum(self.pool_metadata['queryable'].values == True), '\n')
 
         if save_samples:
 
