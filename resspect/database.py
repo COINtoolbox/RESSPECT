@@ -535,16 +535,7 @@ class DataBase:
 
             elif len(self.pool_metadata) > 0:
                 self.queryable_ids = self.pool_metadata[id_name].values
-            """
-            # build complete metadata object
-            self.metadata = pd.concat([self.train_metadata, self.test_metadata,
-                                      self.validation_metadata, self.pool_metadata],
-                                      ignore_index=True, axis=0)
-
-            self.features = np.concatenate([self.train_features, self.test_features,
-                                      self.validation_features,
-                                      self.pool_features], axis=0)
-             """
+            
         else:
             train_flag = self.metadata['orig_sample'] == 'train'
             train_data = self.features[train_flag]
@@ -644,15 +635,15 @@ class DataBase:
             Separate validation sample. Default is False.
         """
 
-        if sep_files:
-            raise ValueError('Random training from separate files are not ' + \
-                             'implemented at this point.')
-
         # object if keyword
         id_name = self.identify_keywords()
 
         # identify Ia
-        data_copy = self.metadata.copy()
+        if sep_files:
+            data_copy = self.train_metadata.copy()
+        else:    
+            data_copy = self.metadata.copy()
+            
         ia_flag = data_copy['type'] == 'Ia'
 
         # separate per class
@@ -670,30 +661,46 @@ class DataBase:
                                for i in range(data_copy.shape[0])])
 
         self.train_metadata = data_copy[train_flag]
-        self.train_features = self.features[train_flag]
+        
+        if sep_files:
+            self.train_features = self.train_features[train_flag]
+            test_labels = self.test_metadata['type'].values == 'Ia'
+            self.test_labels = test_labels.astype(int)
+            validation_labels = self.validation_metadata['type'].values == 'Ia'
+            self.validation_labels = validation_labels.astype(int)
+            pool_labels = self.pool_metadata['type'].values == 'Ia'
+            self.pool_labels = pool_labels.astype(int)
 
-        # get test sample
-        test_flag = ~train_flag
-        self.test_metadata = data_copy[test_flag]
-        self.test_features = self.features[test_flag]
-        self.pool_metadata = self.test_metadata
-        self.pool_features = self.test_features
-        self.validation_features = self.test_features
-        self.validation_metadata = self.test_metadata
+        else:
+            self.train_features = self.features[train_flag]
+
+            # get test sample
+            test_flag = ~train_flag
+            self.test_metadata = data_copy[test_flag]
+            self.test_features = self.features[test_flag]
+            self.pool_metadata = self.test_metadata
+            self.pool_features = self.test_features
+            self.validation_features = self.test_features
+            self.validation_metadata = self.test_metadata
+            test_label_flag = data_copy['type'][test_flag].values == 'Ia'
+            self.test_labels = test_label_flag.astype(int)
+            self.pool_labels = self.test_labels
+            self.validation_labels = self.test_labels
 
         train_label_flag = data_copy['type'][train_flag].values == 'Ia'
         self.train_labels = train_label_flag.astype(int)
-        test_label_flag = data_copy['type'][test_flag].values == 'Ia'
-        self.test_labels = test_label_flag.astype(int)
-        self.pool_labels = self.test_labels
-        self.validation_labels = self.test_labels
 
-        if queryable:
+        if queryable and not sep_files:
             queryable_flag = data_copy['queryable'].values
             combined_flag = np.logical_and(~train_flag, queryable_flag)
             self.queryable_ids = data_copy[combined_flag][id_name].values
-        else:
+        elif not queryable and not sep_files:
             self.queryable_ids = self.test_metadata[id_name].values
+        elif queryable and sep_files:
+            queryable_flag = self.pool_metadata['queryable'].values == True
+            self.queryable_ids = self.pool_metadata[id_name].values[queryable_flag]
+        elif not queryable and sep_files:
+            self.queryable_ids = self.pool_metadata[id_name].values
 
         if screen:
             print('\n')
@@ -762,7 +769,7 @@ class DataBase:
                                        nclass=nclass, screen=screen,
                                        Ia_frac=Ia_frac, queryable=queryable,
                                        sep_files=sep_files)
-
+            
         if screen:
             print('\n')
             print('** Inside build_samples ** : ')
@@ -772,7 +779,7 @@ class DataBase:
             print('Pool set size: ', self.pool_metadata.shape[0])
             if len(self.pool_metadata) > 0:
                 print('   From which queryable: ',
-                      sum(self.pool_metadata['queryable'].values == True), '\n')
+                      self.queryable_ids.shape[0], '\n')
 
         if save_samples:
 

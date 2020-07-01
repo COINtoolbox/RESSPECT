@@ -107,7 +107,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                            screen=screen, survey=survey)
 
         # separate training and test samples
-        data.build_samples(initial_training=training, nclass=nclass)
+        data.build_samples(initial_training=training, nclass=nclass,
+                          queryable=queryable)
 
     else:
         for name in ['train', 'test', 'validation', 'pool']:
@@ -118,7 +119,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                 print('Path to ' + sample + 'not given. Proceeding without this sample.')
 
         data.build_samples(initial_training=training, nclass=nclass,
-                           screen=screen, sep_files=True)
+                           screen=screen, sep_files=True, queryable=queryable)
 
     for loop in range(nloops):
 
