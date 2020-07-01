@@ -26,7 +26,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                training='original', batch=1, screen=True, survey='DES',
                nclass=2, photo_class_thr=0.5, photo_ids=False, photo_ids_tofile = False,
                photo_ids_froot=' ', classifier_bootstrap=False, save_predictions=False,
-               sep_files=False, pred_dir=None, **kwargs):
+               sep_files=False, pred_dir=None, queryable=False, **kwargs):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -51,16 +51,16 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         Currently implemented options are 'RandomForest', 'GradientBoostedTrees',
         'K-NNclassifier','MLPclassifier','SVMclassifier' and 'NBclassifier'.
     sep_files: bool (optional)
-            If True, consider train and test samples separately read
-            from independent files. Default is False.    
-    training: str or int (optional)
-        Choice of initial training sample.
-        If 'original': begin from the train sample flagged in the file
-        If int: choose the required number of samples at random,
-        ensuring that at least half are SN Ia
-        Default is 'original'.
+        If True, consider train and test samples separately read
+        from independent files. Default is False.    
     batch: int (optional)
         Size of batch to be queried in each loop. Default is 1.
+    bootstrap: bool (optional)
+        Flag for bootstrapping on the classifier
+        Must be true if using disagreement based strategy
+    nclass: int (optional)
+        Number of classes to consider in the classification
+        Currently only nclass == 2 is implemented.
     photo_class_thr: float (optional)
         Threshold for photometric classification. Default is 0.5.
         Only used if photo_ids is True.
@@ -74,6 +74,9 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     pred_dir: str (optional)
         Output diretory to store prediction file for each loop.
         Only used if `save_predictions==True`.
+    queryable: bool (optional)
+        If True, check if randomly chosen object is queryable.
+        Default is False.
     save_predictions: bool (optional)
         If True, save classification predictions to file in each loop.
         Default is False.
@@ -82,12 +85,12 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     survey: str (optional)
         'DES' or 'LSST'. Default is 'DES'.
         Name of the survey which characterizes filter set.
-    nclass: int (optional)
-        Number of classes to consider in the classification
-        Currently only nclass == 2 is implemented.
-    bootstrap: bool (optional)
-        Flag for bootstrapping on the classifier
-        Must be true if using disagreement based strategy
+    training: str or int (optional)
+        Choice of initial training sample.
+        If 'original': begin from the train sample flagged in the file
+        If int: choose the required number of samples at random,
+        ensuring that at least half are SN Ia
+        Default is 'original'.
     kwargs: extra parameters
         All keywords required by the classifier function.
     """
@@ -107,13 +110,15 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         data.build_samples(initial_training=training, nclass=nclass)
 
     else:
-        data.load_features(path_to_features['train'], method=features_method,
-                           screen=screen, survey=survey, sample='train')
-        data.load_features(path_to_features['test'], method=features_method,
-                           screen=screen, survey=survey, sample='test')
+        for name in ['train', 'test', 'validation', 'pool']:
+            if name in path_to_features.keys():
+                data.load_features(path_to_features[name], method=features_method,
+                                   screen=screen, survey=survey, sample=name)
+            elif screen:
+                print('Path to ' + sample + 'not given. Proceeding without this sample.')
 
         data.build_samples(initial_training=training, nclass=nclass,
-                           screen=screen, sep_files=True, sep_validation=sep_validation)
+                           screen=screen, sep_files=True)
 
     for loop in range(nloops):
 
@@ -140,7 +145,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
             data.output_photo_Ia(photo_class_thr, to_file=False)
 
         # choose object to query
-        indx = data.make_query(strategy=strategy, batch=batch)
+        indx = data.make_query(strategy=strategy, batch=batch, queryable=queryable)
 
         # update training and test samples
         data.update_samples(indx, epoch=loop)

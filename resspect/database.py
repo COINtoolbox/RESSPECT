@@ -533,8 +533,8 @@ class DataBase:
                 queryable_flag = self.pool_metadata['queryable'].values
                 self.queryable_ids = self.pool_metadata[queryable_flag][id_name].values
 
-            elif len(self.test_metadata) > 0:
-                self.queryable_ids = self.test_metadata[id_name].values
+            elif len(self.pool_metadata) > 0:
+                self.queryable_ids = self.pool_metadata[id_name].values
             """
             # build complete metadata object
             self.metadata = pd.concat([self.train_metadata, self.test_metadata,
