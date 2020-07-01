@@ -456,9 +456,10 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                      ' was queried but is missing from training!')
 
         # check if validation sample continues the same
-        for name in data.validation_metadata[id_name].values:
-            if name not in validation_ids:
-                raise ValueError('There was a change in the validation sample!')
+        if sep_files:
+            for name in data.validation_metadata[id_name].values:
+                if name not in validation_ids:
+                    raise ValueError('There was a change in the validation sample!')
 
 
 def main():
