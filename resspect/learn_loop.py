@@ -140,7 +140,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         indx = data.make_query(strategy=strategy, batch=batch)
 
         # update training and test samples
-        data.update_samples(indx, loop=loop)
+        data.update_samples(indx, epoch=loop)
 
         # save metrics for current state
         data.save_metrics(loop=loop, output_metrics_file=output_metrics_file,
