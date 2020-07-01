@@ -26,7 +26,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                training='original', batch=1, screen=True, survey='DES',
                nclass=2, photo_class_thr=0.5, photo_ids=False, photo_ids_tofile = False,
                photo_ids_froot=' ', classifier_bootstrap=False, save_predictions=False,
-               pred_dir=None, **kwargs):
+               sep_files=False, pred_dir=None, **kwargs):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -50,6 +50,9 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         Machine Learning algorithm.
         Currently implemented options are 'RandomForest', 'GradientBoostedTrees',
         'K-NNclassifier','MLPclassifier','SVMclassifier' and 'NBclassifier'.
+    sep_files: bool (optional)
+            If True, consider train and test samples separately read
+            from independent files. Default is False.    
     training: str or int (optional)
         Choice of initial training sample.
         If 'original': begin from the train sample flagged in the file

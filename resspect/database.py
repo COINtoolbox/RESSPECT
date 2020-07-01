@@ -581,16 +581,16 @@ class DataBase:
                 self.queryable_ids = self.pool_metadata[id_name].values
 
             if nclass == 2:
-                train_ia_flag = self.train_metadata['type'] == 'Ia'
+                train_ia_flag = self.train_metadata['type'].values == 'Ia'
                 self.train_labels = train_ia_flag.astype(int)
 
-                test_ia_flag = self.test_metadata['type'] == 'Ia'
+                test_ia_flag = self.test_metadata['type'].values == 'Ia'
                 self.test_labels = test_ia_flag.astype(int)
 
-                val_ia_flag = self.validation_metadata['type'] == 'Ia'
+                val_ia_flag = self.validation_metadata['type'].values == 'Ia'
                 self.validation_labels = val_ia_flag.astype(int)
 
-                pool_ia_flag = self.pool_metadata['type'] == 'Ia'
+                pool_ia_flag = self.pool_metadata['type'].values == 'Ia'
                 self.pool_labels = pool_ia_flag.astype(int)
 
             else:
@@ -639,7 +639,7 @@ class DataBase:
             Default is 0.5.
         sep_files: bool (optional)
             If True, consider train and test samples separately read
-            from independent files.
+            from independent files. Default is False.
         sep_validation: bool (optional)
             Separate validation sample. Default is False.
         """
