@@ -170,7 +170,6 @@ def get_snpcc_metric(label_pred: list, label_true: list, ia_flag=1,
 
     return metric_names, metric_values
 
-
 def cosmo_metric(data: str, comp_data: str):
     """Calculate the Fisher-matrix based difference between two sets.
 
@@ -299,7 +298,7 @@ def get_cosmo_metric(input_fname_root: str, loop: int,
         
         return names, values
 
-
+      
 def main():
     return None
 

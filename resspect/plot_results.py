@@ -125,13 +125,20 @@ class Canvas(object):
                        'UncSamplingLeastConfident': '#eb34de', # pink
                        'UncSamplingMargin': '#ff8f05',         # orange
                        'QBDMI': '#0a4f08',                     # dark green
-                       'QBDEntropy': '#434773',                 # grey blue
+                       'QBDEntropy': '#434773',                # grey blue
                        'RandomForest': '#fac901',
                        'GradientBoostedTrees': '#ff8f05',
                        'KNN': '#dd0100',
                        'MLP': '#225095',
                        'SVM' : '#74eb34',
                        'NB': '#0a4f08'}
+        self.classifiers = {'RandomForest': 'Random Forest',
+                            'GradientBoostedTrees': 'GBT',
+                            'KNN': 'KNN',
+                            'MLP': 'MLP',
+                            'SVM': 'SVM',
+                            'NB': 'NB'
+                       }
         self.labels = {'Canonical': 'Canonical',
                        'RandomSampling': 'Passive Learning',
                        'UncSampling': 'AL - Uncertainty Sampling',
@@ -169,7 +176,8 @@ class Canvas(object):
                            'QBDMI': self.qbd_mi,
                            'QBDEntropy': self.qbd_entropy}
 
-    def load_metrics(self, path_to_files: list, strategies_list: list):
+    def load_metrics(self, path_to_files: list, strategies_list: list,
+                     metrics_name='snpcc'):
         """Load and identify set of metrics.
 
         Populates attributes: canonical, unc_sampling or rand_sampling,
@@ -183,19 +191,27 @@ class Canvas(object):
             List of all strategies to be included in the same plot.
             Current possibibilities are:
             ['canonical', 'rand_sampling', 'unc_sampling'].
+        metrics_name: str (optional)
+            Identify the metrics to be read. Only option is 'snpcc'.
         """
 
         # read data
         for i in range(len(strategies_list)):
             name = strategies_list[i]
+            
+            # get metrics names
+            if metrics_name == 'snpcc':
+                self.metrics_names = ['accuracy', 'efficiency',
+                                      'purity', 'fom']
+                names_list = ['loop', 'accuracy', 'efficiency',
+                                      'purity', 'fom']
+            else:
+                raise ValueError('Invalid metric choice!')
+                
             self.strategies[name] = pd.read_csv(path_to_files[i],
                                                 sep=' ',
-                                                index_col=False)
-
-            # get metrics names
-            if len(self.metrics_names) == 0:
-                self.metrics_names = \
-                    list(self.strategies[name].columns[1: -1])
+                                                index_col=False,
+                                                usecols=names_list)
 
     def set_plot_dimensions(self):
         """Set directives for plot sizes.
@@ -206,7 +222,8 @@ class Canvas(object):
         # determine number of lines and columns in plot
         self.nmetrics = len(self.metrics_names)
         self.ncolumns = self.nmetrics // self.nlines + self.nmetrics % self.nlines
-        self.fig_size = (10 * self.ncolumns, 7 * self.nlines)
+
+        self.fig_size = (10 * self.ncolumns, 9 * self.nlines)
 
     def plot_metrics(self,  output_plot_file: str, strategies_list: list,
                          lim_queries=None):

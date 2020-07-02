@@ -124,6 +124,7 @@ def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
 
     # check if there are queryable objects within threshold
     indx = int(len(flag) * query_thre)
+
     if sum(flag[:indx]) > 0:
 
         # arrange queryable elements in increasing order
@@ -131,9 +132,13 @@ def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
         final_order = order[flag]
 
         if screen:
-            print('*** Displacement caused by constraints on query****')
-            print(' 0 -> ', list(order).index(final_order[0]))
-            print(class_prob[order[0]], '-- > ', class_prob[final_order[0]])
+            print('\n Inside UncSampling: ')
+            print('       query_ids: ', test_ids[final_order][:batch], '\n')
+            print('   number of test_ids: ', test_ids.shape[0])
+            print('   number of queryable_ids: ', len(queryable_ids), '\n')
+            print('   *** Displacement caused by constraints on query****')
+            print('   0 -> ', list(order).index(final_order[0]))
+            print('   ', class_prob[order[0]], '-- > ', class_prob[final_order[0]], '\n')
 
         # return the index of the highest uncertain objects which are queryable
         return list(final_order)[:batch]
@@ -143,7 +148,8 @@ def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
 
 
 def random_sampling(test_ids: np.array, queryable_ids: np.array,
-                    batch=1, queryable=False, query_thre=1.0, seed=42) -> list:
+                    batch=1, queryable=False, query_thre=1.0, seed=42,
+                    screen=False) -> list:
     """Randomly choose an object from the test sample.
 
     Parameters
@@ -161,6 +167,10 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
     query_thre: float (optinal)
         Threshold where a query is considered worth it.
         Default is 1.0 (no limit).
+    screen: bool (optional)
+        If True display on screen the shift in index and
+        the difference in estimated probabilities of being Ia
+        caused by constraints on the sample available for querying.
     seed: int (optional)
         Seed for random number generator. Default is 42.
 
@@ -175,7 +185,9 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
 
     # randomly select indexes to be queried
     np.random.seed(seed)
-    indx = np.random.randint(low=0, high=len(test_ids), size=len(test_ids))
+    indx = np.random.choice(np.arange(0, len(test_ids)), 
+                            size=len(test_ids),
+                            replace=False)
 
     if queryable:
         # flag only the queryable objects
@@ -186,18 +198,26 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
             else:
                 flag.append(False)
 
+        ini_index = flag.index(True)
+
         flag = np.array(flag)
 
         # check if there are queryable objects within threshold
         indx_query = int(len(flag) * query_thre)
 
-        if sum(flag[:indx_query]) > 0:
+        if sum(flag[:indx_query]) > 0:       
+            if screen:
+                print('\n Inside RandomSampling: ')
+                print('       query_ids: ', test_ids[indx[flag]][:batch], '\n')
+                print('   number of test_ids: ', test_ids.shape[0])
+                print('   number of queryable_ids: ', len(queryable_ids), '\n')
+                print('   inedex of queried ids: ', indx[flag][:batch])
+
             # return the corresponding batch size
             return list(indx[flag])[:batch]
         else:
             # return empty list
             return list([])
-
     else:
         return list(indx)[:batch]
 
