@@ -17,7 +17,6 @@ day, it is necessary to prepare our simulate data to resemble this scenario. In 
 
 5. Join all information in a standard features file.
 
-
 Defining a queryable object and observation cost
 ------------------------------------------------
 

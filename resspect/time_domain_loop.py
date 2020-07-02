@@ -1,6 +1,5 @@
 # Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#
 # created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
@@ -164,26 +163,6 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     output_fname: str (optional)
         Complete path to output file where initial training will be stored.
         Only used if save_samples == True.
-    """
-
-    """# initiate object
-    data = DataBase()
-
-    # constructs training, test, validation and pool samples
-    data.load_features(path_to_ini_train, method=features_method,
-                       screen=screen, survey=survey)
-
-     # get identification keyword
-    id_name = data.identify_keywords()
-
-    data.build_samples(initial_training=initial_training, nclass=nclass,
-                       screen=screen, Ia_frac=ia_frac,
-                       queryable=queryable, save_samples=save_samples,
-                       sep_files=sep_files, survey=survey,
-                       output_fname=output_fname,
-                       path_to_train=path_to_train,
-                       path_to_queried=path_to_queried,
-                       method=features_method)
     """
 
     # load features for the first obs day

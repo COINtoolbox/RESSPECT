@@ -102,18 +102,16 @@ def random_forest(train_features:  np.array, train_labels: np.array,
         Predicted classes for test sample.
     prob: np.array
         Classification probability for test sample [pIa, pnon-Ia].
-
     """
 
     # create classifier instance
     clf = RandomForestClassifier(n_estimators=n_estimators, **kwargs)
-
     clf.fit(train_features, train_labels)                     # train
     predictions = clf.predict(test_features)                # predict
     prob = clf.predict_proba(test_features)       # get probabilities
 
     return predictions, prob, clf
-
+  
 
 def gradient_boosted_trees(train_features: np.array,
                            train_labels: np.array,
@@ -148,7 +146,6 @@ def gradient_boosted_trees(train_features: np.array,
 
     return predictions, prob, clf
 
-
 def knn(train_features: np.array, train_labels: np.array,
         test_features: np.array, **kwargs):
 
@@ -181,6 +178,7 @@ def knn(train_features: np.array, train_labels: np.array,
     prob = clf.predict_proba(test_features)            # get probabilities
 
     return predictions, prob, clf
+
 
 def mlp(train_features: np.array, train_labels: np.array,
         test_features: np.array, **kwargs):
@@ -247,6 +245,7 @@ def svm(train_features: np.array, train_labels: np.array,
     prob = clf.predict_proba(test_features)        # get probabilities
 
     return predictions, prob, clf
+  
 
 def nbg(train_features: np.array, train_labels: np.array,
                   test_features: np.array, **kwargs):

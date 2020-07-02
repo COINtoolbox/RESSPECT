@@ -107,7 +107,7 @@ def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
     if class_prob.shape[0] != test_ids.shape[0]:
         raise ValueError('Number of probabiblities is different ' +
                          'from number of objects in the test sample!')
-    
+
     # calculate distance to the decision boundary - only binary classification
     dist = abs(class_prob[:, 1] - 0.5)
 
@@ -124,7 +124,7 @@ def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
 
     # check if there are queryable objects within threshold
     indx = int(len(flag) * query_thre)
-    
+
     if sum(flag[:indx]) > 0:
 
         # arrange queryable elements in increasing order
@@ -199,20 +199,20 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
                 flag.append(False)
 
         ini_index = flag.index(True)
+
         flag = np.array(flag)
 
         # check if there are queryable objects within threshold
         indx_query = int(len(flag) * query_thre)
 
-        if sum(flag[:indx_query]) > 0:
-            
+        if sum(flag[:indx_query]) > 0:       
             if screen:
                 print('\n Inside RandomSampling: ')
                 print('       query_ids: ', test_ids[indx[flag]][:batch], '\n')
                 print('   number of test_ids: ', test_ids.shape[0])
                 print('   number of queryable_ids: ', len(queryable_ids), '\n')
                 print('   inedex of queried ids: ', indx[flag][:batch])
-            
+
             # return the corresponding batch size
             return list(indx[flag])[:batch]
         else:

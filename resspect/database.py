@@ -388,7 +388,6 @@ class DataBase:
                 print('\n Loaded ', self.test_metadata.shape[0],
                       ' samples! \n')
 
-
     def load_features(self, path_to_file: str, method='Bazin', screen=False,
                       survey='DES', sample=None ):
         """Load features according to the chosen feature extraction method.
@@ -413,7 +412,8 @@ class DataBase:
             Default is 'DES'.
         sample: str (optional)
             If None, sample is given by a column within the given file.
-            else, read independent files. Default is None.
+            else, read independent files for 'train' and 'test'.
+            Default is None.
         """
 
         if method == 'Bazin':
@@ -583,7 +583,7 @@ class DataBase:
 
                 pool_ia_flag = self.pool_metadata['type'].values == 'Ia'
                 self.pool_labels = pool_ia_flag.astype(int)
-
+                
             else:
                 raise ValueError("Only 'Ia x non-Ia' are implemented! "
                                  "\n Feel free to add other options.")
@@ -809,6 +809,9 @@ class DataBase:
             Chosen classifier.
             The current implementation accepts `RandomForest`,
             'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
+        loop: int (boolean)
+            Iteration loop. Only used if save+predictions==True.
+            Default is None
         screen: bool (optional)
             If True, print debug statements to screen.
             Default is False.
@@ -852,8 +855,6 @@ class DataBase:
             self.predicted_class, self.classprob, self.classifier = \
                 nbg(self.train_features, self.train_labels,
                           self.pool_features, **kwargs)
-
-
         else:
             raise ValueError("The only classifiers implemented are" +
                               "'RandomForest', 'GradientBoostedTrees'," +
@@ -948,7 +949,6 @@ class DataBase:
             bootstrap_clf(nbg, n_ensembles,
                           self.train_features, self.train_labels,
                           self.pool_features, **kwargs)
-
 
         else:
             raise ValueError("The only classifiers implemented are" +
@@ -1145,7 +1145,6 @@ class DataBase:
             order of importance.
             If strategy=='RandomSampling' the order is irrelevant.
         """
-
         if screen:
             print('\n Inside make_query: ')
             print('       ... classprob: ', self.classprob.shape[0])
@@ -1267,7 +1266,7 @@ class DataBase:
                 line.append(item)
             for item1 in query_features:
                 line.append(item1)
-
+                
             all_queries.append(line)
 
             # add object to the training sample

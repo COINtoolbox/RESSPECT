@@ -350,6 +350,7 @@ class LightCurve(object):
             Identification number for the desired light curve.
         """
 
+        # read from file if full photometry not available
         if self.full_photometry.shape[0] == 0:
             if '.tar.gz' in photo_file:
                 tar = tarfile.open(photo_file, 'r:gz')
@@ -739,7 +740,6 @@ class LightCurve(object):
                 plt.ylabel('mag')            
 
             plt.xlabel('days since first observation')
-            
             plt.tight_layout()
 
         if save:
@@ -798,7 +798,6 @@ def fit_snpcc_bazin(path_to_data_dir: str, features_file: str):
                 param_file.write('\n')
 
     param_file.close()
-
 
 def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
                        output_file: str, sample=None):

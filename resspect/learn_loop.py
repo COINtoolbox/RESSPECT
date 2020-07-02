@@ -26,7 +26,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                training='original', batch=1, screen=True, survey='DES',
                nclass=2, photo_class_thr=0.5, photo_ids=False, photo_ids_tofile = False,
                photo_ids_froot=' ', classifier_bootstrap=False, save_predictions=False,
-               sep_files=False, pred_dir=None, queryable=False, **kwargs):
+               sep_files=False, pred_dir=None, queryable=False, 
+               metric_label='snpcc', dist_loop_root=None,**kwargs):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -57,7 +58,14 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         Size of batch to be queried in each loop. Default is 1.
     bootstrap: bool (optional)
         Flag for bootstrapping on the classifier
-        Must be true if using disagreement based strategy
+        Must be true if using disagreement based strategy.
+    dist_loop_root: str (optional)
+        Pattern for file storing distances in each learn loop.
+        Only used if "metric_label" is "cosmo" or "snpcc_cosmo".
+    metric_label: str (optional)
+        Choice of metric. 
+        Currenlty only "snpcc", "cosmo" or "snpcc_cosmo" are accepted.
+        Default is "snpcc".
     nclass: int (optional)
         Number of classes to consider in the classification
         Currently only nclass == 2 is implemented.
@@ -135,8 +143,9 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                           pred_dir=pred_dir, loop=loop, **kwargs)
 
         # calculate metrics
-        data.evaluate_classification()
-
+        data.evaluate_classification(metric_label=metric_label,
+                                     dist_loop_root=dist_loop_root,
+                                     loop=loop)
         # save photo ids
         if photo_ids and photo_ids_tofile:
             fname = photo_ids_froot + '_' + str(loop) + '.dat'

@@ -1,6 +1,5 @@
 # Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#
 # created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
@@ -18,6 +17,7 @@
 from .bazin import *
 from .build_snpcc_canonical import *
 from .classifiers import *
+from .cosmo_metric_utils import *
 from .database import *
 from .exposure_time_calculator import *
 from .fit_lightcurves import *
@@ -25,35 +25,48 @@ from .learn_loop import *
 from .metrics import *
 from .query_strategies import *
 from .plot_results import *
+from .salt3_utils import *
 from .snana_fits_to_pd import *
 from .scripts.build_canonical import main as build_canonical
 from .scripts.build_time_domain_SNPCC import main as build_time_domain
+from .scripts.calculate_cosmology_metric import main as calculate_cosmology_metric
 from .scripts.fit_dataset import main as fit_dataset
 from .scripts.make_metrics_plots import main as make_metrics_plots
 from .scripts.run_loop import main as run_loop
 from .scripts.run_time_domain import main as run_time_domain
+from .time_domain_PLAsTiCC import *
 from .time_domain_SNPCC import *
 from .time_domain_loop import *
 from .batch_functions import *
 from .query_budget_strategies import *
 
 __all__ = ['accuracy',
+           'assign_cosmo',
            'bazin',
            'build_canonical',
            'build_snpcc_canonical',
            'Canonical',
            'Canvas',
+           'column_deriv_m',
+           'compare_two_fishers',
+           'cosmo_metric',
            'DataBase',
            'ExpTimeCalc',
            'efficiency',
            'errfunc',
+           'fish_deriv_m',
+           'fisher_results',
+           'fisher_most_useful',
            'fit_dataset',
            'fit_scipy',
            'fit_snpcc_bazin',
            'fit_plasticc_bazin',
            'fit_resspect_bazin',
            'fom',
+           'full_check',
+           'get_distances',
            'get_snpcc_metric',
+           'get_cosmo_metric',
            'gradient_boosted_trees',
            'knn',
            'learn_loop',
@@ -65,7 +78,7 @@ __all__ = ['accuracy',
            'make_metrics_plots',
            'plot_snpcc_train_canonical',
            'purity',
-           'random_forest',
+           'random_forest',           
            'random_sampling',
            'read_fits',
            'run_loop',
@@ -73,4 +86,5 @@ __all__ = ['accuracy',
            'SNPCCPhotometry',
            'svm',
            'time_domain_loop',
-           'uncertainty_sampling']
+           'uncertainty_sampling',
+           'update_matrix']
