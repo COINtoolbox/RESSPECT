@@ -25,7 +25,6 @@ from .learn_loop import *
 from .metrics import efficiency, purity, fom, accuracy, get_snpcc_metric
 from .query_strategies import *
 from .plot_results import *
-from .salt3_utils import *
 from .snana_fits_to_pd import *
 from .scripts.build_canonical import main as build_canonical
 from .scripts.build_time_domain_SNPCC import main as build_time_domain

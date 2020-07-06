@@ -17,8 +17,6 @@
 
 import pandas as pd
 
-from resspect.cosmo_metric_utils import compare_two_fishers
-
 
 __all__ = ['efficiency', 'purity', 'fom', 'accuracy', 'get_snpcc_metric',
            'cosmo_metric', 'get_cosmo_metric']
@@ -191,7 +189,8 @@ def cosmo_metric(data: str, comp_data: str):
     metric_values: list
         list of calculated metrics values for each element
     """
-
+    from resspect.cosmo_metric_utils import compare_two_fishers
+    
     # read distances
     if isinstance(data, str):
         data = pd.read_csv(data)

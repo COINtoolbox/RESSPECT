@@ -25,7 +25,7 @@ from resspect.classifiers import *
 
 from resspect.query_strategies import *
 from resspect.query_budget_strategies import *
-from resspect.metrics import *
+from resspect.metrics import efficiency, purity, fom, accuracy, get_snpcc_metric
 
 
 __all__ = ['DataBase']
