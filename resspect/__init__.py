@@ -22,7 +22,7 @@ from .database import *
 from .exposure_time_calculator import *
 from .fit_lightcurves import *
 from .learn_loop import *
-from .metrics import *
+from .metrics import efficiency, purity, fom, accuracy, get_snpcc_metric
 from .query_strategies import *
 from .plot_results import *
 from .salt3_utils import *

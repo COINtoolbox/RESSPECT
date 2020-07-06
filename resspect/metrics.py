@@ -18,7 +18,7 @@
 import pandas as pd
 
 from resspect.cosmo_metric_utils import compare_two_fishers
-from resspect.salt3_utils import get_distances
+
 
 __all__ = ['efficiency', 'purity', 'fom', 'accuracy', 'get_snpcc_metric',
            'cosmo_metric', 'get_cosmo_metric']
@@ -267,6 +267,7 @@ def get_cosmo_metric(input_fname_root: str, loop: int,
     metric_values: list
         list of calculated metrics values for each element
     """
+    from resspect.salt3_utils import get_distances
 
     if loop == 0:
         # if first loop, return nothing
