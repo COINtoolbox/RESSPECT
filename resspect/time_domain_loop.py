@@ -187,7 +187,6 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                  save_samples=False, sep_files=sep_files,
                                  survey=survey)
         
-
     if sep_files:
         # initiate object
         data = DataBase()
@@ -201,11 +200,6 @@ def time_domain_loop(days: list,  output_metrics_file: str,
             data.load_features(path_to_file=path_to_ini_files[s],
                                method='Bazin', screen=screen,
                                survey=survey, sample=s)
-        data.build_samples(initial_training='original', nclass=2,
-                           screen=screen,
-                           queryable=queryable, save_samples=save_samples,
-                           sep_files=sep_files, survey=survey)
-
     else:
         # read initial training
         data = load_dataset(fname=path_to_ini_files['train'],
@@ -234,9 +228,10 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     data.pool_labels = first_loop.pool_labels
 
     if sep_files:
-        data.build_orig_samples(nclass=2, screen=screen,
+        data.build_samples(nclass=2, screen=screen,
                                 queryable=queryable,
-                                sep_files=True)
+                                sep_files=True, 
+                           initial_training=initial_training)
     else:
         data.test_features = first_loop.pool_features
         data.test_metadata = first_loop.pool_metadata
