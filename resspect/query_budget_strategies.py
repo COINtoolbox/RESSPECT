@@ -94,7 +94,7 @@ def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
     return acquistion_index
 
 def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
-                             pool_metadata, budgets, criteria="MI" ):
+                             pool_metadata, budgets, criteria="MI", ignore_cost=True):
     ''' DOCUMENT '''
     pool_ids = pool_metadata[id_name].values
     # Specifically queryable ids since we don't need ids to the pool in general.
@@ -153,11 +153,15 @@ def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
         elif criteria == 'entropy':
             batch_scores = joint_entropies_B
 
-        # Adjust scores for cost
-        scores_4m = batch_scores / cost_4m
-        scores_4m[~np.isfinite(scores_4m)] = -np.inf
-        scores_8m = batch_scores / cost_8m
-        scores_8m[~np.isfinite(scores_8m)] = -np.inf
+        if ignore_cost:
+            print("IGNORE COST")
+            scores_4m = batch_scores
+            scores_8m = batch_scores
+        else:
+            scores_4m = batch_scores / cost_4m
+            scores_4m[~np.isfinite(scores_4m)] = -np.inf
+            scores_8m = batch_scores / cost_8m
+            scores_8m[~np.isfinite(scores_8m)] = -np.inf
 
         scores_4m[acquistions] = -1 * np.inf
         scores_8m[acquistions] = -1 * np.inf
