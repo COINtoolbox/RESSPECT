@@ -284,11 +284,6 @@ class LightCurve(object):
                 self.full_photometry = pd.read_csv(photo_file, 
                                                    index_col=False)
 
-                if ' ' in self.full_photometry.keys()[0]:
-                   self.full_photometry = pd.read_csv(photo_file, 
-                                                      sep=' ', 
-                                                      index_col=False)
-
         if 'SNID' in self.full_photometry.keys():
             flag = self.full_photometry['SNID'] == snid
             self.id_name = 'SNID'
@@ -823,10 +818,8 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
         tar.close()
     elif 'FITS' in path_header_file:
         header, photo = read_fits(path_photo_file, drop_separators=True)    
-    else:    
+    else:   
         header = pd.read_csv(path_header_file, index_col=False)
-        if ' ' in header.keys()[0]:
-            header = pd.read_csv(path_header_file, sep=' ', index_col=False)
     
     # add headers to files
     with open(output_file, 'w') as param_file:
@@ -895,11 +888,11 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
                     param_file.write(str(item) + ' ')
                 param_file.write('\n')
 
-        self.redshift = None
-        self.sntype = None
-        self.sncode = None
-        self.sample = None
-        self.photometry = []
+        lc.redshift = None
+        lc.sntype = None
+        lc.sncode = None
+        lc.sample = None
+        lc.photometry = []
 
     param_file.close()
 
