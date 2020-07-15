@@ -143,9 +143,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                           pred_dir=pred_dir, loop=loop, **kwargs)
 
         # calculate metrics
-        data.evaluate_classification(metric_label=metric_label,
-                                     dist_loop_root=dist_loop_root,
-                                     loop=loop)
+        data.evaluate_classification(metric_label=metric_label, screen=screen)
         # save photo ids
         if photo_ids and photo_ids_tofile:
             fname = photo_ids_froot + '_' + str(loop) + '.dat'
