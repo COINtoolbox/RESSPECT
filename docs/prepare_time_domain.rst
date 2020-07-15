@@ -40,7 +40,7 @@ You can perform the entire analysis for one day of the survey using the `SNPCCPh
 .. code-block:: python
    :linenos:
 
-   >>> from resspect.time_domain import SNPCCPhotometry
+   >>> from resspect.time_domain_SNPCC import SNPCCPhotometry
 
    >>> path_to_data = 'data/SIMGEN_PUBLIC_DES/'
    >>> output_dir = 'results/time_domain/'
