@@ -58,6 +58,6 @@ Alternatively you can use the command line to prepare a sequence of days in one 
 
 .. code-block:: bash
 
-   >>> build_time_domain.py -d 20 21 22 23 -p <path to raw data dir> 
+   >>> build_time_domain_SNPCC.py -d 20 21 22 23 -p <path to raw data dir> 
    >>>        -o <path to output time domain dir> -q 2 -c True
 
