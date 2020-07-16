@@ -1236,8 +1236,6 @@ class DataBase:
         """
         id_name = self.identify_keywords()
 
-        all_queries = []
-
         ### keep track of number evolution ####
         npool = self.pool_metadata.shape[0]
         ntrain = self.train_metadata.shape[0]
@@ -1267,7 +1265,7 @@ class DataBase:
             for item1 in query_features:
                 line.append(item1)
                 
-            all_queries.append(line)
+            self.queried_sample.append(line)
 
             # add object to the training sample
             new_header = pd.DataFrame([query_header], columns=self.metadata_names)
@@ -1336,12 +1334,9 @@ class DataBase:
         ntest2 = self.test_metadata.shape[0]
         nvalidation2 = self.validation_metadata.shape[0]
 
-        # update queried samples
-        self.queried_sample.append(all_queries)
-
         if screen:
             print('query_ids: ', query_ids)
-            print('queried sample: ', self.queried_sample[-1][-1][1])
+            print('queried sample: ', self.queried_sample[-1][1])
 
         if ntrain2 != ntrain + nquery or npool2 != npool - nquery:
             raise ValueError('Wrong dimensionality for train/pool samples!')
@@ -1397,19 +1392,23 @@ class DataBase:
                 for j in range(batch - 1):
                     metrics.write('query_id' + str(j + 1) + ' ')
                 metrics.write('query_id' + str(batch) + '\n')
-
-        # write to file
-        if len(self.queried_sample[loop]) > 0:
+ 
+        # write to file)
+        queried_sample = np.array(self.queried_sample)
+        flag = queried_sample[:,0].astype(int) == epoch
+        
+        if sum(flag) > 0:
             with open(output_metrics_file, 'a') as metrics:
                 metrics.write(str(epoch) + ' ')
                 for value in self.metrics_list_values:
                     metrics.write(str(value) + ' ')
-                for j in range(len(self.queried_sample[loop]) - 1):
-                    metrics.write(str(self.queried_sample[loop][j][1]) + ' ')
-                metrics.write(str(self.queried_sample[loop][len(self.queried_sample[loop]) - 1][1]) + '\n')
+                for j in range(sum(flag) - 1):
+                    metrics.write(str(queried_sample[flag][j][1]) + ' ')
+                metrics.write(str(queried_sample[flag][sum(flag) - 1][1]) + '\n')
+       
 
     def save_queried_sample(self, queried_sample_file: str, loop: int,
-                            full_sample=False, batch=1):
+                            full_sample=False, batch=1, epoch=20):
         """Save queried sample to file.
 
         Parameters
@@ -1422,29 +1421,34 @@ class DataBase:
             If true, write down a complete queried sample stored in
             property 'queried_sample'. Otherwise append 1 line per loop to
             'queried_sample_file'. Default is False.
+        epoch: int  (optional)
+            Days since the beginning of the survey. Default is 20.
         """
 
-        if full_sample and len(self.queried_sample[loop]) > 0:
-            full_header = self.metadata_names + self.features_names
+        if full_sample and len(self.queried_sample) > 0:
+            full_header = ['epoch'] + self.metadata_names + self.features_names
             query_sample = pd.DataFrame(self.queried_sample, columns=full_header)
             query_sample.to_csv(queried_sample_file, sep=' ', index=False)
 
-        elif isinstance(loop, int) and len(self.queried_sample[loop]) > 0:
-            if not os.path.exists(queried_sample_file) or loop == 0:
-                # add header to query sample file
-                full_header = self.metadata_names + self.features_names
-                with open(queried_sample_file, 'w') as query:
-                    query.write('day ')
-                    for item in full_header:
-                        query.write(item + ' ')
-                    query.write('\n')
+        elif isinstance(loop, int):
+            queried_sample = np.array(self.queried_sample)
+            flag = queried_sample[:,0].astype(int) == epoch
+            if sum(flag) > 0:
+                if not os.path.exists(queried_sample_file) or loop == 0:
+                    # add header to query sample file
+                    full_header = self.metadata_names + self.features_names
+                    with open(queried_sample_file, 'w') as query:
+                        query.write('day ')
+                        for item in full_header:
+                            query.write(item + ' ')
+                        query.write('\n')
 
-            # save query sample to file
-            with open(queried_sample_file, 'a') as query:
-                for batch in range(batch):
-                    for elem in self.queried_sample[loop][batch]:
-                        query.write(str(elem) + ' ')
-                    query.write('\n')
+                # save query sample to file
+                with open(queried_sample_file, 'a') as query:
+                    for batch in range(batch):
+                        for elem in queried_sample[flag][batch]:
+                            query.write(str(elem) + ' ')
+                        query.write('\n')
 
 
 def main():

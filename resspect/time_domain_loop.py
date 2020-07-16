@@ -86,6 +86,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                      path_to_queried="", queryable=True,
                      query_thre=1.0, save_samples=False, sep_files=False,
                      screen=True, survey='LSST', initial_training='original',
+                     save_full_query=False,
                     **kwargs):
     """Perform the active learning loop. All results are saved to file.
 
@@ -111,7 +112,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         "RandomSampling",
     fname_pattern: str
         List of strings. Set the pattern for filename, except day of
-        survey. If file name is 'day_1_vx.dat' -> ['day_', '_vx.dat']
+        survey. If file name is 'day_1_vx.dat' -> ['day_', '_vx.dat'].
     path_to_ini_files: dict (optional)
         Path to initial full light curve files.
         Possible keywords are: "train", "test" and "validation".
@@ -145,6 +146,9 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     save_samples: bool (optional)
         If True, save training and test samples to file.
         Default is False.
+    save_full_query: bool (optional)
+        If True, save complete queried sample to file. 
+        Otherwise, save only first element. Default is False.
     screen: bool (optional)
         If True, print on screen number of light curves processed.
     sep_files: bool (optional)
@@ -318,8 +322,13 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                               batch=len(indx), epoch=night)
 
             # save query sample to file
-            data.save_queried_sample(output_queried_file, loop=night - days[0],
-                                     full_sample=False)
+            if save_full_query:
+                query_fname = output_queried_file[:-4] + '_' + str(night - days[0]) + '.dat' 
+            else:
+                query_fname = output_queried_file
+                
+            data.save_queried_sample(query_fname, loop=night - days[0],
+                                     full_sample=save_full_query, epoch=night)
 
             # load features for next day
             path_to_features2 = path_to_features_dir + fname_pattern[0] + \
@@ -355,7 +364,31 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                         data.train_metadata = data.train_metadata.drop(data.train_metadata.index[indx_today])
                         data.train_labels = np.delete(data.train_labels, indx_today, axis=0)
                         data.train_features = np.delete(data.train_features, indx_today, axis=0)
-
+                        
+                        # get number of queried objects
+                        n = np.array(data.queried_sample).shape[0] * np.array(data.queried_sample).shape[1]
+                        if n < 30:
+                            n1 = n
+                        else:
+                            n1 = n / 30
+                            
+                        # build query data frame
+                        full_header = ['epoch'] + data.metadata_names + data.features_names
+                        queried_sample = pd.DataFrame(data.queried_sample,
+                                                      columns=full_header)
+                        
+                        # get object index in the queried sample
+                        indx_queried = list(queried_sample[id_name].values).index(obj)
+                        
+                        # get flag to isolate object in question
+                        flag2 = queried_sample[id_name].values == obj
+                        
+                        # get object epoch in the queried sample
+                        obj_epoch = queried_sample['epoch'].values[flag2]
+                        
+                        # remove old features from queried
+                        queried_sample = queried_sample.drop(queried_sample.index[indx_queried])
+                        
                         # update new features of the training with new obs
                         flag = data_tomorrow.pool_metadata[id_name].values == obj
 
@@ -366,7 +399,17 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                                         data_tomorrow.pool_features[flag], axis=0)
                         data.train_labels = np.append(data.train_labels,
                                                       data_tomorrow.pool_labels[flag], axis=0)
-
+                        
+                        # update new features in the queried sample
+                        l1 = [obj_epoch[0]] + list(data_tomorrow.pool_metadata[flag].values[0]) + \
+                             list(data_tomorrow.pool_features[flag][0])
+                        new_query = pd.DataFrame([l1], columns=full_header)
+                        queried_sample = pd.concat([queried_sample, new_query], axis=0,
+                                                    ignore_index=True)
+                        
+                        # update queried sample
+                        data.queried_sample = list(queried_sample.values)
+                        
                     # remove obj from pool sample
                     data_tomorrow.pool_metadata = data_tomorrow.pool_metadata.drop(\
                                              data_tomorrow.pool_metadata.index[indx_tomorrow])
@@ -435,11 +478,10 @@ def time_domain_loop(days: list,  output_metrics_file: str,
 
         # check if all queried samples are in the training sample
         for i in range(len(data.queried_sample)):
-            for j in range(len(data.queried_sample[i])):
-                if data.queried_sample[i][j][1] not in data.train_metadata['id'].values:
-                    raise ValueError('End of time_domain_loop : Object '+ \
-                                     str(data.queried_sample[i][j][1]) + \
-                                     ' was queried but is missing from training!')
+            if data.queried_sample[i][1] not in data.train_metadata['id'].values:
+                raise ValueError('End of time_domain_loop : Object '+ \
+                                 str(data.queried_sample[i][1]) + \
+                                 ' was queried but is missing from training!')
 
         # check if validation sample continues the same
         if sep_files:
