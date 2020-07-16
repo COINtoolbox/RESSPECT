@@ -1,9 +1,13 @@
 astropy>=4.0
+f90nml>=1.2
 matplotlib>=3.1.1
 numpy>=1.17.0
 pandas>=0.25.0
+psutil>=5.7.0
+pytest>=5.4
 setuptools>=41.0.1
 scipy>=1.3.0
 scikit-learn>=0.20.3
 seaborn>=0.9.0
+tox>=3.17
 xgboost>=1.0.1
