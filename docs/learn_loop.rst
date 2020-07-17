@@ -110,7 +110,7 @@ Active Learning loop in time domain
 ===================================
 
 Considering that you have previously prepared the time domain data, you can run the active learning loop
-in its current form either by using the :py:mod:`resspect.time_domain_loop` module:
+in its current form by using the :py:mod:`resspect.time_domain_loop` module:
 
 .. code-block:: python
     :linenos:
@@ -120,9 +120,7 @@ in its current form either by using the :py:mod:`resspect.time_domain_loop` modu
     >>> days = [20, 180]
     >>> training = 'original'
     >>> strategy = 'UncSampling'
-    >>> n_estimators = 1000
-    >>> batch = 1
- 
+    >>> n_estimators = 1000 
     >>> sep_files = True
     
     >>> output_diag_file = 'results/metrics_' + strategy + '_' + str(training) + \
@@ -160,13 +158,6 @@ in its current form either by using the :py:mod:`resspect.time_domain_loop` modu
 
 Make sure you check the full documentation of the module to understand which variables are required depending
 on the case you wish to run.
-
-For example, to run with SNPCC data, the larges survey interval you can run is between 20 and 182 days,
-the corresponding option will be `-d 20 182`.
-
-In the example above, if you choose to start from the original training sample, `-t original` you must also
-input the path to the file containing the full light curve analysis - so the full initial training can
-be read. This option corresponds to `-t original -fl <path to full lc features>`.
 
 More details can be found in the corresponding `docstring <https://github.com/COINtoolbox/resspect/blob/master/resspect/scripts/run_time_domain.py>`_.
 
