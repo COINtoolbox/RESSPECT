@@ -122,6 +122,7 @@ in its current form by using the :py:mod:`resspect.time_domain_loop` module:
     >>> strategy = 'UncSampling'
     >>> n_estimators = 1000 
     >>> sep_files = True
+    >>> batch = None # use budgets instead              # if int, ignore cost per observation
     
     >>> output_diag_file = 'results/metrics_' + strategy + '_' + str(training) + \
                            '_batch' + str(batch) +  '.dat'
@@ -129,7 +130,6 @@ in its current form by using the :py:mod:`resspect.time_domain_loop` module:
                             '_batch' + str(batch) +  '.dat'
     >>> path_to_features_dir = 'data/pool/'
   
-    >>> batch = None # use budgets instead              # if int, ignore cost per observation
     >>> budgets = (6. * 3600, 6. * 3600)                # budget of 6 hours per night of observation
     >>> classifier = 'RandomForest'
     >>> clf_bootstrap = False 
