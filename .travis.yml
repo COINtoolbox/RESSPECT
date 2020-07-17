@@ -15,4 +15,5 @@ install:
   - pip install tox
 
 script:
+  - echo "Hello World"
   - tox -e test
