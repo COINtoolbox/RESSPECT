@@ -13,11 +13,7 @@ branches:
 install:
   - sudo apt-get update
   - pip install tox
+
+
+script:
   - echo "Hello World"
-
-# install
-#- python setup.py test
-#- python setup.py install
-
-#script:
-#- pytest
