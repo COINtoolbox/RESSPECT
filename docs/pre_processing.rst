@@ -6,7 +6,7 @@ Feature Extraction
 The first stage in consists in transforming the raw data into a uniform data matrix which will subsequently be given
 as input to the learning algorithm.
 
-``resspect`` can handle FITS format data from the RESSPECT project, csv data from the Photometric LSST Astronomical Classification Challenge (`PLAsTiCC <https://zenodo.org/record/2539456#.Xrsk33UzZuQ>`_)  and text-like data from the SuperNova Photometric Classification Challenge (`SNPCC <<https://arxiv.org/abs/1008.1024>>`_).
+``resspect`` can handle FITS format data from the RESSPECT project, csv data from the Photometric LSST Astronomical Classification Challenge (`PLAsTiCC <https://zenodo.org/record/2539456#.Xrsk33UzZuQ>`_)  and text-like data from the SuperNova Photometric Classification Challenge (`SNPCC <https://arxiv.org/abs/1008.1024>`_).
 
 
 Load 1 light curve: 
@@ -24,22 +24,16 @@ In order to fit a single light curve from the RESSPECT simulations you need to h
     >>> import pandas as pd
     >>> import tarfile
 
-    >>> path_to_header = '~/RESSPECT_TRAIN_HEAD.tar.gz'
-
-    # openning '.tar.gz' files requires some juggling ...
-    >>> tar = tarfile.open(path_to_header, 'r:gz')
-    >>> fname = tar.getmembers()[0]
-    >>> content = tar.extractfile(fname).read()
-    >>> header = pd.read_csv(io.BytesIO(content))
-    >>> tar.close()
+    >>> path_to_header = '~/RESSPECT_TRAIN_HEAD.csv.gz'
+    >>> header = pd.read_csv(path_to_header)
 
     # get keywords
     >>> header.keys()
     Index(['objid', 'redshift', 'type', 'code', 'sample'], dtype='object')
 
     # check the first chunks of ids and types
-    >>> header[['objid', 'type']].iloc[:10]
-       objid     type
+    >>> header[['SNID', 'TYPE']].iloc[:10]
+       SNID     TYPE
     0   3228  Ibc_V19
     1   2241      IIn
     2   6770       Ia
@@ -51,10 +45,12 @@ In order to fit a single light curve from the RESSPECT simulations you need to h
     8   1695       Ia
     9   1660   II-NMF  
 
-    >> snid = header['objid'].values[4]
+    >> snid = header['SNID'].values[4]
 
 
-Now that you have selected on object, you can fit its light curve using the `LightCurve class <https://resspect.readthedocs.io/en/resspect/api/resspect.LightCurve.html#resspect.LightCurve>`_ :
+
+Now that you have selected on object, you can fit its light curve using the `LightCurve class <https://resspect.readthedocs.io/en/latest/api/resspect.LightCurve.html#resspect.LightCurve>`_ :
+
 
 .. code-block:: python
     :linenos:
@@ -89,7 +85,7 @@ Similar to the case presented below, reading only 1 light curve from PLAsTiCC re
     >>> from resspect.fit_lightcurves import LightCurve
     >>> import pandas as pd
 
-    >>> path_to_metadata = '~/plasticc_train_metadata.csv.gz'
+    >>> path_to_metadata = '~/plasticc_train_metadata.csv'
     >>> path_to_lightcurves = '~/plasticc_train_lightcurves.csv.gz'
     
     # read metadata for the entire sample
@@ -177,7 +173,7 @@ It is possible to perform the fit in all filters at once and visualize the resul
 
    >>> lc.fit_bazin_all()                            # perform Bazin fit in all filters
    >>> lc.plot_bazin_fit(save=True, show=True,
-                         output_file='plots/SN' + str(lc.id) + '.png')   # save to file
+   >>>                   output_file='plots/SN' + str(lc.id) + '.png')   # save to file
 
 .. figure:: images/SN7948.png
    :align: center
@@ -186,6 +182,45 @@ It is possible to perform the fit in all filters at once and visualize the resul
    :alt: Bazing fit to light curve. This is an example from RESSPECT perfect simulations.
 
    Example of light curve from RESSPECT perfect simulations.
+
+
+This can be done in flux as well as in magnitude:
+
+.. code-block:: python
+    :linenos:
+
+    >>> lc.plot_bazin_fit(save=False, show=True, unit='mag')
+
+.. figure:: images/SN834603.png
+   :align: center
+   :height: 480 px
+   :width: 640 px
+   :alt: Bazing fit to light curve. This is an example from SNPCC data.
+
+    Example of light from SNPCC data.
+
+
+Ocasionally, it is necessary to extrapolate the fitted light curve to a latter epoch -- for example, in case we want to estimate its magnitude at the time of spectroscopic measurement (details in the `time domain preparation section <https://resspect.readthedocs.io/en/latest/prepare_time_domain.html>`_ ).
+
+Before deploying  large batches for pre-processing, you might want to visualize how the extrapolation behaves for a few light curves. This can be done using:
+
+.. code-block:: python
+    :linenos:
+
+    >>> # define max MJD for this light curve
+    >>> max_mjd = max(lc.photometry['mjd']) - min(lc.photometry['mjd'])
+    
+    >>> lc.plot_bazin_fit(save=False, show=True, extrapolate=True, 
+                          time_flux_pred=[max_mjd+3, max_mjd+5, max_mjd+10])
+
+
+.. figure:: images/SN469949_extrap.png
+   :align: center
+   :height: 480 px
+   :width: 640 px
+   :alt: Bazing fit to light curve. This is an example from SNPCC data.
+
+    Example of extrapolated light from SNPCC data.
 
 
 Processing all light curves in the data set
@@ -246,6 +281,8 @@ For SNPCC:
 The same result can be achieved using the command line:
 
 .. code-block:: bash
+    :linenos:
+
     # for RESSPECT or PLAsTiCC
     >>> fit_dataset.py -s <dataset_name> -p <path_to_photo_file> 
              -hd <path_to_header_file> -sp <sample> -o <output_file> 

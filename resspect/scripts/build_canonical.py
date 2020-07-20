@@ -43,8 +43,9 @@ def main(user_choices):
     -p : str (optional)
         File to store comparison plot.
         If not provided plot is shown on screen.
-    -s :  bool
+    -s :  bool (optional)
         If True, save to file metadata on SNR and peakmag.
+        Default is False.
 
     Examples
     -------
@@ -115,8 +116,9 @@ if __name__ == '__main__':
                                          'If not provided plot is '
                                          'shown on screen.',
                         dest='output_plot_file')
-    parser.add_argument('-s', '--save', required=True, type=str2bool,
-                        dest='save', help='If True, save to file metadata'
+    parser.add_argument('-s', '--save', required=False, type=str2bool,
+                        default=False, dest='save', 
+                        help='If True, save to file metadata'
                                           'on SNR and peakmag.')
 
     # get input directory and output file name from user

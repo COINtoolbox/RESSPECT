@@ -66,7 +66,8 @@ class Canonical(object):
 
     Methods
     -------
-    snpcc_get_canonical_info(path_to_rawdata_dir: str, canonical_output_file: st, compute: bool, save: bool, canonical_input_file: str)
+    snpcc_get_canonical_info(path_to_rawdata_dir: str, canonical_output_file: st,
+                             compute: bool, save: bool, canonical_input_file: str)
         Load SNPCC metada data required to characterize objects.
     snpcc_identify_samples()
         Identify training and test sample.
@@ -94,7 +95,7 @@ class Canonical(object):
     def snpcc_get_canonical_info(self, path_to_rawdata_dir: str,
                                  canonical_output_file: str,
                                  compute=True, save=True,
-                                 canonical_input_file='', scree=False):
+                                 canonical_input_file='', screen=False):
         """
         Load SNPCC metada data required to characterize objects.
 
@@ -151,7 +152,7 @@ class Canonical(object):
 
                 sim_info_matrix.append(line)
 
-            metadata_header = ['snid', 'sample', 'sntype', 'z', 'g_pkmag',
+            metadata_header = ['snid', 'orig_sample', 'sntype', 'z', 'g_pkmag',
                                'r_pkmag', 'i_pkmag', 'z_pkmag', 'g_SNR',
                                'r_SNR', 'i_SNR', 'z_SNR']
             self.meta_data = pd.DataFrame(sim_info_matrix,
@@ -180,7 +181,7 @@ class Canonical(object):
         # define parameters
         features_list = ['z', 'g_pkmag', 'r_pkmag', 'i_pkmag',
                          'z_pkmag', 'g_SNR', 'r_SNR', 'i_SNR', 'z_SNR']
-        train_flag = self.meta_data['sample'].values == 'train'
+        train_flag = self.meta_data['orig_sample'].values == 'train'
         ia_flag = self.meta_data['sntype'].values == 'Ia'
         ibc_flag = self.meta_data['sntype'].values == 'Ibc'
         ii_flag = self.meta_data['sntype'].values == 'II'
@@ -268,7 +269,7 @@ class Canonical(object):
 def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,
                           output_canonical_file: str, output_info_file='',
                           compute=True, save=True, input_info_file='',
-                          features_method='Bazin'):
+                          features_method='Bazin', screen=False):
     """Build canonical sample for SNPCC data.
 
     Parameters
@@ -286,14 +287,16 @@ def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,
         If True, compute metadata information on SNR and sim peak mag.
         If False, read info from file.
         Default is True.
-    save: bool (optional)
-        Save simulation metadata information to file.
-        Default is True.
+    features_method: str (optional)
+        Method for feature extraction. Only 'Bazin' is implemented.
     input_info_file: str (optional)
         Complete path to sim metadata file.
         This must be provided if save == False.
-    features_method: str (optional)
-        Method for feature extraction. Only 'Bazin' is implemented.
+    save: bool (optional)
+        Save simulation metadata information to file.
+        Default is True.
+    screen: bool (optional)
+            If true, display steps info on screen. Default is False.     
 
     Returns
     -------
@@ -308,28 +311,34 @@ def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,
     sample.snpcc_get_canonical_info(path_to_rawdata_dir=path_to_raw_data,
                                     canonical_output_file=output_info_file,
                                     canonical_input_file=input_info_file,
-                                    compute=compute, save=save)
+                                    compute=compute, save=save, screen=screen)
 
     sample.snpcc_identify_samples()                 # identify samples
-    sample.find_neighbors()                         # find neighbors
+    sample.find_neighbors(screen=screen)            # find neighbors
 
     # get metadata from features file
     data = DataBase()
-    data.load_features(path_to_features, method=features_method)
+    data.load_features(path_to_file=path_to_features, method=features_method,
+                        screen=screen)
     sample.header = data.metadata
 
     # identify new samples
-    for i in range(data.data.shape[0]):
-        if data.data.iloc[i]['id'] in sample.canonical_ids:
-            data.data.at[i, 'sample'] = 'queryable'
+    for i in range(data.metadata.shape[0]):
+        if data.metadata.iloc[i]['id'] in sample.canonical_ids:
+            data.metadata.at[i, 'queryable'] = True
+        else:
+            data.metadata.at[i, 'queryable'] = False
 
     # save to file
+    features = pd.DataFrame(data.features, columns=data.features_names)
+    data.data = pd.concat([data.metadata, features], axis=1)
     data.data.to_csv(output_canonical_file, sep=' ', index=False)
 
     # update Canonical object
     sample.canonical_sample = data.data
 
-    print('Built canonical sample!')
+    if screen:
+        print('Built canonical sample!')
 
     return sample
 
@@ -347,18 +356,18 @@ def plot_snpcc_train_canonical(sample: Canonical, output_plot_file=False):
     """
 
     # prepare data
-    ztrain = sample.meta_data['z'][sample.meta_data['sample'].values == 'train']
+    ztrain = sample.meta_data['z'][sample.meta_data['orig_sample'].values == 'train']
     ztrain_axis = np.linspace(min(ztrain) - 0.25, max(ztrain) + 0.25, 1000)[:, np.newaxis]
     kde_ztrain = KernelDensity(kernel='gaussian', bandwidth=0.05).fit(np.array(ztrain).reshape(-1, 1))
     log_dens_ztrain = kde_ztrain.score_samples(ztrain_axis)
 
-    canonical_flag = sample.canonical_sample['sample'] == 'queryable'
+    canonical_flag = sample.canonical_sample['queryable']
     zcanonical = sample.canonical_sample[canonical_flag]['redshift'].values
     zcanonical_axis = np.linspace(min(zcanonical) - 0.25, max(zcanonical) + 0.25, 1000)[:, np.newaxis]
     kde_zcanonical = KernelDensity(kernel='gaussian', bandwidth=0.05).fit(np.array(zcanonical).reshape(-1, 1))
     log_dens_zcanonical = kde_zcanonical.score_samples(zcanonical_axis)
 
-    gtrain = sample.meta_data['g_pkmag'][sample.meta_data['sample'] == 'train'].values
+    gtrain = sample.meta_data['g_pkmag'][sample.meta_data['orig_sample'] == 'train'].values
     gtrain_axis = np.linspace(min(gtrain) - 0.25, max(gtrain) + 0.25, 1000)[:, np.newaxis]
     kde_gtrain = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(np.array(gtrain).reshape(-1, 1))
     log_dens_gtrain = kde_gtrain.score_samples(gtrain_axis)
@@ -369,7 +378,7 @@ def plot_snpcc_train_canonical(sample: Canonical, output_plot_file=False):
     kde_gcanonical = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(np.array(gcanonical).reshape(-1, 1))
     log_dens_gcanonical = kde_gcanonical.score_samples(gcanonical_axis)
 
-    rtrain = sample.meta_data['r_pkmag'][sample.meta_data['sample'] == 'train'].values
+    rtrain = sample.meta_data['r_pkmag'][sample.meta_data['orig_sample'] == 'train'].values
     rtrain_axis = np.linspace(min(rtrain) - 0.25, max(rtrain) + 0.25, 1000)[:, np.newaxis]
     kde_rtrain = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(np.array(rtrain).reshape(-1, 1))
     log_dens_rtrain = kde_rtrain.score_samples(rtrain_axis)

@@ -19,7 +19,7 @@ For start, we can load the feature information:
    >>> path_to_features_file = 'results/Bazin.dat'
 
    >>> data = DataBase()
-   >>> data.load_features(path_to_features_file, method='Bazin')
+   >>> data.load_features(path_to_features_file, method='Bazin', screen=True)
    Loaded  21284  samples!
 
 Notice that this data has some pre-determine separation between training and test sample:
@@ -27,7 +27,7 @@ Notice that this data has some pre-determine separation between training and tes
 .. code-block:: python
    :linenos:
 
-   >>> data.metadata['sample'].unique()
+   >>> data.metadata['orig_sample'].unique()
    array(['test', 'train'], dtype=object)
 
 You can choose to start your first iteration of the active learning loop from the original training sample
@@ -37,9 +37,13 @@ training sample. The code below build the respective samples and performs the cl
 .. code-block:: python
    :linenos:
 
-   >>> data.build_samples(initial_training='original', nclass=2)
-   Training set size:  1093
-   Test set size:  20191
+   >>> data.build_samples(initial_training='original', nclass=2, screen=True)
+   ** Inside build_orig_samples: **
+      Training set size:  1093
+      Test set size:  20191
+      Validation set size:  20191
+      Pool set size:  20191
+         From which queryable:  20191 
 
    >>> data.classify(method='RandomForest')
    >>> data.classprob                        # check classification probabilities
@@ -67,24 +71,6 @@ Given the output from the classifier we can calculate the metric(s) of choice:
    [0.5975434599574068, 0.9024767801857585,
    0.34684684684684686, 0.13572404702012383]
 
-and save results for this one loop to file:
-
-.. code-block:: python
-   :linenos:
-
-    >>> path_to_features_file = 'results/Bazin.dat'
-    >>> metrics_file = 'results/metrics.dat'
-    >>> queried_sample_file = 'results/queried_sample.dat'
-
-   >>> data.save_metrics(loop=0, output_metrics_file=metrics_file)
-   >>> data.save_queried_sample(loop=0, queried_sample_file=query_file,
-   >>>                          full_sample=False)
-
-You should now have in your ``results`` directory a ``metrics.dat`` file which looks like this:
-
-.. literalinclude:: images/example_diagnostic.dat
- :lines: 1-2
-
 
 Running a number of iterations in sequence
 ------------------------------------------
@@ -99,7 +85,7 @@ In interactive mode, you must define the required variables and use the :py:mod:
 
    >>> nloops = 1000                                  # number of iterations
    >>> method = 'Bazin'                               # only option in v1.0
-   >>> ml = 'RandomForest'                            # only option in v1.0
+   >>> ml = 'RandomForest'                            # classifier
    >>> strategy = 'RandomSampling'                    # learning strategy
    >>> input_file = 'results/Bazin.dat'               # input features file
    >>> metric = 'results/metrics.dat'                 # output metrics file
@@ -108,7 +94,7 @@ In interactive mode, you must define the required variables and use the :py:mod:
    >>> batch = 1                                      # size of batch
 
    >>> learn_loop(nloops=nloops, features_method=method, classifier=ml,
-   >>>            strategy=strategy, path_to_features=input_file, output_metrics_file=metrics, 
+   >>>            strategy=strategy, path_to_features=input_file, output_metrics_file=metric, 
    >>>            output_queried_file=queried, training=train, batch=batch)
 
 Alternatively you can also run everything from the command line:
@@ -119,45 +105,59 @@ Alternatively you can also run everything from the command line:
    >>>             -m <output metrics file> -q <output queried sample file>
    >>>             -s <learning strategy> -t <choice of initial training>
 
-The queryable sample
---------------------
-
-In the example shown above, when reading the data from the features file there was only 2 possibilities for the
-`sample` variable:
-
-.. code-block:: python
-   :linenos:
-
-   >>> data.metadata['orig_sample'].unique()
-   array(['test', 'train'], dtype=object)
-
-This corresponds to an unrealistic scenario where we are able to obtain spectra for any object at any time.
-
-.. hint:: If you wish to restrict the sample available for querying, just change the `sample` variable to `queryable` for the objects available for querying. Whenever this keywork is encountered in a file of extracted features, the code automatically restricts the query selection to the objects flagged as `queryable`.
-
 
 Active Learning loop in time domain
 ===================================
 
 Considering that you have previously prepared the time domain data, you can run the active learning loop
-in its current form either by using the :py:mod:`resspect.time_domain_loop` or by using the command line
-interface:
+in its current form by using the :py:mod:`resspect.time_domain_loop` module:
 
-.. code-block:: bash
+.. code-block:: python
+    :linenos:
 
-    >>> run_time_domain.py -d <first day of survey> <last day of survey>
-    >>>        -m <output metrics file> -q <output queried file> -f <features directory>
-    >>>        -s <learning strategy> -t <choice of initial training>
+    >>> from resspect import time_domain_loop
+    
+    >>> days = [20, 180]
+    >>> training = 'original'
+    >>> strategy = 'UncSampling'
+    >>> n_estimators = 1000 
+    >>> sep_files = True
+    >>> batch = None # use budgets instead              # if int, ignore cost per observation
+    
+    >>> output_diag_file = 'results/metrics_' + strategy + '_' + str(training) + \
+                           '_batch' + str(batch) +  '.dat'
+    >>> output_query_file = 'results/queried_' + strategy + '_' + str(training) + \
+                            '_batch' + str(batch) +  '.dat'
+    >>> path_to_features_dir = 'data/pool/'
+  
+    >>> budgets = (6. * 3600, 6. * 3600)                # budget of 6 hours per night of observation
+    >>> classifier = 'RandomForest'
+    >>> clf_bootstrap = False 
+    >>> feature_method = 'Bazin'
+    >>> screen = True
+    >>> fname_pattern = ['day_', '.dat']                # pattern on filename where different days of the survey are stored
+    >>> canonical = False
+    >>> queryable= True
+    
+    >>> path_to_ini_files = {}
+    >>> path_to_ini_files['train'] = 'data/Train.csv'
+    >>> path_to_ini_files['test'] = 'data/Test.csv'
+    >>> path_to_ini_files['validation'] = 'data/Validation.csv'
+    >>> survey='DES'
+    
+    >>> # run time domain loop
+    >>> time_domain_loop(days=days, output_metrics_file=output_diag_file,
+    >>>                  output_queried_file=output_query_file,
+    >>>                  path_to_features_dir=path_to_features_dir,
+    >>>                  budgets=budgets, clf_bootstrap=clf_bootstrap,
+    >>>                  strategy=strategy, fname_pattern=fname_pattern, batch=batch, classifier=classifier,
+    >>>                  canonical=canonical, sep_files=sep_files,
+    >>>                  screen=screen, initial_training=training, path_to_ini_files=path_to_ini_files,
+    >>>                  survey=survey, queryable=queryable, n_estimators=n_estimators)
+
 
 Make sure you check the full documentation of the module to understand which variables are required depending
 on the case you wish to run.
-
-For example, to run with SNPCC data, the larges survey interval you can run is between 20 and 182 days,
-the corresponding option will be `-d 20 182`.
-
-In the example above, if you choose to start from the original training sample, `-t original` you must also
-input the path to the file containing the full light curve analysis - so the full initial training can
-be read. This option corresponds to `-t original -fl <path to full lc features>`.
 
 More details can be found in the corresponding `docstring <https://github.com/COINtoolbox/resspect/blob/master/resspect/scripts/run_time_domain.py>`_.
 
