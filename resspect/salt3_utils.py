@@ -102,7 +102,10 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
 
         prefix = os.path.join(outputdir,fitres_prefix.strip()+'_'+str(i))
         fitres_file = prefix+'.FITRES.TEXT'
-        phot_version = '{}_MODEL{}_SN{}'.format(data_prefix,modelnum,sntype)
+        if int(modelnum) == 99:
+            phot_version = '{}_MODEL{}_{}'.format(data_prefix,modelnum,sntype)
+        else:
+            phot_version = '{}_MODEL{}_SN{}'.format(data_prefix,modelnum,sntype)
         hook = SNANAHook(snid_file=f, data_folder=data_folder, 
                          phot_version=phot_version, fitres_prefix=prefix,
                          stages=['lcfit'], glue=False,tempfile=salt3_tempfile,
