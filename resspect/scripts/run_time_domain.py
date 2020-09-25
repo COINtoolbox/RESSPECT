@@ -1,8 +1,7 @@
 # Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
 #
-# created on 10 August 2019 for ActSNClass
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -71,14 +70,15 @@ def main(user_choice):
 
     >>> run_time_domain.py -d <first day of survey> <last day of survey>
     >>>        -m <output metrics file> -q <output queried file> -f <features directory>
-    >>>        -s <learning strategy> -fm <path to full light curve features >
+    >>>        -s <learning strategy> -t <training choice>
+    >>>        -fl <path to full light curve features >
 
     Be aware to check the default options as well!
     """
 
     # set parameters
     days = user_choice.days
-    output_diag_file = user_choice.metrics
+    output_metrics_file = user_choice.metrics
     output_query_file = user_choice.queried
     path_to_features_dir = user_choice.features_dir
     strategy = user_choice.strategy
@@ -91,7 +91,7 @@ def main(user_choice):
     training = user_choice.training
 
     # run time domain loop
-    time_domain_loop(days=days, output_diag_file=output_diag_file,
+    time_domain_loop(days=days, output_metrics_file=output_metrics_file,
                      output_queried_file=output_query_file,
                      path_to_features_dir=path_to_features_dir,
                      strategy=strategy, batch=batch, classifier=classifier,
@@ -156,6 +156,7 @@ if __name__ == '__main__':
                         default='original', help='Choice of initial training'
                                                  'sample. It can be "original"'
                                                  'or an integer.')
+
 
     from_user = parser.parse_args()
 

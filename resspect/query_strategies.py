@@ -1,8 +1,7 @@
 # Copyright 2020 resspect software
 # Author: The RESSPECT team
-#         Initial skeleton taken from ActSNClass
 #
-# created on 02 March 2020
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -16,16 +15,65 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+__all__ = ['uncertainty_sampling',
+           'random_sampling',
+           'uncertainty_sampling_entropy',
+           'uncertainty_sampling_least_confident',
+           'uncertainty_sampling_margin',
+           'qbd_mi',
+           'qbd_entropy']
+
 import numpy as np
 
 
-__all__ = ['uncertainty_sampling', 'random_sampling', 'percentile_sampling']
+def compute_entropy(ps: np.array):
+    """
+    Calcualte the entropy for discrete distributoons assuming the events are
+    indexed by the last dimension.
+
+    Parameters
+    ----------
+    ps: np.array
+        Probability disburtions to compute entropy of.
+
+    Returns
+    -------
+    entropy: np.array
+        Predicted classes.
+    """
+    return -1*np.sum(ps*np.log(ps + 1e-12), axis=-1)
+
+
+def compute_qbd_mi_entropy(ensemble_probs: np.array):
+    """
+    Calcualte the entropy of the average distribution from an ensemble of
+    distributions. Calculate the mutual information between the members in the
+    ensemble and the average distribution.
+
+    Parameters
+    ----------
+    ensemble_probs: np.array
+        Probability from ensembles where the first dimension is number of unique
+        point, the second dimension is the number of ensemble members and the
+        third dimension is the number of events.
+
+    Returns
+    -------
+    entropy: np.array
+    mutual information: np.array
+    """
+    avg_dist = np.mean(ensemble_probs, axis=1)
+    entropy_avg_dist = compute_entropy(avg_dist)
+    conditional_entropy = compute_entropy(ensemble_probs)
+    mutual_information = entropy_avg_dist - np.mean(conditional_entropy, axis=1)
+    return entropy_avg_dist, mutual_information
 
 
 def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
                          queryable_ids: np.array, batch=1,
                          screen=False, query_thre=1.0) -> list:
     """Search for the sample with highest uncertainty in predicted class.
+
     Parameters
     ----------
     class_prob: np.array
@@ -45,6 +93,7 @@ def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
         Maximum percentile where a spectra is considered worth it.
         If not queryable object is available before this threshold,
         return empty query. Default is 1.0.
+
     Returns
     -------
     query_indx: list
@@ -75,6 +124,7 @@ def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
 
     # check if there are queryable objects within threshold
     indx = int(len(flag) * query_thre)
+
     if sum(flag[:indx]) > 0:
 
         # arrange queryable elements in increasing order
@@ -82,19 +132,26 @@ def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
         final_order = order[flag]
 
         if screen:
-            print('*** Displacement caused by constraints on query****')
-            print(' 0 -> ', list(order).index(final_order[0]))
-            print(class_prob[order[0]], '-- > ', class_prob[final_order[0]])
+            print('\n Inside UncSampling: ')
+            print('       query_ids: ', test_ids[final_order][:batch], '\n')
+            print('   number of test_ids: ', test_ids.shape[0])
+            print('   number of queryable_ids: ', len(queryable_ids), '\n')
+            print('   *** Displacement caused by constraints on query****')
+            print('   0 -> ', list(order).index(final_order[0]))
+            print('   ', class_prob[order[0]], '-- > ', class_prob[final_order[0]], '\n')
 
         # return the index of the highest uncertain objects which are queryable
         return list(final_order)[:batch]
 
     else:
         return list([])
-    
+
+
 def random_sampling(test_ids: np.array, queryable_ids: np.array,
-                    batch=1, queryable=False, query_thre=1.0, seed=42) -> list:
+                    batch=1, queryable=False, query_thre=1.0, seed=42,
+                    screen=False) -> list:
     """Randomly choose an object from the test sample.
+
     Parameters
     ----------
     test_ids: np.array
@@ -110,8 +167,13 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
     query_thre: float (optinal)
         Threshold where a query is considered worth it.
         Default is 1.0 (no limit).
+    screen: bool (optional)
+        If True display on screen the shift in index and
+        the difference in estimated probabilities of being Ia
+        caused by constraints on the sample available for querying.
     seed: int (optional)
         Seed for random number generator. Default is 42.
+
     Returns
     -------
     query_indx: list
@@ -128,7 +190,6 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
                             replace=False)
 
     if queryable:
-        print('inside queryable')
         # flag only the queryable objects
         flag = []
         for item in indx:
@@ -137,24 +198,34 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
             else:
                 flag.append(False)
 
+        ini_index = flag.index(True)
+
         flag = np.array(flag)
 
         # check if there are queryable objects within threshold
         indx_query = int(len(flag) * query_thre)
 
-        if sum(flag[:indx_query]) > 0:
+        if sum(flag[:indx_query]) > 0:       
+            if screen:
+                print('\n Inside RandomSampling: ')
+                print('       query_ids: ', test_ids[indx[flag]][:batch], '\n')
+                print('   number of test_ids: ', test_ids.shape[0])
+                print('   number of queryable_ids: ', len(queryable_ids), '\n')
+                print('   inedex of queried ids: ', indx[flag][:batch])
+
             # return the corresponding batch size
             return list(indx[flag])[:batch]
         else:
             # return empty list
             return list([])
-
     else:
         return list(indx)[:batch]
-    
-def percentile_sampling(class_prob: np.array, test_ids: np.array,
-                  queryable_ids: np.array, perc: float) -> list:
-    """Search for the sample at a specific percentile of uncertainty.
+
+
+def uncertainty_sampling_entropy(class_prob: np.array, test_ids: np.array,
+                         queryable_ids: np.array, batch=1,
+                         screen=False, query_thre=1.0) -> list:
+    """Search for the sample with highest uncertainty, defined by entropy, in predicted class.
 
     Parameters
     ----------
@@ -164,32 +235,353 @@ def percentile_sampling(class_prob: np.array, test_ids: np.array,
         Set of ids for objects in the test sample.
     queryable_ids: np.array
         Set of ids for objects available for querying.
-    perc: float in [0,1]
-        Percentile used to identify obj to be queried.
-  
+    batch: int (optional)
+        Number of objects to be chosen in each batch query.
+        Default is 1.
+    screen: bool (optional)
+        If True display on screen the shift in index and
+        the difference in estimated probabilities of being Ia
+        caused by constraints on the sample available for querying.
+    query_thre: float (optional)
+        Maximum percentile where a spectra is considered worth it.
+        If not queryable object is available before this threshold,
+        return empty query. Default is 1.0.
+
     Returns
     -------
     query_indx: list
             List of indexes identifying the objects from the test sample
             to be queried in decreasing order of importance.
+            If there are less queryable objects than the required batch
+            it will return only the available objects -- so the list of
+            objects to query can be smaller than 'batch'.
     """
+    if class_prob.shape[0] != test_ids.shape[0]:
+        raise ValueError('Number of probabiblities is different ' +
+                         'from number of objects in the test sample!')
 
-    # calculate distance to the decision boundary - only binary classification
-    dist = abs(class_prob[:, 1] - 0.5)
+    # calculate entropy
+    entropies = (-1*np.sum(class_prob * np.log(class_prob + 1e-12), axis=1))
 
     # get indexes in increasing order
-    order = dist.argsort()
+    order = entropies.argsort()[::-1]
 
-    # get index of wished percentile
-    perc_index = int(order.shape[0] * perc)
+    # only allow objects in the query sample to be chosen
+    flag = []
+    for item in order:
+        if test_ids[item] in queryable_ids:
+            flag.append(True)
+        else:
+            flag.append(False)
 
-    # return the index of the highest object at the requested percentile
-    return list([perc_index])
+    # check if there are queryable objects within threshold
+    indx = int(len(flag) * query_thre)
+    if sum(flag[:indx]) > 0:
+
+        # arrange queryable elements in increasing order
+        flag = np.array(flag)
+        final_order = order[flag]
+
+        if screen:
+            print('*** Displacement caused by constraints on query****')
+            print(' 0 -> ', list(order).index(final_order[0]))
+            print(class_prob[order[0]], '-- > ', class_prob[final_order[0]])
+
+        # return the index of the highest uncertain objects which are queryable
+        return list(final_order)[:batch]
+
+    else:
+        return list([])
+
+def uncertainty_sampling_least_confident(class_prob: np.array, test_ids: np.array,
+                         queryable_ids: np.array, batch=1,
+                         screen=False, query_thre=1.0) -> list:
+    """Search for the sample with highest uncertainty, defined by least confident, in predicted class.
+
+    Parameters
+    ----------
+    class_prob: np.array
+        Classification probability. One value per class per object.
+    test_ids: np.array
+        Set of ids for objects in the test sample.
+    queryable_ids: np.array
+        Set of ids for objects available for querying.
+    batch: int (optional)
+        Number of objects to be chosen in each batch query.
+        Default is 1.
+    screen: bool (optional)
+        If True display on screen the shift in index and
+        the difference in estimated probabilities of being Ia
+        caused by constraints on the sample available for querying.
+    query_thre: float (optional)
+        Maximum percentile where a spectra is considered worth it.
+        If not queryable object is available before this threshold,
+        return empty query. Default is 1.0.
+
+    Returns
+    -------
+    query_indx: list
+            List of indexes identifying the objects from the test sample
+            to be queried in decreasing order of importance.
+            If there are less queryable objects than the required batch
+            it will return only the available objects -- so the list of
+            objects to query can be smaller than 'batch'.
+    """
+    if class_prob.shape[0] != test_ids.shape[0]:
+        raise ValueError('Number of probabiblities is different ' +
+                         'from number of objects in the test sample!')
+
+    # Get probability of predicted class
+    prob_predicted_class = class_prob.max(axis=1)
+
+    # get indexes in increasing order
+    order = prob_predicted_class.argsort()
+
+    # only allow objects in the query sample to be chosen
+    flag = []
+    for item in order:
+        if test_ids[item] in queryable_ids:
+            flag.append(True)
+        else:
+            flag.append(False)
+
+    # check if there are queryable objects within threshold
+    indx = int(len(flag) * query_thre)
+    if sum(flag[:indx]) > 0:
+
+        # arrange queryable elements in increasing order
+        flag = np.array(flag)
+        final_order = order[flag]
+
+        if screen:
+            print('*** Displacement caused by constraints on query****')
+            print(' 0 -> ', list(order).index(final_order[0]))
+            print(class_prob[order[0]], '-- > ', class_prob[final_order[0]])
+
+        # return the index of the highest uncertain objects which are queryable
+        return list(final_order)[:batch]
+
+    else:
+        return list([])
+
+def uncertainty_sampling_margin(class_prob: np.array, test_ids: np.array,
+                         queryable_ids: np.array, batch=1,
+                         screen=False, query_thre=1.0) -> list:
+    """Search for the sample with highest uncertainty, defined by max margin, in predicted class.
+
+    Parameters
+    ----------
+    class_prob: np.array
+        Classification probability. One value per class per object.
+    test_ids: np.array
+        Set of ids for objects in the test sample.
+    queryable_ids: np.array
+        Set of ids for objects available for querying.
+    batch: int (optional)
+        Number of objects to be chosen in each batch query.
+        Default is 1.
+    screen: bool (optional)
+        If True display on screen the shift in index and
+        the difference in estimated probabilities of being Ia
+        caused by constraints on the sample available for querying.
+    query_thre: float (optional)
+        Maximum percentile where a spectra is considered worth it.
+        If not queryable object is available before this threshold,
+        return empty query. Default is 1.0.
+
+    Returns
+    -------
+    query_indx: list
+            List of indexes identifying the objects from the test sample
+            to be queried in decreasing order of importance.
+            If there are less queryable objects than the required batch
+            it will return only the available objects -- so the list of
+            objects to query can be smaller than 'batch'.
+    """
+    if class_prob.shape[0] != test_ids.shape[0]:
+        raise ValueError('Number of probabiblities is different ' +
+                         'from number of objects in the test sample!')
+
+    # Calculate margin between highest predicted class and second highest
+    sorted_probs = np.sort(class_prob, axis=1)
+    margin = sorted_probs[:, -1] - sorted_probs[:, -2]
+    # get indexes in increasing order
+    order = margin.argsort()
+
+    # only allow objects in the query sample to be chosen
+    flag = []
+    for item in order:
+        if test_ids[item] in queryable_ids:
+            flag.append(True)
+        else:
+            flag.append(False)
+
+    # check if there are queryable objects within threshold
+    indx = int(len(flag) * query_thre)
+    if sum(flag[:indx]) > 0:
+
+        # arrange queryable elements in increasing order
+        flag = np.array(flag)
+        final_order = order[flag]
+
+        if screen:
+            print('*** Displacement caused by constraints on query****')
+            print(' 0 -> ', list(order).index(final_order[0]))
+            print(class_prob[order[0]], '-- > ', class_prob[final_order[0]])
+
+        # return the index of the highest uncertain objects which are queryable
+        return list(final_order)[:batch]
+
+    else:
+        return list([])
+
+
+def qbd_mi(ensemble_probs: np.array, test_ids: np.array,
+                         queryable_ids: np.array, batch=1,
+                         screen=False, query_thre=1.0) -> list:
+    """Search for the sample with highest uncertainty in predicted class.
+
+    Parameters
+    ----------
+    ensemble_probs: np.array
+        Classification probability from each model in the ensemble.
+    test_ids: np.array
+        Set of ids for objects in the test sample.
+    queryable_ids: np.array
+        Set of ids for objects available for querying.
+    batch: int (optional)
+        Number of objects to be chosen in each batch query.
+        Default is 1.
+    screen: bool (optional)
+        If True display on screen the shift in index and
+        the difference in estimated probabilities of being Ia
+        caused by constraints on the sample available for querying.
+    query_thre: float (optional)
+        Maximum percentile where a spectra is considered worth it.
+        If not queryable object is available before this threshold,
+        return empty query. Default is 1.0.
+
+    Returns
+    -------
+    query_indx: list
+            List of indexes identifying the objects from the test sample
+            to be queried in decreasing order of importance.
+            If there are less queryable objects than the required batch
+            it will return only the available objects -- so the list of
+            objects to query can be smaller than 'batch'.
+    """
+    if ensemble_probs.shape[0] != test_ids.shape[0]:
+        raise ValueError('Number of probabiblities is different ' +
+                         'from number of objects in the test sample!')
+
+    # calculate distance to the decision boundary - only binary classification
+    entropies, mis = compute_qbd_mi_entropy(ensemble_probs)
+
+    # get indexes in increasing order
+    order = mis.argsort()[::-1]
+
+    # only allow objects in the query sample to be chosen
+    flag = []
+    for item in order:
+        if test_ids[item] in queryable_ids:
+            flag.append(True)
+        else:
+            flag.append(False)
+
+    # check if there are queryable objects within threshold
+    indx = int(len(flag) * query_thre)
+    if sum(flag[:indx]) > 0:
+
+        # arrange queryable elements in increasing order
+        flag = np.array(flag)
+        final_order = order[flag]
+
+        if screen:
+            print('*** Displacement caused by constraints on query****')
+            print(' 0 -> ', list(order).index(final_order[0]))
+            print(ensemble_probs[order[0]], '-- > ', ensemble_probs[final_order[0]])
+
+        # return the index of the highest uncertain objects which are queryable
+        return list(final_order)[:batch]
+
+    else:
+        return list([])
+
+
+def qbd_entropy(ensemble_probs: np.array, test_ids: np.array,
+                queryable_ids: np.array, batch=1,
+                screen=False, query_thre=1.0) -> list:
+    """Search for the sample with highest uncertainty in predicted class.
+
+    Parameters
+    ----------
+    ensemble_probs: np.array
+        Classification probability from each model in the ensemble.
+    test_ids: np.array
+        Set of ids for objects in the test sample.
+    queryable_ids: np.array
+        Set of ids for objects available for querying.
+    batch: int (optional)
+        Number of objects to be chosen in each batch query.
+        Default is 1.
+    screen: bool (optional)
+        If True display on screen the shift in index and
+        the difference in estimated probabilities of being Ia
+        caused by constraints on the sample available for querying.
+    query_thre: float (optional)
+        Maximum percentile where a spectra is considered worth it.
+        If not queryable object is available before this threshold,
+        return empty query. Default is 1.0.
+
+    Returns
+    -------
+    query_indx: list
+            List of indexes identifying the objects from the test sample
+            to be queried in decreasing order of importance.
+            If there are less queryable objects than the required batch
+            it will return only the available objects -- so the list of
+            objects to query can be smaller than 'batch'.
+    """
+    if ensemble_probs.shape[0] != test_ids.shape[0]:
+        raise ValueError('Number of probabiblities is different ' +
+                         'from number of objects in the test sample!')
+
+    # calculate distance to the decision boundary - only binary classification
+    entropies, mis = compute_qbd_mi_entropy(ensemble_probs)
+
+    # get indexes in increasing order
+    order = entropies.argsort()[::-1]
+
+    # only allow objects in the query sample to be chosen
+    flag = []
+    for item in order:
+        if test_ids[item] in queryable_ids:
+            flag.append(True)
+        else:
+            flag.append(False)
+
+    # check if there are queryable objects within threshold
+    indx = int(len(flag) * query_thre)
+    if sum(flag[:indx]) > 0:
+
+        # arrange queryable elements in increasing order
+        flag = np.array(flag)
+        final_order = order[flag]
+
+        if screen:
+            print('*** Displacement caused by constraints on query****')
+            print(' 0 -> ', list(order).index(final_order[0]))
+            print(ensemble_probs[order[0]], '-- > ', ensemble_probs[final_order[0]])
+
+        # return the index of the highest uncertain objects which are queryable
+        return list(final_order)[:batch]
+
+    else:
+        return list([])
 
 
 def main():
     return None
-
 
 if __name__ == '__main__':
     main()

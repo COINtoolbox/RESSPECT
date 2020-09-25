@@ -1,7 +1,6 @@
-# Copyright 2020 snactclass software
+# Copyright 2020 resspect software
 # Author: Emille E. O. Ishida
-#         Based on initial prototype developed by the CRP #4 team
-#
+#     
 # created on 26 February 2020
 #
 # Licensed GNU General Public License v3.0;
@@ -22,7 +21,7 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 
-from actsnclass import LightCurve
+from resspect import LightCurve
 
 
 class PLAsTiCCPhotometry(object):
@@ -62,14 +61,13 @@ class PLAsTiCCPhotometry(object):
         Read metadata and filter only required classes.
     write_bazin_to_file(lightcurve: LightCurve, features_file: str)
         Write Bazin parameters and metadata to file.
-
     """
 
     def __init__(self):
         self.bazin_header = 'id redshift type code sample queryable uA uB ut0 ' + \
                             'utfall utrise gA gB gt0 ' + \
                             'gtfall gtrise rA rB rt0 rtfall rtrise iA ' + \
-                            'iB it0 itfall itrise zA zB zt0 ztfall ztrise ' + \
+                            'iB it0 itfall itrise zA zB zt0 ztfall ztrise' + \
                             'YA YB Yt0 Ytfall Ytrise\n'
         self.class_code = {90: 'Ia', 67: '91bg', 52:'Iax', 42:'II', 62:'Ibc', 
              95: 'SLSN', 15:'TDE', 64:'KN', 88:'AGN', 92:'RRL', 65:'M-dwarf',
@@ -103,7 +101,6 @@ class PLAsTiCCPhotometry(object):
             List of elements to be added to the header.
             Separate by 1 space.
             Default option uses header for Bazin features file.
-
         """
 
         features_file = output_dir + 'day_' + str(day) + '_v' + str(vol) +'.dat'
@@ -131,7 +128,7 @@ class PLAsTiCCPhotometry(object):
             Codes for classes we wish to keep. 
 
         """
-        flist = ['plasticc_train_metadata.csv.gz', 
+        flist = ['plasticc_train_metadata.csv', 
                   'plasticc_test_metadata.csv.gz']
 
         # store classes information
@@ -175,7 +172,6 @@ class PLAsTiCCPhotometry(object):
             Path to directory containing all PLAsTiCC zenodo data.
         output_dir: str
             Output directory.
-
         """
         
         ## create daily files
@@ -205,7 +201,7 @@ class PLAsTiCCPhotometry(object):
         Parameters
         ----------
         lc: LightCurve
-            ActSNClass light curve object.
+            resspect light curve object.
         features_file: str
             Output file to store Bazin features.
         queryable: bool
@@ -215,7 +211,6 @@ class PLAsTiCCPhotometry(object):
         -------
         line: str
             A line concatenating metadata and Bazin fits for 1 obj.
-
         """
 
         # build an entire line with bazin features
@@ -235,7 +230,7 @@ class PLAsTiCCPhotometry(object):
         return line
             
     def fit_one_lc(self, raw_data_dir: str, snid: int, sample: str,
-                   output_dir: str):
+                   output_dir: str, vol: int, day=None, screen=False):
         """Fit one light curve throughout the entire survey.
 
         Save results to appropriate file, considering 1 day survey 
@@ -252,7 +247,17 @@ class PLAsTiCCPhotometry(object):
             Possibilities are 'train' or 'test'.
         output_dir:
             Directory to store output time domain files.
-
+        vol: int or None
+            Index of the original PLAsTiCC zenodo light curve
+            files where the photometry for this object is stored.
+            If None, search for id in all light curve files.
+            If sample == 'train' it is automatically set to 0.
+        day: int or None (optional)
+            Day since beginning of survey to be considered.
+            If None, fit all days. Default is None.
+        screen: bool (optional)
+            Print steps evolution on screen.
+            Default is False.
         """
 
         # store number of points per day
@@ -262,23 +267,49 @@ class PLAsTiCCPhotometry(object):
         # create light curve instance
         orig_lc = LightCurve()          
 
-        vol = 0
         if sample == 'train':
+            vol = 0
             # load light curve
-            print('vol = ', vol)
+            if screen:
+                print('vol: ', vol)
+
             orig_lc.load_plasticc_lc(raw_data_dir + self.fdic[sample][vol], snid)
 
-        else:
+        elif vol ==  None:
             # search within test light curve files
             while orig_lc.photometry.shape[0] == 0 and vol < 11:
                 vol = vol + 1
-                print('vol : ', vol)
+                if screen:
+                    print('vol: ', vol)
+                    
                 orig_lc.load_plasticc_lc(raw_data_dir + self.fdic[sample][vol - 1], snid)
-        
+
+        elif isinstance(vol, int):
+            # load light curve
+            orig_lc.load_plasticc_lc(raw_data_dir + self.fdic[sample][vol - 1], snid)
+
+        # get number of points in all days of the survey for this light curve
+        for days in range(1, self.max_epoch - self.min_epoch):
+
+            # see which epochs are observed until this day
+            now = days + self.min_epoch
+            photo_flag_now = orig_lc.photometry['mjd'].values <= now
+
+            # number of points today
+            npoints[days] = sum(photo_flag_now)
+            
+        # create instance to store Bazin fit parameters    
         line = False
-                
-        # for every day of survey
-        for day_of_survey in range(1, self.max_epoch - self.min_epoch):
+
+        if day == None:
+            # for every day of survey
+            fit_days = range(42, self.max_epoch - self.min_epoch)
+            
+        elif isinstance(day, int):
+            # for a specific day of the survey
+            fit_days = [day]
+            
+        for day_of_survey in fit_days:
 
             lc = deepcopy(orig_lc)
 
@@ -290,7 +321,7 @@ class PLAsTiCCPhotometry(object):
             npoints[day_of_survey] = sum(photo_flag)
 
             # only the allowed photometry
-            lc.photometry = lc.photometry[photo_flag]
+            lc.photometry = lc.photometry[photo_flag]                                  
 
             # check if any point survived, other checks are made
             # inside lc object
@@ -331,9 +362,12 @@ class PLAsTiCCPhotometry(object):
 
                     # write to file
                     line = self.write_bazin_to_file(lc, features_file, queryable)
+
+                    if screen:
+                        print('   *** Wrote to file ***   ')
                     
-            # write previous result to file if there is no change
-            elif npoints[day_of_survey] == npoints[day_of_survey - 1] and isinstance(line, str):
+            # write previous result to file if there is no change or if it is the first day            
+            elif (npoints[day_of_survey] == npoints[day_of_survey - 1] and isinstance(line, str)):
 
                 # set filename
                 features_file = output_dir + 'day_' + \
@@ -342,6 +376,9 @@ class PLAsTiCCPhotometry(object):
                 # save results
                 with open(features_file, 'a') as param_file:
                     param_file.write(line)
+
+                if screen:
+                    print('   *** wrote to file ***   ')
                 
     def build_one_epoch(self, raw_data_dir: str, day_of_survey: int,
                         time_domain_dir: str, feature_method='Bazin'):
@@ -360,7 +397,6 @@ class PLAsTiCCPhotometry(object):
         feature_method: str
             Feature extraction method. 
             Only possibility now is 'Bazin'.
-
         """
         
         # count survivers

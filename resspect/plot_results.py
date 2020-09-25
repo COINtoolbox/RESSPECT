@@ -34,6 +34,7 @@ strategies = ['Canonical',
 
 class Canvas(object):
     """Canvas object, handles and plot information from multiple strategies.
+
     Attributes
     ----------
     axis_label_size: int
@@ -68,6 +69,7 @@ class Canvas(object):
     strategies: dict
         Dictionary connecting each data frame to its
         standard nomenclature (not the plot labels).
+
     Methods
     -------
     load_metrics(path_to_files: list, strategy_list: list)
@@ -76,22 +78,27 @@ class Canvas(object):
         Set directives for plot sizes based on number of metrics.
     plot_metrics(output_plot_file: str, strategies_list: list)
         Generate plot for all metrics in files and strategies given as input.
+
     Examples
     --------
     Define input variables
+
     >>> path_to_files = ['results/metrics_canonical.dat',
     >>>                  'results/metrics_random.dat',
     >>>                  'results/metrics_unc.dat']
     >>> strategies_list = ['Canonical', 'RandomSampling', 'UncSampling']
     >>> output_plot = 'plots/metrics1_unc.png'
+
     Initiate the Canvas object, read and plot the results for
     each metric and strategy.
+
     >>> cv = Canvas()
     >>> cv.load_metrics(path_to_files=path_to_files,
     >>>                    strategies_list=strategies_list)
     >>> cv.set_plot_dimensions()
     >>> cv.plot_metrics(output_plot_file=output_plot,
     >>>                 strategies_list=strategies_list)
+
     """
 
     def __init__(self):
@@ -112,13 +119,13 @@ class Canvas(object):
         self.qbd_mi = pd.DataFrame()
         self.qbd_entropy = pd.DataFrame()
         self.colors = {'Canonical': '#dd0100',                 # red
-                       'RandomSampling': '#fac901',            # yellow
+                       'RandomSampling': '#d83030',            # blue (scream)
                        'UncSampling': '#225095',               # blue
-                       'UncSamplingEntropy': '#74eb34',        # lime green
+                       'UncSamplingEntropy': '#E1522D',        # orange (scream)
                        'UncSamplingLeastConfident': '#eb34de', # pink
                        'UncSamplingMargin': '#ff8f05',         # orange
-                       'QBDMI': '#0a4f08',                     # dark green
-                       'QBDEntropy': '#434773',                # grey blue
+                       'QBDMI': '#606048',                     # light brown (scream) 
+                       'QBDEntropy': '#181818',                # gray (scream)
                        'RandomForest': '#fac901',
                        'GradientBoostedTrees': '#ff8f05',
                        'KNN': '#dd0100',
@@ -169,10 +176,13 @@ class Canvas(object):
                            'QBDMI': self.qbd_mi,
                            'QBDEntropy': self.qbd_entropy}
 
-    def load_metrics(self, path_to_files: list, strategies_list: list):
+    def load_metrics(self, path_to_files: list, strategies_list: list,
+                     metrics_name='snpcc'):
         """Load and identify set of metrics.
+
         Populates attributes: canonical, unc_sampling or rand_sampling,
         depending on choice of 'sample'.
+
         Parameters
         ----------
         path_to_files : str
@@ -181,22 +191,31 @@ class Canvas(object):
             List of all strategies to be included in the same plot.
             Current possibibilities are:
             ['canonical', 'rand_sampling', 'unc_sampling'].
+        metrics_name: str (optional)
+            Identify the metrics to be read. Only option is 'snpcc'.
         """
 
         # read data
         for i in range(len(strategies_list)):
             name = strategies_list[i]
+            
+            # get metrics names
+            if metrics_name == 'snpcc':
+                self.metrics_names = ['accuracy', 'efficiency',
+                                      'purity', 'fom']
+                names_list = ['loop', 'accuracy', 'efficiency',
+                                      'purity', 'fom']
+            else:
+                raise ValueError('Invalid metric choice!')
+                
             self.strategies[name] = pd.read_csv(path_to_files[i],
                                                 sep=' ',
-                                                index_col=False)
-
-            # get metrics names
-            if len(self.metrics_names) == 0:
-                self.metrics_names = \
-                    list(self.strategies[name].columns[1: -1])
+                                                index_col=False,
+                                                usecols=names_list)
 
     def set_plot_dimensions(self):
         """Set directives for plot sizes.
+
         Populates attributes: nmetrics, ncolumns, and fig_size.
         """
 
@@ -210,6 +229,7 @@ class Canvas(object):
                          lim_queries=None):
         """
         Generate plot for all metrics in files and strategies given as input.
+
         Parameters
         ----------
         output_plot_file : str

@@ -1,8 +1,7 @@
 # Copyright 2020 resspect software
-# Author: The RESSPECT team
-#         Initial skeleton from ActSNClass
+# Author: Emille E. O. Ishida
 #
-# created on 7 August 2019
+# created on 14 April 2020
 #
 # Licensed GNU General Public License v3.0;
 # you may not use this file except in compliance with the License.
@@ -23,18 +22,31 @@ setuptools.setup(
     name='resspect',
     version='0.1',
     packages=setuptools.find_packages(),
-    py_modules=['classifiers',
-                'data_base',
-                'fit_lightcurves',
-                'learn_loop',
-                'metrics',
-                'plot_results',
-                'query_strategies',
-                'time_domain'],
-    scripts=[],
-    url='https://github.com/COINtoolbox/RESSPECT',
+    py_modules=['resspect/bazin',
+                'resspect/build_snpcc_canonical',
+                'resspect/classifiers',
+                'resspect/database',
+                'resspect/exposure_time_calculator',
+                'resspect/cosmo_metric_utils',
+                'resspect/fit_lightcurves',
+                'resspect/learn_loop',
+                'resspect/metrics',
+                'resspect/plot_results',
+                'resspect/query_strategies',
+                'resspect/salt3_utils',
+                'resspect/snana_fits_to_pd',
+                'resspect/time_domain_SNPCC',
+                'resspect/time_domain_PLAsTiCC'],
+    scripts=['resspect/scripts/build_canonical.py',
+             'resspect/scripts/build_time_domain_SNPCC.py',    
+             'resspect/scripts/calculate_cosmology_metric.py',
+             'resspect/scripts/fit_dataset.py',
+             'resspect/scripts/make_metrics_plots.py',
+             'resspect/scripts/run_loop.py',
+             'resspect/scripts/run_time_domain.py'],
+    url='https://github.com/COINtoolbox/resspect/tree/RESSPECT',
     license='GNU3',
     author='The RESSPECT team',
     author_email='contact@cosmostatistics-initiative.org',
-    description='Recommendation System for Spectroscopic follow-up'
+    description='resspect - Recommendation System for Spectroscopic Follow-up'
 )
