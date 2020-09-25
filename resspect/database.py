@@ -1216,7 +1216,7 @@ class DataBase:
         return query_indx
 
     def update_samples(self, query_indx: list, epoch=20,
-                       queryable=False, screen=False):
+                       queryable=False, screen=False, alternative_label=False):
         """Add the queried obj(s) to training and remove them from test.
 
         Update properties: train_headers, train_features, train_labels,
@@ -1226,6 +1226,11 @@ class DataBase:
         ----------
         query_indx: list
             List of indexes identifying objects to be moved.
+        alternative_label: bool (optional)
+            Update the training sample with the opposite label
+            from the one optained from the classifier.
+            Default is False.
+            At this point it only works with batch=1.
         epoch: int (optional)
             Day since beginning of survey. Default is 20.
         queryable: bool (optinal)
@@ -1257,7 +1262,34 @@ class DataBase:
             obj = query_indx[0]
 
             # add object to the query sample
-            query_header = self.pool_metadata.values[obj]
+            query_header0 = self.pool_metadata.values[obj]
+            
+            # check if we add normal or reversed label
+            if nquery == 1 and alternative_label:
+                new_header = []
+                print(query_header0)
+                
+                for i in range(len(query_header0)):
+                    # add all elements of header, except type
+                    if i < 2 or i > 3:
+                        new_header.append(query_header0[i])
+                    # add reverse label
+                    elif i == 2 and query_header0[i] == 'Ia':
+                        new_header.append('X')
+                        new_header.append(99)
+                    elif i == 2 and query_header0[i] != 'Ia':
+                        new_header.append('Ia')
+                        new_header.append(90)
+                    
+                query_header = new_header
+                print(query_header)
+                
+            elif not alternative_label:
+                query_header = query_header0
+                        
+            elif nquery > 1 and alternative_label:
+                raise ValueError('Alternative label only works with batch=1!')
+            
             query_features = self.pool_features[obj]
             line = [epoch]
             for item in query_header:
