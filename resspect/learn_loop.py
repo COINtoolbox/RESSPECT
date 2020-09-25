@@ -188,8 +188,6 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
             
         elif save_alt_class and batch > 1:
             raise ValueError('Alternative label only works with batch=1!')
-
-        print('indx_ after = ', indx)
         
         # update training and test samples
         data.update_samples(indx, epoch=loop)
