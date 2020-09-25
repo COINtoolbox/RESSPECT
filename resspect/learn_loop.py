@@ -161,8 +161,11 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
 
         # choose object to query
         indx = data.make_query(strategy=strategy, batch=batch, queryable=queryable)
+<<<<<<< HEAD
         
         # make copy of index (why is this necessary??)
+=======
+>>>>>>> 99c5a9f405ae3d0b7744cb35c2dc8b20b1f6d67c
         indx2 = copy.deepcopy(indx)
 
         # update training with alternative label
@@ -177,10 +180,13 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                               pred_dir=pred_dir_alt, loop=loop, **kwargs)
             # evaluate classification
             data_alt.evaluate_classification(metric_label=metric_label, screen=screen)
+<<<<<<< HEAD
             # save photo ids  
             fname_alt = photo_ids_froot + '_' + str(loop) + '_alt_label.dat'
             data_alt.output_photo_Ia(photo_class_thr, to_file=photo_ids_tofile,
                                      filename=fname_alt)
+=======
+>>>>>>> 99c5a9f405ae3d0b7744cb35c2dc8b20b1f6d67c
             # save metrics for alternate state
             output_metrics_file_alt = output_metrics_file[:-4] + '_alt_label.dat'
             data_alt.save_metrics(loop=loop, output_metrics_file=output_metrics_file_alt,
