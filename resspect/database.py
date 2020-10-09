@@ -606,6 +606,23 @@ class DataBase:
                 if name in self.pool_metadata[id_name].values:
                     raise ValueError('Object ', name, 'found in both, training ' +\
                                     'and pool samples!')
+                    
+        # check if there are repeated ids within each sample
+        names = ['train', 'pool', 'validation', 'test']
+        pds = [self.train_metadata, self.pool_metadata, 
+               self.validation_metadata, self.test_metadata]
+        
+        repeated_ids_samples = []
+        for i in range(4):
+            
+            delta = len(np.unique(pds[i][id_name].values)) - pds[i].shape[0]
+            if abs(delta) > 0: 
+                repeated_ids_samples.append([names[i], delta])
+                
+        if len(repeated_ids_samples) > 0:
+            raise ValueError('There are repeated ids within ' + \
+                             str(repeated_ids_samples)  + ' sample!')
+            
 
     def build_random_training(self, initial_training: int, nclass=2, screen=False,
                               Ia_frac=0.5, queryable=True, sep_files=False):
@@ -719,6 +736,22 @@ class DataBase:
             if name in self.pool_metadata[id_name].values:
                 raise ValueError('Object ', name, ' present in both, ' + \
                                  'training and pool samples!')
+                
+        # check if there are repeated ids within each sample
+        names = ['train', 'pool', 'validation', 'test']
+        pds = [self.train_metadata, self.pool_metadata, 
+               self.validation_metadata, self.test_metadata]
+        
+        repeated_ids_samples = []
+        for i in range(4):
+            
+            delta = len(np.unique(pds[i][id_name].values)) - pds[i].shape[0]
+            if abs(delta) > 0: 
+                repeated_ids_samples.append([names[i], delta])
+                
+        if len(repeated_ids_samples) > 0:
+            raise ValueError('There are repeated ids within ' + \
+                             str(repeated_ids_samples)  + ' sample!')
 
     def build_samples(self, initial_training='original', nclass=2,
                       screen=False, Ia_frac=0.5,
@@ -1318,6 +1351,11 @@ class DataBase:
             # remove queried object from pool sample
             query_flag = self.pool_metadata[id_name].values == \
                  self.pool_metadata[id_name].iloc[obj]
+            
+            if sum(query_flag) > 1:
+                print('Repeated id: ')
+                print(self.pool_metadata[query_flag])
+                raise ValueError('Found repeated ids in pool sample!')
 
             pool_metadata_temp = self.pool_metadata.copy()
             self.pool_metadata = pool_metadata_temp[~query_flag]
@@ -1363,7 +1401,7 @@ class DataBase:
             query_indx = new_query_indx
 
             if screen:
-                print('  query_indx: ', query_indx)
+                print('remaining  queries: ', query_indx)
 
         # test
         npool2 = self.pool_metadata.shape[0]
@@ -1374,9 +1412,7 @@ class DataBase:
         if screen:
             print('query_ids: ', query_ids)
             print('queried sample: ', self.queried_sample[-1][1])
-
-        if ntrain2 != ntrain + nquery or npool2 != npool - nquery:
-            raise ValueError('Wrong dimensionality for train/pool samples!')
+            print('----------------------------------------------')
 
         if ntest2 > ntest or nvalidation2 > nvalidation:
             raise ValueError('Wrong dimensionality for test/val samples.')
@@ -1400,7 +1436,10 @@ class DataBase:
 
             if name in self.validation_metadata['id'].values:
                 raise ValueError('After update! Object ', name,
-                                 ' found in validation and training samples!')
+                                 ' found in validation and training samples!')            
+                
+        if ntrain2 != ntrain + nquery or npool2 != npool - nquery:            
+            raise ValueError('Wrong dimensionality for train/pool samples!')
 
     def save_metrics(self, loop: int, output_metrics_file: str, epoch: int, batch=1):
         """Save current metrics to file.

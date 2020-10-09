@@ -170,10 +170,12 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
             # create a copy of the DataBase object
             data_alt = copy.deepcopy(data)
             # update with the less probable label
-            data_alt.update_samples(indx2, epoch=loop, alternative_label=True)
+            data_alt.update_samples(indx2, epoch=loop, alternative_label=True,
+                                    screen=screen)
             # classify
             data_alt.classify(method=classifier, save_predictions=save_predictions,
-                              pred_dir=pred_dir, loop=loop, **kwargs)
+                              pred_dir=pred_dir, loop=loop, screen=screen, 
+                              **kwargs)
             # evaluate classification
             data_alt.evaluate_classification(metric_label=metric_label, screen=screen)
             # save photo ids  
@@ -196,7 +198,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
             raise ValueError('Alternative label only works with batch=1!')
         
         # update training and test samples
-        data.update_samples(indx, epoch=loop)
+        data.update_samples(indx, epoch=loop, screen=screen)
 
         # save metrics for current state
         data.save_metrics(loop=loop, output_metrics_file=output_metrics_file,
