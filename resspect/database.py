@@ -36,6 +36,8 @@ class DataBase:
 
     Attributes
     ----------
+    alt_label: bool
+        Flag indicating training with less probable label.
     classifier: sklearn.classifier
         Classifier object.
     classprob: np.array
@@ -174,6 +176,7 @@ class DataBase:
     """
 
     def __init__(self):
+        self.alt_label = False
         self.classifier = None
         self.classprob = np.array([])
         self.data = pd.DataFrame()
@@ -874,7 +877,10 @@ class DataBase:
         if save_predictions:
             id_name = self.identify_keywords()
 
-            out_fname = 'predict_loop_' + str(loop) + '.dat'
+            if self.alt_label:
+                out_fname = 'predict_loop_' + str(loop) + '_alt_label.dat'
+            else:
+                out_fname = 'predict_loop_' + str(loop) + '.dat'
             op = open(pred_dir + '/' + out_fname, 'w')
             op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
             for i in range(self.validation_metadata.shape[0]):
@@ -1266,6 +1272,7 @@ class DataBase:
             
             # check if we add normal or reversed label
             if nquery == 1 and alternative_label:
+                self.alt_label = True
                 new_header = []
                 
                 for i in range(len(query_header0)):

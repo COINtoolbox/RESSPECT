@@ -172,9 +172,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
             # update with the less probable label
             data_alt.update_samples(indx2, epoch=loop, alternative_label=True)
             # classify
-            pred_dir_alt = pred_dir[:-1] + '_alt_label/'
             data_alt.classify(method=classifier, save_predictions=save_predictions,
-                              pred_dir=pred_dir_alt, loop=loop, **kwargs)
+                              pred_dir=pred_dir, loop=loop, **kwargs)
             # evaluate classification
             data_alt.evaluate_classification(metric_label=metric_label, screen=screen)
             # save photo ids  
