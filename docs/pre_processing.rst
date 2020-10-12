@@ -163,7 +163,7 @@ You can now fit each individual filter to the parametric function proposed by
 
 The designation for each parameter are stored in:
 
-.. code-block::python
+.. code-block:: python
    :linenos:
 
    >>> lc.bazin_features_names
