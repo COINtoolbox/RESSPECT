@@ -32,7 +32,7 @@ In order to fit a single light curve from the RESSPECT simulations you need to h
     Index(['objid', 'redshift', 'type', 'code', 'sample'], dtype='object')
 
     # check the first chunks of ids and types
-    >>> header[['SNID', 'TYPE']].iloc[:10]
+    >>> header[['SNID', 'type']].iloc[:10]
        SNID     TYPE
     0   3228  Ibc_V19
     1   2241      IIn
