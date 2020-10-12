@@ -110,49 +110,46 @@ Active Learning loop in time domain
 ===================================
 
 Considering that you have previously prepared the time domain data, you can run the active learning loop
-in its current form by using the :py:mod:`resspect.time_domain_loop` module:
+following the same algorithm described in `Ishida et al., 2019 <https://cosmostatistics-initiative.org/portfolio-item/active-learning-for-sn-classification/>`_    by using the :py:mod:`resspect.time_domain_loop` module:
 
 .. code-block:: python
     :linenos:
 
     >>> from resspect import time_domain_loop
     
-    >>> days = [20, 180]
-    >>> training = 'original'
-    >>> strategy = 'UncSampling'
-    >>> n_estimators = 1000 
-    >>> sep_files = True
-    >>> batch = None # use budgets instead              # if int, ignore cost per observation
+    >>> days = [20, 180]                                # first and last day of the survey to be considered
+    >>> training = 'original'                           # if int take int number of objects for initial training, 50% being Ia
+    >>> strategy = 'UncSampling'                        # learning strategy
+    >>> batch = 1                                       # if int, ignore cost per observation, if None find optimal batch size
+    >>> sep_files = False                               # if True, expects train, test and validation samples in separate files
     
-    >>> output_diag_file = 'results/metrics_' + strategy + '_' + str(training) + \
-                           '_batch' + str(batch) +  '.dat'
+    >>> path_to_features_dir = 'results/time_domain/'   # folder where the files for each day are stored
+    
+    >>> output_metrics_file = 'results/metrics_' + strategy + '_' + str(training) + \
+                           '_batch' + str(batch) +  '.dat'                               # output results for metrics
     >>> output_query_file = 'results/queried_' + strategy + '_' + str(training) + \
-                            '_batch' + str(batch) +  '.dat'
-    >>> path_to_features_dir = 'data/pool/'
-  
-    >>> budgets = (6. * 3600, 6. * 3600)                # budget of 6 hours per night of observation
-    >>> classifier = 'RandomForest'
-    >>> clf_bootstrap = False 
-    >>> feature_method = 'Bazin'
-    >>> screen = True
-    >>> fname_pattern = ['day_', '.dat']                # pattern on filename where different days of the survey are stored
-    >>> canonical = False
-    >>> queryable= True
-    
+                            '_batch' + str(batch) +  '.dat'                              # output query sample
+                            
     >>> path_to_ini_files = {}
-    >>> path_to_ini_files['train'] = 'data/Train.csv'
-    >>> path_to_ini_files['test'] = 'data/Test.csv'
-    >>> path_to_ini_files['validation'] = 'data/Validation.csv'
+    >>> path_to_ini_files['train'] = 'results/Bazin.dat'                                 # features from full light curves for initial training sample 
     >>> survey='DES'
     
+    >>> classifier = 'RandomForest'
+    >>> n_estimators = 1000                             # number of trees in the forest
+    
+    >>> feature_method = 'Bazin'
+    >>> screen = False                                  # if True will print many intermediate steps for debuging 
+    >>> fname_pattern = ['day_', '.dat']                # pattern on filename where different days of the survey are stored                              
+    >>> queryable= True                                 # if True, check brightness before considering an object queryable
+    
+
     >>> # run time domain loop
-    >>> time_domain_loop(days=days, output_metrics_file=output_diag_file,
-    >>>                  output_queried_file=output_query_file,
+    >>> time_domain_loop(days=days, output_metrics_file=output_metrics_file,
+    >>>                  output_queried_file=output_query_file, path_to_ini_files=path_to_ini_files,
     >>>                  path_to_features_dir=path_to_features_dir,
-    >>>                  budgets=budgets, clf_bootstrap=clf_bootstrap,
     >>>                  strategy=strategy, fname_pattern=fname_pattern, batch=batch, classifier=classifier,
-    >>>                  canonical=canonical, sep_files=sep_files,
-    >>>                  screen=screen, initial_training=training, path_to_ini_files=path_to_ini_files,
+    >>>                  sep_files=sep_files,
+    >>>                  screen=screen, initial_training=training,
     >>>                  survey=survey, queryable=queryable, n_estimators=n_estimators)
 
 
@@ -174,3 +171,9 @@ The result will be something like the plot below (accounting for variations due 
 
 
 .. warning:: At this point there is no `Canonical sample` option implemented for the time domain module.
+
+
+Separate samples and Telescope resources
+----------------------------------------
+
+Beyond the simple learning loop described above, `resspect` also handdles a few batch strategies which take into account the available telescope time for spectroscopic follow-up... TBC
