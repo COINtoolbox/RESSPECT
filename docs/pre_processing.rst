@@ -45,11 +45,14 @@ In order to fit a single light curve from the RESSPECT simulations you need to h
     8   1695       Ia
     9   1660   II-NMF  
 
+Choose one SNID to work with:
+
+.. code-block:: python
+    :linenos:
     >> snid = header['SNID'].values[4]
 
 
-
-Now that you have selected on object, you can fit its light curve using the `LightCurve class <https://resspect.readthedocs.io/en/latest/api/resspect.LightCurve.html#resspect.LightCurve>`_ :
+Now that you have selected one object, you can read its light curve using the `LightCurve class <https://resspect.readthedocs.io/en/latest/api/resspect.LightCurve.html#resspect.LightCurve>`_ :
 
 
 .. code-block:: python
