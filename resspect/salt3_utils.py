@@ -112,6 +112,10 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                          outfile=salt3_outfile,**kwargs)
         hook.run() 
         fitres_list.append(fitres_file)
+    
+    if len(fitres_list) == 0:
+        print("No objects were fitted - check input modelnums")
+        return pd.DataFrame(columns=['id','z','mu','mu_err','fitprob'])
 
     combined_fitres_name_str = os.path.join(outputdir,combined_fitres_name)
     combine_fitres(fitres_list,output=combined_fitres_name_str)
@@ -190,6 +194,8 @@ def parse_snid_file(snid_file: str,
         for num in numlist:
             f = '{}/{}_{}_{}'.format(outfolder, os.path.split(snid_file)[1],
                                      samplename,num)
+            if num not in df.modelnum.unique():
+                continue
             df_subsample = df.set_index(['orig_sample','modelnum']).loc[(samplename,num)]
             df_subsample = df_subsample.sample(np.min([len(df_subsample),maxsnnum]),random_state=random_state)
             df_subsample[id_name].to_csv(f,index=False)        
