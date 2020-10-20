@@ -1013,7 +1013,7 @@ class DataBase:
             op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
             for i in range(self.validation_metadata.shape[0]):
                 op.write(str(self.validation_metadata[id_name].iloc[i]) + ',')
-                op.write(str(self.validatin_prob[i][0]) + ',')
+                op.write(str(self.validation_prob[i][0]) + ',')
                 op.write(str(self.validation_prob[i][1]) + ',')
                 op.write(str(self.validation_class[i]) + '\n')
             op.close()
