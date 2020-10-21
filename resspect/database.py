@@ -239,7 +239,7 @@ class DataBase:
 
         else:
             data = pd.read_csv(path_to_bazin_file, index_col=False)
-            if ' ' in data.keys()[0]:
+            if 'redshift' not in data.keys():
                 data = pd.read_csv(path_to_bazin_file, sep=' ', index_col=False)
 
         # check if queryable is there
