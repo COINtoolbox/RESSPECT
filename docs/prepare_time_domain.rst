@@ -17,7 +17,6 @@ day, it is necessary to prepare our simulate data to resemble this scenario. In 
 
 5. Join all information in a standard features file.
 
-
 Defining a queryable object and observation cost
 ------------------------------------------------
 
@@ -41,7 +40,7 @@ You can perform the entire analysis for one day of the survey using the `SNPCCPh
 .. code-block:: python
    :linenos:
 
-   >>> from resspect.time_domain import SNPCCPhotometry
+   >>> from resspect.time_domain_SNPCC import SNPCCPhotometry
 
    >>> path_to_data = 'data/SIMGEN_PUBLIC_DES/'
    >>> output_dir = 'results/time_domain/'
@@ -50,7 +49,7 @@ You can perform the entire analysis for one day of the survey using the `SNPCCPh
    >>> get_cost = True
 
    >>> data = SNPCCPhotometry()
-   >>> data.create_daily_file(output_dir=output_dir, day=day)
+   >>> data.create_daily_file(output_dir=output_dir, day=day, get_cost=get_cost)
    >>> data.build_one_epoch(raw_data_dir=path_to_data, day_of_survey=day,
    >>>                      time_domain_dir=output_dir, queryable_criteria=queryable_criteria, get_cost=get_cost)
 
@@ -59,6 +58,6 @@ Alternatively you can use the command line to prepare a sequence of days in one 
 
 .. code-block:: bash
 
-   >>> build_time_domain.py -d 20 21 22 23 -p <path to raw data dir> 
+   >>> build_time_domain_SNPCC.py -d 20 21 22 23 -p <path to raw data dir> 
    >>>        -o <path to output time domain dir> -q 2 -c True
 

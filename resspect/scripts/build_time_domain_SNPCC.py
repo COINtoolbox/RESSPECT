@@ -67,14 +67,14 @@ def main(user_choice):
     feature_method = user_choice.feature_method
     screen = user_choice.screen
     days_since_obs = user_choice.days_since_obs
-    tel_sizes = user_choices.tel_sizes
-    tel_names = user_choices.tel_names
-    spec_SNR = user_choices.spec_SNR
-    fname_pattern = user_choices.fname_pattern
+    tel_sizes = user_choice.tel_sizes
+    tel_names = user_choice.tel_names
+    spec_SNR = user_choice.spec_SNR
+    fname_pattern = user_choice.fname_pattern
 
     for item in day:
         data = SNPCCPhotometry()
-        data.create_daily_file(output_dir=output_dir, day=item)
+        data.create_daily_file(output_dir=output_dir, day=item, get_cost=get_cost)
         data.build_one_epoch(raw_data_dir=path_to_data, day_of_survey=int(item),
                              time_domain_dir=output_dir,
                              feature_method=feature_method, screen=screen,

@@ -119,13 +119,13 @@ class Canvas(object):
         self.qbd_mi = pd.DataFrame()
         self.qbd_entropy = pd.DataFrame()
         self.colors = {'Canonical': '#dd0100',                 # red
-                       'RandomSampling': '#fac901',            # yellow
+                       'RandomSampling': '#d83030',            # blue (scream)
                        'UncSampling': '#225095',               # blue
-                       'UncSamplingEntropy': '#74eb34',        # lime green
+                       'UncSamplingEntropy': '#E1522D',        # orange (scream)
                        'UncSamplingLeastConfident': '#eb34de', # pink
                        'UncSamplingMargin': '#ff8f05',         # orange
-                       'QBDMI': '#0a4f08',                     # dark green
-                       'QBDEntropy': '#434773',                # grey blue
+                       'QBDMI': '#606048',                     # light brown (scream) 
+                       'QBDEntropy': '#181818',                # gray (scream)
                        'RandomForest': '#fac901',
                        'GradientBoostedTrees': '#ff8f05',
                        'KNN': '#dd0100',
@@ -198,16 +198,20 @@ class Canvas(object):
         # read data
         for i in range(len(strategies_list)):
             name = strategies_list[i]
-            self.strategies[name] = pd.read_csv(path_to_files[i],
-                                                sep=' ',
-                                                index_col=False)
-
+            
             # get metrics names
             if metrics_name == 'snpcc':
                 self.metrics_names = ['accuracy', 'efficiency',
                                       'purity', 'fom']
+                names_list = ['loop', 'accuracy', 'efficiency',
+                                      'purity', 'fom']
             else:
                 raise ValueError('Invalid metric choice!')
+                
+            self.strategies[name] = pd.read_csv(path_to_files[i],
+                                                sep=' ',
+                                                index_col=False,
+                                                usecols=names_list)
 
     def set_plot_dimensions(self):
         """Set directives for plot sizes.

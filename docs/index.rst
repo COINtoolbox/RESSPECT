@@ -34,7 +34,7 @@ Navigate to a ``working_directory`` where you will store the new virtual environ
 
 Once the environment is set up you can activate it:
 
-.. code-block::bash
+.. code-block:: bash
 
    >>> source <working_directory>/bin/activate
 

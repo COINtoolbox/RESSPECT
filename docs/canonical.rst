@@ -80,5 +80,5 @@ In the command line, this looks like:
 .. code-block:: bash
 
    >>> run_loop.py -i results/Bazin_SNPCC_canonical.dat -b <batch size> -n <number of loops>
-   >>>             -d <output metrics file> -q <output queried sample file>
+   >>>             -m <output metrics file> -q <output queried sample file>
    >>>             -s RandomSampling -t <choice of initial training>

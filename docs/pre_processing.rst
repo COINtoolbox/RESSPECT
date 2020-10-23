@@ -24,22 +24,16 @@ In order to fit a single light curve from the RESSPECT simulations you need to h
     >>> import pandas as pd
     >>> import tarfile
 
-    >>> path_to_header = '~/RESSPECT_TRAIN_HEAD.tar.gz'
-
-    # openning '.tar.gz' files requires some juggling ...
-    >>> tar = tarfile.open(path_to_header, 'r:gz')
-    >>> fname = tar.getmembers()[0]
-    >>> content = tar.extractfile(fname).read()
-    >>> header = pd.read_csv(io.BytesIO(content))
-    >>> tar.close()
+    >>> path_to_header = '~/RESSPECT_TRAIN_HEAD.csv.gz'
+    >>> header = pd.read_csv(path_to_header)
 
     # get keywords
     >>> header.keys()
     Index(['objid', 'redshift', 'type', 'code', 'sample'], dtype='object')
 
     # check the first chunks of ids and types
-    >>> header[['objid', 'type']].iloc[:10]
-       objid     type
+    >>> header[['SNID', 'type']].iloc[:10]
+       SNID     TYPE
     0   3228  Ibc_V19
     1   2241      IIn
     2   6770       Ia
@@ -51,10 +45,15 @@ In order to fit a single light curve from the RESSPECT simulations you need to h
     8   1695       Ia
     9   1660   II-NMF  
 
-    >> snid = header['objid'].values[4]
+Choose one SNID to work with:
+
+.. code-block:: python
+    :linenos:
+    >> snid = header['SNID'].values[4]
 
 
-Now that you have selected on object, you can fit its light curve using the `LightCurve class <https://resspect.readthedocs.io/en/latest/api/resspect.LightCurve.html#resspect.LightCurve>`_ :
+Now that you have selected one object, you can read its light curve using the `LightCurve class <https://resspect.readthedocs.io/en/latest/api/resspect.LightCurve.html#resspect.LightCurve>`_ :
+
 
 .. code-block:: python
     :linenos:
@@ -89,7 +88,7 @@ Similar to the case presented below, reading only 1 light curve from PLAsTiCC re
     >>> from resspect.fit_lightcurves import LightCurve
     >>> import pandas as pd
 
-    >>> path_to_metadata = '~/plasticc_train_metadata.csv.gz'
+    >>> path_to_metadata = '~/plasticc_train_metadata.csv'
     >>> path_to_lightcurves = '~/plasticc_train_lightcurves.csv.gz'
     
     # read metadata for the entire sample
@@ -164,7 +163,7 @@ You can now fit each individual filter to the parametric function proposed by
 
 The designation for each parameter are stored in:
 
-.. code-block::python
+.. code-block:: python
    :linenos:
 
    >>> lc.bazin_features_names
