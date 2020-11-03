@@ -9,6 +9,8 @@ This tool allows the constructon of an optimized spectroscopic observation strat
 
 This grew from the work presented in `Ishida et al., 2019 <https://cosmostatistics-initiative.org/portfolio-item/active-learning-for-sn-classification/>`_ and implemented in the `actsnclass <https://github.com/COINtoolbox/ActSNClass>`_ package.
 
+The RESSPECT active learning and telescope resources pipeline is described in `Kennamer et al, 2020 <https://cosmostatistics-initiative.org/portfolio-item/resspect1/>`_. We kindly ask you to include its full citation if you use this material in your research.
+
 The code has been modify for the task of enabling photometric supernova cosmology.
 
 Getting started
@@ -159,7 +161,7 @@ Enjoy!!
 Acknowledgements
 ****************
 
-This work started from the prototype developed  during COIN Residence Program (`CRP#4 <https://iaacoin.wixsite.com/crp2017>`_), held in Clermont Ferrand, France, 2017.
+This work is part of the Recommendation System for Spectroscopic Followup (RESSPECT) project, governed by an inter-collaboration agreement signed between the `Cosmostatistics Initiative (COIN) <https://cosmostatistics-initiative.org/>`_ and the `LSST Dark Energy Science Collaboration (DESC) <https://lsstdesc.org/>`_.
 
 The `COsmostatistics INitiative (COIN) <https://cosmostatistics-initiative.org>`_ receives financial support from `CNRS <http://www.cnrs.fr/>`_ as part of its MOMENTUM programme over the 2018-2020 period, under the project *Active Learning for Large Scale Sky Surveys*.
 
