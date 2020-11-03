@@ -259,7 +259,7 @@ class SNPCCPhotometry(object):
                         print('... ... ... Survived: ', count_surv)
                         
                     # calculate r-mag today
-                    lc.check_queryable(mjd=self.min_epoch + day_of_survey,
+                    lc.queryable = lc.check_queryable(mjd=self.min_epoch + day_of_survey,
                                        filter_lim=self.rmag_lim, 
                                        criteria=queryable_criteria,
                                        days_since_last_obs=days_since_obs)
@@ -270,15 +270,15 @@ class SNPCCPhotometry(object):
                                              telescope_name=tel_names[k],
                                              SNR=spec_SNR, **kwargs)
                             
-                    # see if query is possible
-                    query_flags = []
-                    for item in tel_names:
-                        if lc.exp_time[item] < 7200:
-                            query_flags.append(True)
-                        else:
-                            query_flags.append(False)
+                        # see if query is possible
+                        query_flags = []
+                        for item in tel_names:
+                            if lc.exp_time[item] < 7200:
+                                query_flags.append(True)
+                            else:
+                                query_flags.append(False)
                             
-                    queryable = bool(sum(query_flags))
+                        lc.queryable = bool(sum(query_flags))
                     
                     # save features to file
                     with open(features_file, 'a') as param_file:
@@ -287,7 +287,7 @@ class SNPCCPhotometry(object):
                                          str(lc.sntype) + ' ')
                         param_file.write(str(lc.sncode) + ' ' +
                                          str(lc.sample) + ' ' +
-                                         str(queryable) + ' ')
+                                         str(lc.queryable) + ' ')
                         param_file.write(str(lc.last_mag) + ' ')
                         if get_cost:
                             for k in range(len(tel_names)):

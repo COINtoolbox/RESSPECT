@@ -411,10 +411,6 @@ class LightCurve(object):
                         filter_cut='r'):
         """Check if this object can be queried in a given day.
 
-        This checks only r-band mag limit in a given epoch.
-        It there is no observation on that day, use the last available
-        observation.
-
         Parameters
         ----------
         mjd: float
