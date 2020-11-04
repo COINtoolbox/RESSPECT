@@ -33,6 +33,7 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                   salt3_outfile='salt3pipeinput.txt',
                   salt3_tempfile='$RESSPECT_DIR/auxiliary_files/salt3pipeinput_template.txt',
                   outputdir='results/salt3',
+                  data_prefix_has_sntype=True,
                   **kwargs):
     """Calculates distances and errors for cosmology metric.
 
@@ -64,6 +65,8 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
          template file for SALT3 input    
     outputdir: str (optional)
          dir of all outputs
+    data_prefix_has_sntype: bool (optional)
+         True if _sntype is part of the data_prefix
 
     Returns
     -------
@@ -81,7 +84,8 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                   select_modelnum=[90],
                   salt2mu_prefix='test_salt2mu_res',
                   maxsnnum=10,
-                  select_orig_sample=['train'])
+                  select_orig_sample=['train'],
+                  data_prefix_has_sntype=True)
     """
 
     #check if outputdir exists. create one if not.
@@ -102,10 +106,13 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
 
         prefix = os.path.join(outputdir,fitres_prefix.strip()+'_'+str(i))
         fitres_file = prefix+'.FITRES.TEXT'
-        if int(modelnum) == 99:
-            phot_version = '{}_MODEL{}_{}'.format(data_prefix,modelnum,sntype)
+        if data_prefix_has_sntype:
+            if int(modelnum) == 99:
+                phot_version = '{}_MODEL{}_{}'.format(data_prefix,modelnum,sntype)
+            else:
+                phot_version = '{}_MODEL{}_SN{}'.format(data_prefix,modelnum,sntype)
         else:
-            phot_version = '{}_MODEL{}_SN{}'.format(data_prefix,modelnum,sntype)
+            phot_version = '{}_MODEL{}'.format(data_prefix,modelnum)
         hook = SNANAHook(snid_file=f, data_folder=data_folder, 
                          phot_version=phot_version, fitres_prefix=prefix,
                          stages=['lcfit'], glue=False,tempfile=salt3_tempfile,
