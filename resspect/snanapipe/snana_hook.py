@@ -69,8 +69,6 @@ class SNANAHook():
         #replace cosmofit outinput
         for sec in ['cosmofit']:
             outname = config[sec]['outinput']
-            print(outname)
-            print(salt2mu_prefix)
             outname = outname.replace('REPLACE_SALT2MU_M0DIF',salt2mu_prefix+'.M0DIF')
             config[sec]['outinput'] = outname
         

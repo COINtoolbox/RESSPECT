@@ -70,9 +70,11 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
 
     Returns
     -------
-    result_df: pd.DataFrame
-        Keywords: ['id','z','mu','mu_err','fitprob']
-    
+    result_df: dict
+        'distances': pd.DataFrame
+            Keywords: ['id','z','mu','mu_err','fitprob']
+        'cosmopars': pd.DataFrame
+            Keywords: ['w','wsig_marg','OM','OM_sig','chi2','Ndof','sigint','wran','OMran','label']
     
     Example
     -------
@@ -112,7 +114,7 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
             else:
                 phot_version = '{}_MODEL{}_SN{}'.format(data_prefix,modelnum,sntype)
         else:
-            phot_version = '{}_MODEL{}'.format(data_prefix,modelnum)
+            phot_version = '{}_MODEL{:02d}'.format(data_prefix,modelnum)
         hook = SNANAHook(snid_file=f, data_folder=data_folder, 
                          phot_version=phot_version, fitres_prefix=prefix,
                          salt2mu_prefix = salt2mu_prefix,
@@ -134,8 +136,10 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                      outfile=salt3_outfile,
                      tempfile=salt3_tempfile,**kwargs)
     hook.run()
-        
-    result_df = parse_salt2mu_output('{}.fitres'.format(salt2mu_prefix_str))
+      
+    result_df = {}    
+    result_df['distances'] = parse_salt2mu_output('{}.fitres'.format(salt2mu_prefix_str))
+    result_df['cosmopars'] = parse_wfit_output('{}.M0DIF.cospar'.format(salt2mu_prefix_str))
     
     return result_df
 
@@ -281,6 +285,25 @@ def combine_fitres(fitres_list,output='fitres_combined.fitres'):
     res.to_csv(output,index=False,sep=' ',float_format='%.5e')
 #     cmd = 'cat {} > {}'.format(' '.join(fitres_list),output)
 #     os.system(cmd)
+
+def parse_wfit_output(cospar_file):
+    """Parse the wfit output and return as a pd.DataFrame.
+
+    Parameters
+    ----------
+    cospar_file: str
+        The wfit output
+
+    Returns
+    -------
+    df: pd.DataFrame
+        Keywords: ['w','wsig_marg','OM','OM_sig','chi2','Ndof','sigint','wran','OMran','label']
+    """
+    
+    df = pd.read_csv(cospar_file,comment='#',sep='\s+',header=None)
+    df.columns = ['w','wsig_marg','OM','OM_sig','chi2','Ndof','sigint','wran','OMran','label']
+
+    return df
 
 
 def main():
