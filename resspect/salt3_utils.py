@@ -115,6 +115,7 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
             phot_version = '{}_MODEL{}'.format(data_prefix,modelnum)
         hook = SNANAHook(snid_file=f, data_folder=data_folder, 
                          phot_version=phot_version, fitres_prefix=prefix,
+                         salt2mu_prefix = salt2mu_prefix,
                          stages=['lcfit'], glue=False,tempfile=salt3_tempfile,
                          outfile=salt3_outfile,**kwargs)
         hook.run() 
@@ -129,7 +130,7 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
     salt2mu_prefix_str = os.path.join(outputdir,salt2mu_prefix.strip()+'_combined')
     hook = SNANAHook(salt2mu_prefix=salt2mu_prefix_str,
                      combined_fitres=combined_fitres_name_str,
-                     stages=['getmu'], glue=False,
+                     stages=['getmu','cosmofit'], glue=False,
                      outfile=salt3_outfile,
                      tempfile=salt3_tempfile,**kwargs)
     hook.run()
