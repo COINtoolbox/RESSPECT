@@ -167,7 +167,7 @@ class PLAsTiCCPhotometry(object):
                 self.metadata = header2[final_flag]
             elif field == 'WFD':
                 final_flag2 = np.logical_and(~ddf_flag, class_flag)
-                self.metadata = header2[final_flag]
+                self.metadata = header2[final_flag2]
         else:
             self.metadata = header2[class_flag]
 
