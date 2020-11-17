@@ -311,26 +311,36 @@ class PLAsTiCCPhotometry(object):
 
         # store number of points per day
         npoints = {}
-        npoints[0] = 0
-
-        # create light curve instance
-        orig_lc = LightCurve()          
+        npoints[0] = 0         
 
         if vol ==  None:
             vol = 0
+            cont = True
             
             # search within test light curve files
-            while orig_lc.photometry.shape[0] == 0 and vol < 11:
+            while cont:
                 vol = vol + 1
                 if screen:
                     print('vol: ', vol)
-                    
+                
+                # create light curve instance
+                orig_lc = LightCurve() 
                 orig_lc.load_plasticc_lc(raw_data_dir + self.fdic['test'][vol - 1], snid)
+       
+                if vol == 10 and orig_lc.photometry['mjd'].values.shape[0] == 0:
+                    raise ValueError('Light curve for ', snid, ' not found!')
+                
+                elif orig_lc.photometry['mjd'].values.shape[0] > 0:
+                    cont = False
 
         elif isinstance(vol, int):
             # load light curve
             orig_lc.load_plasticc_lc(raw_data_dir + self.fdic[vol - 1], snid)
             
+            if len(orig_lc.photometry['mjd'].values.shape[0]) == 0:
+                raise ValueError('Light curve for ', snid, ' not found!')
+            
+
         # define days in which this light curve exists
         min_mjd = min(orig_lc.photometry['mjd'].values)
         max_mjd = max(orig_lc.photometry['mjd'].values)
@@ -411,30 +421,31 @@ class PLAsTiCCPhotometry(object):
                             
                         lc.queryable = bool(sum(query_flags))
 
-                    # mask only metadata for this object
-                    mask = self.metadata['object_id'].values == snid
+                    if lc.queryable:
+                        # mask only metadata for this object
+                        mask = self.metadata['object_id'].values == snid
                     
-                    # set redshift
-                    lc.redshift = self.metadata['true_z'].values[mask][0]
+                        # set redshift
+                        lc.redshift = self.metadata['true_z'].values[mask][0]
 
-                    # set light curve type
-                    lc.sncode  = self.metadata['true_target'].values[mask][0]
-                    lc.sntype = self.class_code[lc.sncode]
+                        # set light curve type
+                        lc.sncode  = self.metadata['true_target'].values[mask][0]
+                        lc.sntype = self.class_code[lc.sncode]
 
-                    # set id
-                    lc.id = snid
+                        # set id
+                        lc.id = snid
 
-                    # set sample
-                    lc.sample = 'pool'
+                        # set sample
+                        lc.sample = 'pool'
 
-                    # set filename
-                    features_file = output_dir + 'day_' + \
-                                         str(day_of_survey) + '.dat'
+                        # set filename
+                        features_file = output_dir + 'day_' + \
+                                             str(day_of_survey) + '.dat'
 
-                    # write to file
-                    line = self.write_bazin_to_file(lc, features_file, 
-                                                    tel_names=tel_names,
-                                                    get_cost=get_cost)
+                        # write to file
+                        line = self.write_bazin_to_file(lc, features_file, 
+                                                        tel_names=tel_names,
+                                                        get_cost=get_cost)
 
-                    if screen:
-                        print('   *** Wrote to file ***   ')
+                        if screen:
+                            print('   *** Wrote to file ***   ')

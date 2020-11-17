@@ -370,6 +370,9 @@ class LightCurve(object):
             flag = self.full_photometry['snid'] == snid
             self.id_name = 'snid'
 
+        if sum(flag) > 0:
+            print('  ---  ', sum(flag))
+            
         photo = self.full_photometry[flag]
 
         filter_dict = {0:'u', 1:'g', 2:'r', 3:'i', 4:'z', 5:'Y'}
@@ -385,6 +388,7 @@ class LightCurve(object):
         self.photometry['fluxerr'] = photo['flux_err'].values
         self.photometry['detected_bool'] = photo['detected_bool'].values
         self.photometry = pd.DataFrame(self.photometry)
+
 
     def conv_flux_mag(self, flux, zpt=27.5):
         """Convert FLUXCAL to magnitudes.
