@@ -264,6 +264,7 @@ class PLAsTiCCPhotometry(object):
             Index of the original PLAsTiCC zenodo light curve
             files where the photometry for this object is stored.
             If None, search for id in all light curve files.
+            If training sample, choose "vol = 0".
             Default is None.
         day: int or None (optional)
             Day since beginning of survey to be considered.
@@ -334,11 +335,16 @@ class PLAsTiCCPhotometry(object):
                     cont = False
 
         elif isinstance(vol, int):
-            # load light curve
-            orig_lc.load_plasticc_lc(raw_data_dir + self.fdic[vol - 1], snid)
+            if vol == 0:
+                # load light curve
+                orig_lc.load_plasticc_lc(raw_data_dir + self.fdic['train'][vol], snid)
+                
+            else:
+                # load light curve
+                orig_lc.load_plasticc_lc(raw_data_dir + self.fdic[vol - 1], snid)
             
-            if len(orig_lc.photometry['mjd'].values.shape[0]) == 0:
-                raise ValueError('Light curve for ', snid, ' not found!')
+                if len(orig_lc.photometry['mjd'].values.shape[0]) == 0:
+                    raise ValueError('Light curve for ', snid, ' not found!')
             
 
         # define days in which this light curve exists
