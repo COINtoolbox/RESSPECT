@@ -101,7 +101,7 @@ class PLAsTiCCPhotometry(object):
         """
 
         features_file = output_dir + 'day_' + str(day) + '.dat'
-
+        
         if header == 'Bazin':
             if get_cost:
                 self.bazin_header = 'id redshift type code orig_sample queryable ' + \
@@ -124,7 +124,7 @@ class PLAsTiCCPhotometry(object):
 
 
     def read_metadata(self, path_to_data_dir: str, classes: list,
-                      field='DDF'):
+                      field='DDF', sample='test'):
         """ Read metadata and filter only required classes.
 
         Populates the metadata attribute. 
@@ -138,8 +138,14 @@ class PLAsTiCCPhotometry(object):
         field: str (optional)
             Telescope cadence.
             'DDF', 'WFD' or 'DDF+WFD'. Default is 'DDF'.
+        sample: str (optional)
+            Options are 'train' or 'test'.
+            Default is 'test'.
         """
-        fname = 'plasticc_test_metadata.csv.gz'
+        if sample == 'train':
+            fname = 'plasticc_train_metadata.csv'       
+        else:
+            fname = 'plasticc_test_metadata.csv.gz'
 
         # store classes information
         self.include_classes = classes
@@ -433,6 +439,8 @@ class PLAsTiCCPhotometry(object):
                     if lc.queryable:
                         # mask only metadata for this object
                         mask = self.metadata['object_id'].values == snid
+                        
+                        # check 
                     
                         # set redshift
                         lc.redshift = self.metadata['true_z'].values[mask][0]
