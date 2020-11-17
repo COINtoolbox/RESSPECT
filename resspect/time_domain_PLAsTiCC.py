@@ -335,6 +335,9 @@ class PLAsTiCCPhotometry(object):
                     cont = False
 
         elif isinstance(vol, int):
+            # create light curve instance
+            orig_lc = LightCurve() 
+                
             if vol == 0:
                 # load light curve
                 orig_lc.load_plasticc_lc(raw_data_dir + self.fdic['train'][vol], snid)
