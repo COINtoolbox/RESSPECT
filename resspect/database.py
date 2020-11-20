@@ -237,7 +237,11 @@ class DataBase:
         else:
             data = pd.read_csv(path_to_bazin_file, index_col=False)
             if ' ' in data.keys()[0]:
-                data = pd.read_csv(path_to_bazin_file, sep=' ', index_col=False)
+                c = data.keys()[0].split(' ')
+                data = pd.read_csv(path_to_bazin_file, 
+                                   sep=' ', names=c)
+                data.drop(index=0, inplace=True)
+                data.reset_index(drop=True)
 
         # check if queryable is there
         if 'queryable' not in data.keys():
@@ -274,6 +278,13 @@ class DataBase:
             elif 'id' in data.keys():
                 self.metadata_names = ['id', 'redshift', 'type', 'code',
                                        'orig_sample', 'queryable']
+                
+            if 'last_rmag' in data.keys():
+                self.metadata_names.append('last_rmag')
+
+            for name in self.telescope_names:
+                if 'cost_' + name in data.keys():
+                    self.metadata_names = self.metadata_names + ['cost_' + name]
 
         else:
             raise ValueError('Only "DES" and "LSST" filters are ' + \
@@ -352,8 +363,11 @@ class DataBase:
             data = pd.read_csv(path_to_photometry_file,
                                index_col=False)
             if ' ' in data.keys()[0]:
-                data = pd.read_csv(path_to_photometry_file,
-                                   sep=' ', index_col=False)
+                c = data.keys()[0].split(' ')
+                data = pd.read_csv(path_to_photometry_file, 
+                                   sep=' ', names=c)
+                data.drop(index=0, inplace=True)
+                data.reset_index(drop=True)
 
         # list of features to use
         self.features_names = data.keys()[5:]

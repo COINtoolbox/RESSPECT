@@ -105,9 +105,9 @@ class PLAsTiCCPhotometry(object):
         if header == 'Bazin':
             if get_cost:
                 self.bazin_header = 'id redshift type code orig_sample queryable ' + \
-                            'last_rmag cost_4m cost_8m gA gB gt0 ' + \
+                            'last_rmag cost_4m cost_8m uA uB ut0 utfall utrise gA gB gt0 ' + \
                             'gtfall gtrise rA rB rt0 rtfall rtrise iA ' + \
-                            'iB it0 itfall itrise zA zB zt0 ztfall ztrise\n'
+                            'iB it0 itfall itrise zA zB zt0 ztfall ztrise YA YB Yt0 Ytfall Ytrise\n'
             else:
                 self.bazin_header = 'id redshift type code sample queryable last_rmag uA uB ' + \
                                'ut0 utfall utrise gA gB gt0 gtfall ' + \
@@ -237,10 +237,10 @@ class PLAsTiCCPhotometry(object):
             for k in range(len(tel_names)):
                 line = line + str(lc.exp_time[tel_names[k]]) + ' '
 
-        for item in lc.bazin_features:
+        for item in lc.bazin_features[:-1]:
             line = line + str(item) + ' '
-
-        line = line + '\n'
+            
+        line = line + str(lc.bazin_features[-1]) + '\n'
                                                                
         # save features to file
         with open(features_file, 'a') as param_file:
