@@ -281,7 +281,7 @@ def combine_fitres(fitres_list,output='fitres_combined.fitres'):
     for fitres in fitres_list:
         try:
             df = pd.read_csv(fitres,comment='#',sep='\s+')
-        except pandas.io.common.EmptyDataError:
+        except pd.io.common.EmptyDataError:
             df = pd.DataFrame()
 
         dflist.append(df)
