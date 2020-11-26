@@ -279,7 +279,7 @@ def parse_salt2mu_output(fitres_file: str, timeout=50):
 def combine_fitres(fitres_list,output='fitres_combined.fitres'):
     dflist = []
     for fitres in fitres_list:
-        if os.stat(fitres).st_size >= 0
+        if os.stat(fitres).st_size >= 0:
             df = pd.read_csv(fitres,comment='#',sep='\s+')
             dflist.append(df)
     res = pd.concat(dflist,ignore_index=True,sort=False).dropna(axis=1)
