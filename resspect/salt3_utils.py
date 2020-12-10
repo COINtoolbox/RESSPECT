@@ -20,6 +20,7 @@ import pandas as pd
 import os
 from .snanapipe.snana_hook import SNANAHook
 from io import StringIO
+from datetime import datetime
 
 __all__ = ['get_distances', 'parse_salt2mu_output', 'parse_snid_file']
 
@@ -34,6 +35,9 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                   salt3_tempfile='$RESSPECT_DIR/auxiliary_files/salt3pipeinput_template.txt',
                   outputdir='results/salt3',
                   data_prefix_has_sntype=True,
+                  master_fitres_name='master_fitres.fitres',
+                  append_master_fitres=True,
+                  restart_master_fitres=False,
                   **kwargs):
     """Calculates distances and errors for cosmology metric.
 
@@ -67,7 +71,12 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
          dir of all outputs
     data_prefix_has_sntype: bool (optional)
          True if _sntype is part of the data_prefix
-
+    master_fitres_name: str (optional)
+        filename for a master fitres file that builds gradually from earlier runs
+    append_master_fitres: bool (optional)
+        if True, build a master fitres by appending an existing one 
+    restart_master_fitres: bool (optional)
+        if True, overwrite master fitres file and start from empty
     Returns
     -------
     result_df: dict
@@ -94,10 +103,19 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
     if not os.path.isdir(outputdir):
         os.makedirs(outputdir)    
     salt3_outfile = os.path.join(outputdir,salt3_outfile)
+ 
+    if not os.path.exists(master_fitres_name) or restart_master_fitres:
+        now = datetime.now()
+        dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
+        with open(master_fitres_name, "w") as fmaster:
+            print("# Master SNANA FITRES file that stores all previously fitted objects",file=fmaster)
+            print("# Started on {}".format(dt_string),file=fmaster)
     
     result_dict = parse_snid_file(snid_file, select_modelnum=select_modelnum,
                                   select_orig_sample=select_orig_sample,
                                   maxsnnum=maxsnnum,outfolder=os.path.join(outputdir,'snid'),
+                                  rm_duplicates_from_master=True,
+                                  master_fitres_name=master_fitres_name,
                                   **kwargs)
 
     fitres_list = []
@@ -128,18 +146,59 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
         return pd.DataFrame(columns=['id','z','mu','mu_err','fitprob'])
 
     combined_fitres_name_str = os.path.join(outputdir,combined_fitres_name)
-    combine_fitres(fitres_list,output=combined_fitres_name_str)
+    res_newfit = combine_fitres(fitres_list,output=combined_fitres_name_str,
+                         snid_in_master=[],write_output=False)       
+    if append_master_fitres:
+        with open(master_fitres_name,"r") as fmaster:
+            lines = fmaster.readlines()
+        with open(master_fitres_name,"a+") as fmaster:       
+            if 'VARNAMES:' in '\n'.join(lines):
+                now = datetime.now()
+                dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
+                print("writing new fits to {}".format(master_fitres_name))
+                print("#==========================================================",file=fmaster)
+                print("# The following lines are appended on {}".format(dt_string),file=fmaster)
+                print("#==========================================================",file=fmaster)               
+                res_newfit.to_csv(fmaster,index=False,sep=' ',float_format='%.5e',mode='a',header=False)
+            else:
+                res_newfit.to_csv(fmaster,index=False,sep=' ',float_format='%.5e',mode='a',header=True)
+    
+    master_colnames = pd.read_csv(master_fitres_name,nrows=1,sep='\s+',comment='#').columns
+    res = combine_fitres(fitres_list,output=combined_fitres_name_str,
+                         snid_in_master=result_dict['snid_in_master'],
+                         master_fitres_name=master_fitres_name,
+                         write_output=True)
+    
     salt2mu_prefix_str = os.path.join(outputdir,salt2mu_prefix.strip()+'_combined')
     hook = SNANAHook(salt2mu_prefix=salt2mu_prefix_str,
                      combined_fitres=combined_fitres_name_str,
                      stages=['getmu','cosmofit'], glue=False,
                      outfile=salt3_outfile,
                      tempfile=salt3_tempfile,**kwargs)
-    hook.run()
-      
+    try:
+        hook.run()
+    except:
+        if os.path.exists('{}.M0DIF'.format(salt2mu_prefix_str)) and not os.path.exists('{}.M0DIF.cospar'.format(salt2mu_prefix_str)):
+            print("[WARNING] Something is wrong but probably in wfit.exe, continue running and check back later")
+            timestamp = datetime.timestamp(datetime.now())
+            print("[WARNING] Copying current .fitres and .M0DIF as *_errcheck_{}.*".format(timestamp))
+            os.system("cp {}.fitres {}_errcheck_{}.fitres".format(salt2mu_prefix_str,salt2mu_prefix_str,timestamp))
+            os.system("cp {}.M0DIF {}_errcheck_{}.M0DIF".format(salt2mu_prefix_str,salt2mu_prefix_str,timestamp))
+            print("[WARNING] Command for debugging: wfit.exe {}_errcheck_{}.M0DIF -ompri 0.3 -dompri 0.01".format(salt2mu_prefix_str,timestamp))
+        else:
+            raise RuntimeError("Something else other than wfit.exe was wrong. Program ended.")
+          
     result_df = {}    
     result_df['distances'] = parse_salt2mu_output('{}.fitres'.format(salt2mu_prefix_str))
-    result_df['cosmopars'] = parse_wfit_output('{}.M0DIF.cospar'.format(salt2mu_prefix_str))
+    #rename after parsing
+    os.system("mv {}.fitres {}.fitres.bkp".format(salt2mu_prefix_str,salt2mu_prefix_str))
+    os.system("mv {}.M0DIF {}.M0DIF.bkp".format(salt2mu_prefix_str,salt2mu_prefix_str))
+    if os.path.exists('{}.M0DIF.cospar'.format(salt2mu_prefix_str)):
+        result_df['cosmopars'] = parse_wfit_output('{}.M0DIF.cospar'.format(salt2mu_prefix_str))
+        #rename after parsing
+        os.system("mv {}.M0DIF.cospar {}.M0DIF.cospar.bkp".format(salt2mu_prefix_str,salt2mu_prefix_str))
+    else:
+        result_df['cosmopars'] = pd.DataFrame()
     
     return result_df
 
@@ -149,6 +208,8 @@ def parse_snid_file(snid_file: str,
                     outfolder='snid',
                     maxsnnum=1000,
                     random_state=None,
+                    rm_duplicates_from_master=True,
+                    master_fitres_name='master_fitres.fitres',
                     **kwargs):
     """Parse the snid file that is output from the pipeline.
 
@@ -167,11 +228,16 @@ def parse_snid_file(snid_file: str,
         output folder that stores the parsed snid files for each type and sample. Default is 'snid'.
     random_state: int or numpy.random.RandomState, optional
         random_state in pd.DataFrame.sample() for sampling maxsnnum of objects    
+    rm_duplicates_from_master: bool (optional)
+        if True, check for duplicates in the master fitres file and remove from fitting
+    master_fitres_name: str(optional)
+        name of master fitres that contains all the fits done previously
+    
     
     Returns
     -------
     dict
-        Keywords: ['snid', 'modelnum', 'sntype', 'orig_sample']
+        Keywords: ['snid', 'modelnum', 'sntype', 'orig_sample','snid_in_master']
     """
 
     df = pd.read_csv(snid_file)
@@ -202,6 +268,18 @@ def parse_snid_file(snid_file: str,
     elif 'objid' in df.keys():
         id_name = 'objid'
     
+    if rm_duplicates_from_master:
+        if os.path.exists(master_fitres_name):
+            with open(master_fitres_name,'r') as fmaster:
+                lines = fmaster.readlines()
+            lines_all_comments = np.all([x.startswith('#') for x in lines])
+        if os.stat(master_fitres_name).st_size > 0 and not lines_all_comments:
+            df_master = pd.read_csv(master_fitres_name,comment='#',sep='\s+')
+            allids_master = list(df_master.CID.values)
+        else:
+            allids_master = []
+    
+    snid_in_master = []
     for samplename in samplelist:
         for num in numlist:
             f = '{}/{}_{}_{}'.format(outfolder, os.path.split(snid_file)[1],
@@ -209,19 +287,27 @@ def parse_snid_file(snid_file: str,
             if num not in df.modelnum.unique():
                 continue
             df_subsample = df.set_index(['orig_sample','modelnum']).loc[(samplename,num)]
-            df_subsample = df_subsample.sample(np.min([len(df_subsample),maxsnnum]),random_state=random_state)
+            
+            if rm_duplicates_from_master:
+                df_subsample = df_subsample.loc[[x not in allids_master for x in df_subsample[id_name]]]
+                snid_in_master += list(df_subsample.loc[[x in allids_master for x in df_subsample[id_name]]][id_name].values)
+            df_subsample = df_subsample.sample(np.min([len(df_subsample),maxsnnum]),random_state=random_state)                
             df_subsample[id_name].to_csv(f,index=False)        
-            snid_file_list.append(f)
+            
+            if len(df_subsample) == 0:
+                continue
             modelnum_list.append(num)
             orig_sample_list.append(samplename)
             sntype = df_subsample.drop_duplicates('type')['type'].values[0]
-
             if sntype == 'Ia':
                 sntype = 'Ia-SALT2'
             sntype_list.append(sntype)
+            
+            snid_file_list.append(f)
 
     return {'snid':snid_file_list, 'modelnum':modelnum_list,
-            'sntype':sntype_list, 'orig_sample':orig_sample_list}
+            'sntype':sntype_list, 'orig_sample':orig_sample_list,
+            'snid_in_master':snid_in_master}
 
 
 def parse_salt2mu_output(fitres_file: str, timeout=50):
@@ -276,7 +362,8 @@ def parse_salt2mu_output(fitres_file: str, timeout=50):
     return df
 
                 
-def combine_fitres(fitres_list,output='fitres_combined.fitres'):
+def combine_fitres(fitres_list,snid_in_master=[],master_fitres_name='master_fitres.fitres',
+                   output='fitres_combined.fitres',write_output=True):
     dflist = []
     for fitres in fitres_list:
         try:
@@ -285,9 +372,17 @@ def combine_fitres(fitres_list,output='fitres_combined.fitres'):
             df = pd.DataFrame()
 
         dflist.append(df)
+    
+    if len(snid_in_master) > 0:
+        df_master = pd.read_csv(master_fitres_name,comment='#',sep='\s+')
+        df = df_master.loc[[x in snid_in_master for x in df_master.CID]]
+        dflist.append(df)
 
     res = pd.concat(dflist,ignore_index=True,sort=False).dropna(axis=1)
-    res.to_csv(output,index=False,sep=' ',float_format='%.5e')
+    if write_output:
+        res.to_csv(output,index=False,sep=' ',float_format='%.5e')
+    
+    return res
 #     cmd = 'cat {} > {}'.format(' '.join(fitres_list),output)
 #     os.system(cmd)
 
