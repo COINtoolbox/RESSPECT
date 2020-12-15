@@ -285,7 +285,7 @@ class Canvas(object):
                                for item in ax.get_xticks()],
                                fontsize=self.tick_label_size)
 
-            ax.set_xlabel('Number of queries', fontsize=self.axis_label_size)
+            ax.set_xlabel('Number of iterations', fontsize=self.axis_label_size)
             ax.set_ylabel(self.metrics_names[i], fontsize=self.axis_label_size)
 
             axis.append(ax)
