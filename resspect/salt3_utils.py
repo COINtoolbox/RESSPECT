@@ -153,17 +153,23 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
             lines = fmaster.readlines()
         with open(master_fitres_name,"a+") as fmaster:       
             if 'VARNAMES:' in '\n'.join(lines):
-                now = datetime.now()
-                dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
-                print("writing new fits to {}".format(master_fitres_name))
-                print("#==========================================================",file=fmaster)
-                print("# The following lines are appended on {}".format(dt_string),file=fmaster)
-                print("#==========================================================",file=fmaster)               
-                res_newfit.to_csv(fmaster,index=False,sep=' ',float_format='%.5e',mode='a',header=False)
+                master_firstrow = pd.read_csv(master_fitres_name,nrows=1,sep='\s+',comment='#')
+                master_colnames = master_firstrow.columns
+                if len(res_newfit.columns) == len(master_colnames) and np.all(np.sort(res_newfit.columns) == np.sort(master_colnames)):               
+                    now = datetime.now()
+                    dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
+                    print("writing new fits to {}".format(master_fitres_name))
+                    print("#==========================================================",file=fmaster)
+                    print("# The following lines are appended on {}".format(dt_string),file=fmaster)
+                    print("#==========================================================",file=fmaster)               
+                    res_newfit.to_csv(fmaster,index=False,sep=' ',float_format='%.5e',mode='a',header=False)
+                else:
+                    print("column names don't match master fitres file. updating master with new columns")
+                    new_colnames = list(master_colnames) + [x for x in res_newfit.columns if x not in master_colnames]
+                    rewrite_master_colnames(master_fitres_name,new_colnames)
             else:
                 res_newfit.to_csv(fmaster,index=False,sep=' ',float_format='%.5e',mode='a',header=True)
     
-    master_colnames = pd.read_csv(master_fitres_name,nrows=1,sep='\s+',comment='#').columns
     res = combine_fitres(fitres_list,output=combined_fitres_name_str,
                          snid_in_master=result_dict['snid_in_master'],
                          master_fitres_name=master_fitres_name,
@@ -202,6 +208,21 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
     
     return result_df
 
+
+def rewrite_master_colnames(master_fitres,new_colnames):
+    with open(master_fitres,'r') as fin:
+        lines = fin.readlines()
+    with open(master_fitres,'w') as fout:
+        for line in lines:
+            if 'VARNAMES:' in line:
+                print("Colnames to be replaced: ")
+                print(line)
+                print("New colnames: ")
+                print(' '.join(new_colnames))
+                print(' '.join(new_colnames),file=fout)
+            else:
+                print(line.replace('\n',''),file=fout)
+    
 
 def parse_snid_file(snid_file: str,
                     select_modelnum: list, select_orig_sample: list,
@@ -378,7 +399,7 @@ def combine_fitres(fitres_list,snid_in_master=[],master_fitres_name='master_fitr
         df = df_master.loc[[x in snid_in_master for x in df_master.CID]]
         dflist.append(df)
 
-    res = pd.concat(dflist,ignore_index=True,sort=False).dropna(axis=1)
+    res = pd.concat(dflist,ignore_index=True,sort=False).fillna(-9)
     if write_output:
         res.to_csv(output,index=False,sep=' ',float_format='%.5e')
     
