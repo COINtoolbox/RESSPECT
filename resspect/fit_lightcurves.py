@@ -195,7 +195,7 @@ class LightCurve(object):
         op.close()
 
         # separate elements
-        data_all = np.array([elem.split() for elem in lin])
+        data_all = np.array([elem.split() for elem in lin], dtype=object)
 
         # flag useful lines
         flag_lines = np.array([True if len(line) > 1 else False \
