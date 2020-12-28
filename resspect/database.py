@@ -36,6 +36,8 @@ class DataBase:
 
     Attributes
     ----------
+    alt_label: bool
+        Flag indicating training with less probable label.
     classifier: sklearn.classifier
         Classifier object.
     classprob: np.array
@@ -174,6 +176,7 @@ class DataBase:
     """
 
     def __init__(self):
+        self.alt_label = False
         self.classifier = None
         self.classprob = np.array([])
         self.data = pd.DataFrame()
@@ -236,7 +239,7 @@ class DataBase:
 
         else:
             data = pd.read_csv(path_to_bazin_file, index_col=False)
-            if ' ' in data.keys()[0]:
+            if 'redshift' not in data.keys():
                 data = pd.read_csv(path_to_bazin_file, sep=' ', index_col=False)
 
         # check if queryable is there
@@ -603,6 +606,23 @@ class DataBase:
                 if name in self.pool_metadata[id_name].values:
                     raise ValueError('Object ', name, 'found in both, training ' +\
                                     'and pool samples!')
+                    
+        # check if there are repeated ids within each sample
+        names = ['train', 'pool', 'validation', 'test']
+        pds = [self.train_metadata, self.pool_metadata, 
+               self.validation_metadata, self.test_metadata]
+        
+        repeated_ids_samples = []
+        for i in range(4):
+            
+            delta = len(np.unique(pds[i][id_name].values)) - pds[i].shape[0]
+            if abs(delta) > 0: 
+                repeated_ids_samples.append([names[i], delta])
+                
+        if len(repeated_ids_samples) > 0:
+            raise ValueError('There are repeated ids within ' + \
+                             str(repeated_ids_samples)  + ' sample!')
+            
 
     def build_random_training(self, initial_training: int, nclass=2, screen=False,
                               Ia_frac=0.5, queryable=True, sep_files=False):
@@ -716,6 +736,22 @@ class DataBase:
             if name in self.pool_metadata[id_name].values:
                 raise ValueError('Object ', name, ' present in both, ' + \
                                  'training and pool samples!')
+                
+        # check if there are repeated ids within each sample
+        names = ['train', 'pool', 'validation', 'test']
+        pds = [self.train_metadata, self.pool_metadata, 
+               self.validation_metadata, self.test_metadata]
+        
+        repeated_ids_samples = []
+        for i in range(4):
+            
+            delta = len(np.unique(pds[i][id_name].values)) - pds[i].shape[0]
+            if abs(delta) > 0: 
+                repeated_ids_samples.append([names[i], delta])
+                
+        if len(repeated_ids_samples) > 0:
+            raise ValueError('There are repeated ids within ' + \
+                             str(repeated_ids_samples)  + ' sample!')
 
     def build_samples(self, initial_training='original', nclass=2,
                       screen=False, Ia_frac=0.5,
@@ -874,7 +910,10 @@ class DataBase:
         if save_predictions:
             id_name = self.identify_keywords()
 
-            out_fname = 'predict_loop_' + str(loop) + '.dat'
+            if self.alt_label:
+                out_fname = 'predict_loop_' + str(loop) + '_alt_label.dat'
+            else:
+                out_fname = 'predict_loop_' + str(loop) + '.dat'
             op = open(pred_dir + '/' + out_fname, 'w')
             op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
             for i in range(self.validation_metadata.shape[0]):
@@ -974,7 +1013,7 @@ class DataBase:
             op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
             for i in range(self.validation_metadata.shape[0]):
                 op.write(str(self.validation_metadata[id_name].iloc[i]) + ',')
-                op.write(str(self.validatin_prob[i][0]) + ',')
+                op.write(str(self.validation_prob[i][0]) + ',')
                 op.write(str(self.validation_prob[i][1]) + ',')
                 op.write(str(self.validation_class[i]) + '\n')
             op.close()
@@ -1216,7 +1255,7 @@ class DataBase:
         return query_indx
 
     def update_samples(self, query_indx: list, epoch=20,
-                       queryable=False, screen=False):
+                       queryable=False, screen=False, alternative_label=False):
         """Add the queried obj(s) to training and remove them from test.
 
         Update properties: train_headers, train_features, train_labels,
@@ -1226,6 +1265,11 @@ class DataBase:
         ----------
         query_indx: list
             List of indexes identifying objects to be moved.
+        alternative_label: bool (optional)
+            Update the training sample with the opposite label
+            from the one optained from the classifier.
+            Default is False.
+            At this point it only works with batch=1.
         epoch: int (optional)
             Day since beginning of survey. Default is 20.
         queryable: bool (optinal)
@@ -1257,7 +1301,33 @@ class DataBase:
             obj = query_indx[0]
 
             # add object to the query sample
-            query_header = self.pool_metadata.values[obj]
+            query_header0 = self.pool_metadata.values[obj]
+            
+            # check if we add normal or reversed label
+            if nquery == 1 and alternative_label:
+                self.alt_label = True
+                new_header = []
+                
+                for i in range(len(query_header0)):
+                    # add all elements of header, except type
+                    if i < 2 or i > 3:
+                        new_header.append(query_header0[i])
+                    # add reverse label
+                    elif i == 2 and query_header0[i] == 'Ia':
+                        new_header.append('X')
+                        new_header.append(99)
+                    elif i == 2 and query_header0[i] != 'Ia':
+                        new_header.append('Ia')
+                        new_header.append(90)
+                    
+                query_header = new_header
+                
+            elif not alternative_label:
+                query_header = query_header0
+                        
+            elif nquery > 1 and alternative_label:
+                raise ValueError('Alternative label only works with batch=1!')
+            
             query_features = self.pool_features[obj]
             line = [epoch]
             for item in query_header:
@@ -1281,6 +1351,11 @@ class DataBase:
             # remove queried object from pool sample
             query_flag = self.pool_metadata[id_name].values == \
                  self.pool_metadata[id_name].iloc[obj]
+            
+            if sum(query_flag) > 1:
+                print('Repeated id: ')
+                print(self.pool_metadata[query_flag])
+                raise ValueError('Found repeated ids in pool sample!')
 
             pool_metadata_temp = self.pool_metadata.copy()
             self.pool_metadata = pool_metadata_temp[~query_flag]
@@ -1326,7 +1401,7 @@ class DataBase:
             query_indx = new_query_indx
 
             if screen:
-                print('  query_indx: ', query_indx)
+                print('remaining  queries: ', query_indx)
 
         # test
         npool2 = self.pool_metadata.shape[0]
@@ -1337,9 +1412,7 @@ class DataBase:
         if screen:
             print('query_ids: ', query_ids)
             print('queried sample: ', self.queried_sample[-1][1])
-
-        if ntrain2 != ntrain + nquery or npool2 != npool - nquery:
-            raise ValueError('Wrong dimensionality for train/pool samples!')
+            print('----------------------------------------------')
 
         if ntest2 > ntest or nvalidation2 > nvalidation:
             raise ValueError('Wrong dimensionality for test/val samples.')
@@ -1363,7 +1436,10 @@ class DataBase:
 
             if name in self.validation_metadata['id'].values:
                 raise ValueError('After update! Object ', name,
-                                 ' found in validation and training samples!')
+                                 ' found in validation and training samples!')            
+                
+        if ntrain2 != ntrain + nquery or npool2 != npool - nquery:            
+            raise ValueError('Wrong dimensionality for train/pool samples!')
 
     def save_metrics(self, loop: int, output_metrics_file: str, epoch: int, batch=1):
         """Save current metrics to file.

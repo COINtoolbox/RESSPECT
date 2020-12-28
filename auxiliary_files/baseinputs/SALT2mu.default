@@ -1,6 +1,6 @@
-bins=5
-zmin=0.02
-zmax=1.02
+bins=10
+zmin=0.1
+zmax=1.5
 x1min=-6.0
 x1max=6.0
 cmin=-6.0

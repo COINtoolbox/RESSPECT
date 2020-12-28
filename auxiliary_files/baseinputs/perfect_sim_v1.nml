@@ -51,5 +51,8 @@
     PRIOR_SHAPE_RANGE = -4.0, 4.0
 
     DELCHI2_REJECT   = 10
+    
+    USESIM_REDSHIFT = T
+
 &END
 

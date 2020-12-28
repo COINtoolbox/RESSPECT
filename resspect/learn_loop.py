@@ -19,6 +19,8 @@ __all__ = ['learn_loop']
 
 from resspect import DataBase
 
+import copy
+
 
 def learn_loop(nloops: int, strategy: str, path_to_features: str,
                output_metrics_file: str, output_queried_file: str,
@@ -27,7 +29,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                nclass=2, photo_class_thr=0.5, photo_ids=False, photo_ids_tofile = False,
                photo_ids_froot=' ', classifier_bootstrap=False, save_predictions=False,
                sep_files=False, pred_dir=None, queryable=False, 
-               metric_label='snpcc', dist_loop_root=None,**kwargs):
+               metric_label='snpcc', dist_loop_root=None, save_alt_class=False, **kwargs):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -85,6 +87,10 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     queryable: bool (optional)
         If True, check if randomly chosen object is queryable.
         Default is False.
+    save_alt_class: bool (optional)
+        If True, train the model and save classifications for alternative
+        query label (this is necessary to calculate impact on cosmology).
+        Default is False.
     save_predictions: bool (optional)
         If True, save classification predictions to file in each loop.
         Default is False.
@@ -137,7 +143,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         # classify
         if classifier_bootstrap:
             data.classify_bootstrap(method=classifier, save_predictions=save_predictions,
-                                    pred_dir=pred_dir, loop=loop, **kwargs)
+                                    pred_dir=pred_dir, loop=loop, **kwargs)            
         else:
             data.classify(method=classifier, save_predictions=save_predictions,
                           pred_dir=pred_dir, loop=loop, **kwargs)
@@ -155,9 +161,44 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
 
         # choose object to query
         indx = data.make_query(strategy=strategy, batch=batch, queryable=queryable)
+        
+        # make copy of index (why is this necessary??)
+        indx2 = copy.deepcopy(indx)
 
+        # update training with alternative label
+        if save_alt_class and batch == 1:
+            # create a copy of the DataBase object
+            data_alt = copy.deepcopy(data)
+            # update with the less probable label
+            data_alt.update_samples(indx2, epoch=loop, alternative_label=True,
+                                    screen=screen)
+            # classify
+            data_alt.classify(method=classifier, save_predictions=save_predictions,
+                              pred_dir=pred_dir, loop=loop, screen=screen, 
+                              **kwargs)
+            # evaluate classification
+            data_alt.evaluate_classification(metric_label=metric_label, screen=screen)
+            # save photo ids  
+            fname_alt = photo_ids_froot + '_' + str(loop) + '_alt_label.dat'
+            data_alt.output_photo_Ia(photo_class_thr, to_file=photo_ids_tofile,
+                                     filename=fname_alt)
+
+            # save metrics for alternate state
+            output_metrics_file_alt = output_metrics_file[:-4] + '_alt_label.dat'
+            data_alt.save_metrics(loop=loop, output_metrics_file=output_metrics_file_alt,
+                                  batch=batch, epoch=loop)
+            # save queried sample for alternate state
+            output_queried_file_alt = output_queried_file[:-4] + '_alt_label.dat'
+            data_alt.save_queried_sample(output_queried_file_alt, loop=loop,
+                                         full_sample=False)
+            
+            del data_alt
+            
+        elif save_alt_class and batch > 1:
+            raise ValueError('Alternative label only works with batch=1!')
+        
         # update training and test samples
-        data.update_samples(indx, epoch=loop)
+        data.update_samples(indx, epoch=loop, screen=screen)
 
         # save metrics for current state
         data.save_metrics(loop=loop, output_metrics_file=output_metrics_file,
