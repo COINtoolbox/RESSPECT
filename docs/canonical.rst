@@ -82,3 +82,6 @@ In the command line, this looks like:
    >>> run_loop.py -i results/Bazin_SNPCC_canonical.dat -b <batch size> -n <number of loops>
    >>>             -m <output metrics file> -q <output queried sample file>
    >>>             -s RandomSampling -t <choice of initial training>
+   
+   
+.. warning:: The cannonical sample is only implemented for the SNPCC data set.
