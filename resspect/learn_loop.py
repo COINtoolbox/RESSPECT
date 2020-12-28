@@ -37,7 +37,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     nloops: int
         Number of active learning loops to run.
     strategy: str
-        Query strategy. Options are 'UncSampling' and 'RandomSampling'.
+        Query strategy. Options are 'UncSampling', 'RandomSampling', 'UncSamplingEntropy',
+        'UncSamplingLeastConfident', 'UncSamplingMargin', 'QBDMI' and 'QBDEntropy'.
     path_to_features: str or dict
         Complete path to input features file.
         if dict, keywords should be 'train' and 'test',
