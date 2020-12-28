@@ -72,8 +72,8 @@ The only difference is that now a few of the ``sample`` variables are set to ``q
  :lines: 1-2, 9-14
 
 This means that you can use the :py:mod:`resspect.learn_loop` module in combination with a ``RandomSampling`` strategy but
-reading data from the canonical sample. In this way, at each iteration the code will select a random object from the test sample
-but a query will only be made is the selected object belongs to the canonical sample.
+reading data from the canonical sample. In this way, at each iteration the code will select a random object from the test sample, 
+but a query will only be made if the selected object belongs to the canonical sample.
 
 In the command line, this looks like:
 
