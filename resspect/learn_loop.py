@@ -144,10 +144,10 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         # classify
         if classifier_bootstrap:
             data.classify_bootstrap(method=classifier, save_predictions=save_predictions,
-                                    pred_dir=pred_dir, loop=loop, **kwargs)            
+                                    pred_dir=pred_dir, loop=loop, screen=screen, **kwargs)            
         else:
             data.classify(method=classifier, save_predictions=save_predictions,
-                          pred_dir=pred_dir, loop=loop, **kwargs)
+                          pred_dir=pred_dir, loop=loop, screen=screen, **kwargs)
 
         # calculate metrics
         data.evaluate_classification(metric_label=metric_label, screen=screen)
@@ -161,7 +161,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
             data.output_photo_Ia(photo_class_thr, to_file=False)
 
         # choose object to query
-        indx = data.make_query(strategy=strategy, batch=batch, queryable=queryable)
+        indx = data.make_query(strategy=strategy, batch=batch, queryable=queryable,
+                               screen=screen)
         
         # make copy of index (why is this necessary??)
         indx2 = copy.deepcopy(indx)
