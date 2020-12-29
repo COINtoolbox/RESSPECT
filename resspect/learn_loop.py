@@ -200,7 +200,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
             raise ValueError('Alternative label only works with batch=1!')
         
         # update training and test samples
-        data.update_samples(indx, epoch=loop, screen=screen)
+        data.update_samples(indx, epoch=loop, screen=screen, queryable=queryable)
 
         # save metrics for current state
         data.save_metrics(loop=loop, output_metrics_file=output_metrics_file,

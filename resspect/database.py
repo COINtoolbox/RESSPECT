@@ -1162,7 +1162,6 @@ class DataBase:
             'RandomSampling', 'UncSamplingEntropy',
             'UncSamplingLeastConfident', 'UncSamplingMargin',
             'QBDMI', 'QBDEntropy', . Default is `UncSampling`.
-
         batch: int (optional)
             Number of objects to be chosen in each batch query.
             Default is 1.
