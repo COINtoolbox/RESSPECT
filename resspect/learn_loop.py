@@ -192,7 +192,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
             # save queried sample for alternate state
             output_queried_file_alt = output_queried_file[:-4] + '_alt_label.dat'
             data_alt.save_queried_sample(output_queried_file_alt, loop=loop,
-                                         full_sample=False, epoch=epoch, batch=batch)
+                                         full_sample=False, epoch=loop, batch=batch)
             
             del data_alt
             
