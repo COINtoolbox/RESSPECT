@@ -28,7 +28,10 @@ Full documentation can be found at [readthedocs](https://resspect.readthedocs.io
  - setuptools>=41.0.1  
  - scipy>=1.3.0  
  - scikit-learn>=0.20.3  
- - seaborn>=0.9.0  
+ - seaborn>=0.9.0
+ - tox>=3.17
+ - xgboost>=1.0.1
+ - wheel>=0.36.2
  
  
  ### For documentation:
