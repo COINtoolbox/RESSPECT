@@ -157,7 +157,8 @@ class CanonicalPLAsTiCC(object):
                 print('Scanning ', obj_code[sntype], ' . . . ')
 
             # find 5x more neighbors in case there are repetitions
-            nbrs = NearestNeighbors(n_neighbors=5*n_neighbors,
+            n = min([5*n_neighbors, self.test_subsamples[sntype].shape[0]])
+            nbrs = NearestNeighbors(n_neighbors=n,
                                     algorithm='auto')
             
             nbrs.fit(self.test_subsamples[sntype].values[:,1:])
@@ -168,7 +169,7 @@ class CanonicalPLAsTiCC(object):
             # match with objects in training
             for i in range(self.train_subsamples[sntype].shape[0]):
                 elem = np.array(self.train_subsamples[sntype].values[i][1:]).reshape(1, -1)
-                indices = nbrs.kneighbors(elem)
+                indices = nbrs.kneighbors(elem, return_distance=False)[0]
                 
                 # only add elements which were not added in a previous loop
                 done = False
@@ -176,7 +177,7 @@ class CanonicalPLAsTiCC(object):
                 success = 0
 
                 while not done:
-                    indx = indices[1][0][count]
+                    indx = indices[count]
                     
                     if indx not in vault:
                         element = self.test_subsamples[sntype].iloc[indx]['object_id']
@@ -184,8 +185,8 @@ class CanonicalPLAsTiCC(object):
                         vault.append(indx)
                         success = success + 1
                         
-                        if success == n_neighbors:
-                            done = True
+                    if success == n_neighbors or count == len(indices) - 1:
+                        done = True
                             
                     count = count + 1
                     
@@ -206,7 +207,7 @@ class CanonicalPLAsTiCC(object):
         data_all = []
         
         for fname in path_to_test:
-            data_temp = pd.read_csv(data_dir + fname, sep = ' ', index_col=False)
+            data_temp = pd.read_csv(fname, sep = ' ', index_col=False)
             data_all.append(data_temp)
             
         data = pd.concat(data_all, ignore_index=True)
