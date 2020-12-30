@@ -173,7 +173,7 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
     res = combine_fitres(fitres_list,output=combined_fitres_name_str,
                          snid_in_master=result_dict['snid_in_master'],
                          master_fitres_name=master_fitres_name,
-                         write_output=True)
+                         write_output=True,replace_zHD=True)
     
     salt2mu_prefix_str = os.path.join(outputdir,salt2mu_prefix.strip()+'_combined')
     hook = SNANAHook(salt2mu_prefix=salt2mu_prefix_str,
@@ -384,7 +384,7 @@ def parse_salt2mu_output(fitres_file: str, timeout=50):
 
                 
 def combine_fitres(fitres_list,snid_in_master=[],master_fitres_name='master_fitres.fitres',
-                   output='fitres_combined.fitres',write_output=True):
+                   output='fitres_combined.fitres',write_output=True,replace_zHD=True):
     dflist = []
     for fitres in fitres_list:
         try:
@@ -400,12 +400,23 @@ def combine_fitres(fitres_list,snid_in_master=[],master_fitres_name='master_fitr
         dflist.append(df)
 
     res = pd.concat(dflist,ignore_index=True,sort=False).fillna(-9)
+
+    if replace_zHD:
+        res = replace_zHD_with_simZCMB(res)
+
     if write_output:
         res.to_csv(output,index=False,sep=' ',float_format='%.5e')
-    
+       
     return res
 #     cmd = 'cat {} > {}'.format(' '.join(fitres_list),output)
 #     os.system(cmd)
+
+
+def replace_zHD_with_simZCMB(fitres):
+    # replace zHD in FITRES with SIM_ZCMB -- still need to check why they are super different
+    fitres['zHD'] = fitres['SIM_ZCMB']
+    return fitres
+
 
 def parse_wfit_output(cospar_file):
     """Parse the wfit output and return as a pd.DataFrame.
