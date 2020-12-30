@@ -625,7 +625,7 @@ class DataBase:
             
 
     def build_random_training(self, initial_training: int, nclass=2, screen=False,
-                              Ia_frac=0.5, queryable=True, sep_files=False):
+                              Ia_frac=0.5, queryable=False, sep_files=False):
         """Construct initial random training and corresponding test sample.
 
         Populate properties: train_features, train_header, test_features,
@@ -651,8 +651,6 @@ class DataBase:
         sep_files: bool (optional)
             If True, consider train and test samples separately read
             from independent files. Default is False.
-        sep_validation: bool (optional)
-            Separate validation sample. Default is False.
         """
 
         # object if keyword
