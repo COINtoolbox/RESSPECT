@@ -34,6 +34,7 @@
     VPEC_FILE = ''
 
     !CUTWIN_CID = 34303 34303
+    OPT_SETPKMJD = 16
     CUTWIN_TREST = -20., 50.
     !CUTWIN_LAMREST = 3100,7000
 
@@ -50,7 +51,11 @@
     PRIOR_MJDSIG        = 10
     PRIOR_SHAPE_RANGE = -4.0, 4.0
 
-    DELCHI2_REJECT   = 10
+    FITWIN_SHAPE     = -3.00, 3.00
+    FITWIN_COLOR     = -0.30, 0.30
+    FITWIN_PROB      =  0.01,  1.01
+    FITWIN_TREST     = -15.0, 45.0
+    !DELCHI2_REJECT   = 10
     
     USESIM_REDSHIFT = T
 
