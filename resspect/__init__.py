@@ -15,6 +15,7 @@
 # limitations under the License.
 
 from .bazin import *
+from .build_plasticc_canonical import *
 from .build_snpcc_canonical import *
 from .classifiers import *
 from .cosmo_metric_utils import *
@@ -43,8 +44,10 @@ __all__ = ['accuracy',
            'assign_cosmo',
            'bazin',
            'build_canonical',
+           'build_plasticc_canonical',
            'build_snpcc_canonical',
            'Canonical',
+           'CanonicalPLAsTiCC',
            'Canvas',
            'column_deriv_m',
            'compare_two_fishers',
