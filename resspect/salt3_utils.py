@@ -21,6 +21,7 @@ import os
 from .snanapipe.snana_hook import SNANAHook
 from io import StringIO
 from datetime import datetime
+import warnings
 
 __all__ = ['get_distances', 'parse_salt2mu_output', 'parse_snid_file']
 
@@ -147,15 +148,16 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
 
     combined_fitres_name_str = os.path.join(outputdir,combined_fitres_name)
     res_newfit = combine_fitres(fitres_list,output=combined_fitres_name_str,
-                         snid_in_master=[],write_output=False)       
-    if append_master_fitres:
+                         snid_in_master=[],write_output=False,replace_zHD=False)       
+    if append_master_fitres and len(res_newfit) > 0:
         with open(master_fitres_name,"r") as fmaster:
             lines = fmaster.readlines()
         with open(master_fitres_name,"a+") as fmaster:       
             if 'VARNAMES:' in '\n'.join(lines):
                 master_firstrow = pd.read_csv(master_fitres_name,nrows=1,sep='\s+',comment='#')
                 master_colnames = master_firstrow.columns
-                if len(res_newfit.columns) == len(master_colnames) and np.all(np.sort(res_newfit.columns) == np.sort(master_colnames)):               
+                if len(res_newfit.columns) > 0 and len(res_newfit.columns) == len(master_colnames) and \
+                   np.all(np.sort(res_newfit.columns) == np.sort(master_colnames)):      
                     now = datetime.now()
                     dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
                     print("writing new fits to {}".format(master_fitres_name))
@@ -310,8 +312,8 @@ def parse_snid_file(snid_file: str,
             df_subsample = df.set_index(['orig_sample','modelnum']).loc[(samplename,num)]
             
             if rm_duplicates_from_master:
-                df_subsample = df_subsample.loc[[x not in allids_master for x in df_subsample[id_name]]]
                 snid_in_master += list(df_subsample.loc[[x in allids_master for x in df_subsample[id_name]]][id_name].values)
+                df_subsample = df_subsample.loc[[x not in allids_master for x in df_subsample[id_name]]]
             df_subsample = df_subsample.sample(np.min([len(df_subsample),maxsnnum]),random_state=random_state)                
             df_subsample[id_name].to_csv(f,index=False)        
             
@@ -390,8 +392,8 @@ def combine_fitres(fitres_list,snid_in_master=[],master_fitres_name='master_fitr
         try:
             df = pd.read_csv(fitres,comment='#',sep='\s+')
         except pd.io.common.EmptyDataError:
-            df = pd.DataFrame()
-
+            continue
+        
         dflist.append(df)
     
     if len(snid_in_master) > 0:
@@ -399,8 +401,11 @@ def combine_fitres(fitres_list,snid_in_master=[],master_fitres_name='master_fitr
         df = df_master.loc[[x in snid_in_master for x in df_master.CID]]
         dflist.append(df)
 
-    res = pd.concat(dflist,ignore_index=True,sort=False).fillna(-9)
-
+    if len(dflist) > 0:
+        res = pd.concat(dflist,ignore_index=True,sort=False).fillna(-9)
+    else:
+        res = pd.DataFrame()
+        
     if replace_zHD:
         res = replace_zHD_with_simZCMB(res)
 
@@ -414,7 +419,11 @@ def combine_fitres(fitres_list,snid_in_master=[],master_fitres_name='master_fitr
 
 def replace_zHD_with_simZCMB(fitres):
     # replace zHD in FITRES with SIM_ZCMB -- still need to check why they are super different
-    fitres['zHD'] = fitres['SIM_ZCMB']
+    print("Replacing zHD with SIM_ZCMB")
+    if 'zHD' in fitres.columns and 'SIM_ZCMB' in fitres.columns:
+        fitres['zHD'] = fitres['SIM_ZCMB']
+    else:
+        warnings.warn("no column with name zHD or SIM_ZCMB. return original fitres")
     return fitres
 
 
