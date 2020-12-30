@@ -897,15 +897,11 @@ class DataBase:
                               "'KNN', 'MLP' and NB'." +
                              "\n Feel free to add other options.")
 
-        if method in ['RandomForest', 'GradientBoostedTrees']:
-            # estimate classification for validation sample
-            self.validation_class = \
-                self.classifier.predict(self.validation_features)
-            self.validation_prob = \
-                self.classifier.predict_proba(self.validation_features)
-
-        else:
-            raise ValueError('Only RF+XGB classifiers were fully tested!')
+        # estimate classification for validation sample
+        self.validation_class = \
+            self.classifier.predict(self.validation_features)
+        self.validation_prob = \
+            self.classifier.predict_proba(self.validation_features)
 
         if save_predictions:
             id_name = self.identify_keywords()
