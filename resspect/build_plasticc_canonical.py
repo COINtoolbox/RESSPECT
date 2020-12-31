@@ -19,6 +19,7 @@ import numpy as np
 import os
 import pandas as pd
 import matplotlib.pylab as plt
+import seaborn as sns
 
 from sklearn.neighbors import NearestNeighbors
 
@@ -40,8 +41,7 @@ class CanonicalPLAsTiCC(object):
         If True, deal only with DDF objects.
     metadata_names: list
         List of keywords on which the nearest neighbors will
-        be calculated. This corresponds to rue fluxes, vspec, rv,
-        av and redshift.
+        be calculated. This corresponds to true redshift.
     metadata_train: pd.DataFrame
         Metadata for all objects in the PLAsTiCC zenodo 
         training set. If ddf == True this corresponds only 
@@ -81,9 +81,7 @@ class CanonicalPLAsTiCC(object):
                          88: 'AGN',
                          90: 'Ia',
                          95: 'SLSN'}
-        self.metadata_names = ['object_id', 'true_z','true_vpec', 'true_rv',
-                               'true_av', 'tflux_u', 'tflux_g', 'tflux_r',
-                               'tflux_i', 'tflux_z', 'tflux_y']
+        self.metadata_names = ['object_id', 'true_z']
         self.metadata_train = pd.DataFrame()
         self.metadata_test = pd.DataFrame()
         self.test_subsamples = {}
@@ -138,7 +136,7 @@ class CanonicalPLAsTiCC(object):
             self.test_subsamples[num] = \
                 self.metadata_test[test_flag][self.metadata_names]
         
-    def find_neighbors(self, n_neighbors=1, screen=False):
+    def find_neighbors(self, n_neighbors=5, screen=False):
         """Identify nearest neighbors in test for each object in training.
 
         Populates attribute: canonical_ids.
@@ -147,17 +145,17 @@ class CanonicalPLAsTiCC(object):
         ----------
         n_neighbors: int (optional)
             Number of neighbors in test to be found for each object
-            in training. Default is 1.
+            in training. Default is 5.
         screen: bool (optional)
             If true, display steps info on screen. Default is False.
         """
         
         for sntype in self.obj_code.keys():
             if screen:
-                print('Scanning ', obj_code[sntype], ' . . . ')
+                print('Scanning ', self.obj_code[sntype], ' . . . ')
 
             # find 5x more neighbors in case there are repetitions
-            n = min([5*n_neighbors, self.test_subsamples[sntype].shape[0]])
+            n = min(n_neighbors, self.test_subsamples[sntype].shape[0])
             nbrs = NearestNeighbors(n_neighbors=n,
                                     algorithm='auto')
             
@@ -172,23 +170,11 @@ class CanonicalPLAsTiCC(object):
                 indices = nbrs.kneighbors(elem, return_distance=False)[0]
                 
                 # only add elements which were not added in a previous loop
-                done = False
-                count = 0
-                success = 0
-
-                while not done:
-                    indx = indices[count]
-                    
+                for indx in indices:
                     if indx not in vault:
                         element = self.test_subsamples[sntype].iloc[indx]['object_id']
                         self.canonical_ids.append(element)
                         vault.append(indx)
-                        success = success + 1
-                        
-                    if success == n_neighbors or count == len(indices) - 1:
-                        done = True
-                            
-                    count = count + 1
                     
             if screen:
                 print('     Processed: ', len(vault))
@@ -207,27 +193,30 @@ class CanonicalPLAsTiCC(object):
         data_all = []
         
         for fname in path_to_test:
-            data_temp = pd.read_csv(fname, sep = ' ', index_col=False)
+            data_temp = pd.read_csv(fname)
             data_all.append(data_temp)
             
         data = pd.concat(data_all, ignore_index=True)
         
         # identify objs
         all_ids  = data['id'].values
+            
         flag = np.array([item in self.canonical_ids for item in all_ids])
         
         self.canonical_sample = data[flag]
         
-        test_ids = self.test_metadata['object_id'].values
-        flag_meta = np.array([item in self.canonical_ids for item in test_ids])
-        self.canonical_metadata = self.test_metadata[flag_meta]
+        test_ids = self.metadata_test['object_id'].values
+        canonical_ids = self.canonical_sample['id'].values
+        flag_meta = np.array([item in canonical_ids for item in test_ids])
+        self.canonical_metadata = self.metadata_test[flag_meta]
 
             
 def build_plasticc_canonical(n_neighbors: int, path_to_metadata: dict,
                              path_to_features: list,
                              output_canonical_file: str, 
                              output_meta_file: str,
-                             screen=False):
+                             screen=False, plot=True, 
+                             plot_fname='compare_train_canonical.png'):
     """Build canonical sample for SNPCC data.
 
     Parameters
@@ -243,6 +232,12 @@ def build_plasticc_canonical(n_neighbors: int, path_to_metadata: dict,
         Keywords must be ['train', 'test'].
     path_to_features: list
         Path to all features files for test sample.
+    plot: bool (optional)
+        If True, plot comparison for redshift and vspec.
+        Default is True.
+    plot_fname: str (optional)
+        Complete path for saving plot. Default is 
+        'compare_train_canonical.png'.
     features_method: str (optional)
         Method for feature extraction. Only 'Bazin' is implemented.
     screen: bool (optional)
@@ -261,6 +256,19 @@ def build_plasticc_canonical(n_neighbors: int, path_to_metadata: dict,
     # save result to file
     sample.canonical_sample.to_csv(output_canonical_file, index=False)
     sample.canonical_metadata.to_csv(output_meta_file, index=False)
+    
+    if plot:
+        plt.figure(figsize=(10,5))
+
+        plt.subplot(1,2,1)
+        sns.distplot(sample.canonical_metadata['true_z'], label='canonical')
+        sns.distplot(sample.metadata_train['true_z'], label='train')
+        plt.legend()
+
+        plt.subplot(1,2,2)
+        sns.distplot(sample.canonical_metadata['true_vpec'], label='canonical')
+        sns.distplot(sample.metadata_train['true_vpec'], label='train')
+        plt.savefig(plot_fname)
     
     
 def main():
