@@ -119,9 +119,9 @@ class Canvas(object):
         self.qbd_mi = pd.DataFrame()
         self.qbd_entropy = pd.DataFrame()
         self.colors = {'Canonical': '#dd0100',                 # red
-                       'RandomSampling': '#d83030',            # blue (scream)
-                       'UncSampling': '#225095',               # blue
-                       'UncSamplingEntropy': '#E1522D',        # orange (scream)
+                       'RandomSampling': '#225095',            # blue
+                       'UncSampling': '#E1522D',               # blue
+                       'UncSamplingEntropy': '#cc6600',       # orange (scream)
                        'UncSamplingLeastConfident': '#eb34de', # pink
                        'UncSamplingMargin': '#ff8f05',         # orange
                        'QBDMI': '#606048',                     # light brown (scream) 
