@@ -131,7 +131,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                 data.load_features(path_to_features[name], method=features_method,
                                    screen=screen, survey=survey, sample=name)
             elif screen:
-                print('Path to ' + sample + 'not given. Proceeding without this sample.')
+                print('Path to ' + name + 'not given. Proceeding without this sample.')
 
         data.build_samples(initial_training=training, nclass=nclass,
                            screen=screen, sep_files=True, queryable=queryable)
