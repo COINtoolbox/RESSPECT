@@ -138,7 +138,10 @@ In the example above we performed the entire operation using only extragalactic 
 The output file  ``plasticc_canonical_bazin_extragal_DDF.csv`` is now a completely separate pool sample.   
 In order to perform the canonical loop we should declare it as completely separate from the training and validation.
 
+
 .. warning:: Before you proceed with the loop, make sure you remove eventual objects in the canonical sample which are also present in the validation and test  samples! In the example below we removed repeated objects and stored the new data sets into specific files for the canonical sample.
+
+The active learning loop using the canonical sample can be ran using:
 
 .. code-block:: python
    :linenos:
@@ -170,4 +173,3 @@ In order to perform the canonical loop we should declare it as completely separa
    >>>            nloops=nloops, output_metrics_file=metric, output_queried_file=queried,
    >>>            path_to_features=path_to_features, screen=screen, strategy=strategy,
    >>>            survey=survey, training=train)
- 
