@@ -170,4 +170,4 @@ In order to perform the canonical loop we should declare it as completely separa
    >>>            nloops=nloops, output_metrics_file=metric, output_queried_file=queried,
    >>>            path_to_features=path_to_features, screen=screen, strategy=strategy,
    >>>            survey=survey, training=train)
-
+ 
