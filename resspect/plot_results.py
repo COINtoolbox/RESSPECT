@@ -300,7 +300,7 @@ class Canvas(object):
                              ncol=3, fontsize=25, title='Strategy:')
         plt.setp(lgd.get_title(), fontsize='23')
 
-        plt.subplots_adjust(left=0.075, right=0.95, top=0.875, bottom=0.075,
+        plt.subplots_adjust(left=0.075, right=0.95, top=0.85, bottom=0.075,
                             wspace=0.35, hspace=0.35)
         plt.savefig(output_plot_file)
 
