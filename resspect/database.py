@@ -620,10 +620,10 @@ class DataBase:
         
         repeated_ids_samples = []
         for i in range(4):
-            
-            delta = len(np.unique(pds[i][id_name].values)) - pds[i].shape[0]
-            if abs(delta) > 0: 
-                repeated_ids_samples.append([names[i], delta])
+            if pds[i].shape[0] > 0:
+                delta = len(np.unique(pds[i][id_name].values)) - pds[i].shape[0]
+                if abs(delta) > 0: 
+                    repeated_ids_samples.append([names[i], delta])
                 
         if len(repeated_ids_samples) > 0:
             raise ValueError('There are repeated ids within ' + \
