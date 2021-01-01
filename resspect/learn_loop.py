@@ -30,7 +30,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                photo_ids_froot=' ', classifier_bootstrap=False, save_predictions=False,
                sep_files=False, pred_dir=None, queryable=False, 
                metric_label='snpcc', dist_loop_root=None, save_alt_class=False,
-               SNANA_types=False,  **kwargs):
+               SNANA_types=False, metadata_fname=None, **kwargs):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -66,6 +66,9 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     dist_loop_root: str (optional)
         Pattern for file storing distances in each learn loop.
         Only used if "metric_label" is "cosmo" or "snpcc_cosmo".
+    metadata_fname: str (optional)
+        Complete path to PLAsTiCC zenodo test metadata. Only used it 
+        SNANA_types == True. Default is None.
     metric_label: str (optional)
         Choice of metric. 
         Currenlty only "snpcc", "cosmo" or "snpcc_cosmo" are accepted.
@@ -160,10 +163,12 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         if photo_ids and photo_ids_tofile:
             fname = photo_ids_froot + '_' + str(loop) + '.dat'
             data.output_photo_Ia(photo_class_thr, to_file=photo_ids_tofile,
-                                 filename=fname, SNANA_types=SNANA_types)
+                                 filename=fname, SNANA_types=SNANA_types,
+                                 metadata_fname=metadata_fname)
         elif photo_ids:
             data.output_photo_Ia(photo_class_thr, to_file=False,
-                                 SNANA_types=SNANA_types)
+                                 SNANA_types=SNANA_types, 
+                                 metadata_fname=metadata_fname)
 
         # choose object to query
         indx = data.make_query(strategy=strategy, batch=batch, queryable=queryable,
@@ -188,7 +193,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
             # save photo ids  
             fname_alt = photo_ids_froot + '_' + str(loop) + '_alt_label.dat'
             data_alt.output_photo_Ia(photo_class_thr, to_file=photo_ids_tofile,
-                                     filename=fname_alt, SNAN_types=SNANA_types)
+                                     filename=fname_alt, SNAN_types=SNANA_types,
+                                     metadata_fname=metadata_fname)
 
             # save metrics for alternate state
             output_metrics_file_alt = output_metrics_file[:-4] + '_alt_label.dat'
