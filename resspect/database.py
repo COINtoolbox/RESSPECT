@@ -1057,17 +1057,25 @@ class DataBase:
         data = self.photo_Ia_metadata.copy(deep=True)
         data_z = pd.read_csv(metadata_fname)
         
-        data['type_zenodo'] = self.photo_Ia_metadata['type']
+        data['code_zenodo'] = data.copy()['code'].values
         
+        codes = []
         for i in range(data.shape[0]):
-            if data.iloc[i]['code'] not in [62, 42, 6]:
-                data.at[i, 'code'] = self.SNANA_types[data.iloc[i]['code']]
+            
+            sncode = data.iloc[i]['code'] 
+            if  sncode not in [62, 42, 6]:
+                codes.append(self.SNANA_types[sncode])
             else:
                 flag = data_z['object_id'].values == data.iloc[i]['id']
                 submodel = data_z[flag]['true_submodel'].values[0]
-                data.at[i, 'code'] = \
-                    self.SNANA_types[data.iloc[i]['code']][submodel]
-            
+                codes.append(self.SNANA_types[sncode][submodel])
+        
+        # convert integers when necessary 
+        data['id'] = data['id'].values.astype(int)
+        data['code'] = codes
+        data['code_zenodo'] = data['code_zenodo'].values.astype(int)
+        
+        del self.photo_Ia_metadata
         self.photo_Ia_metadata = data
         
     def output_photo_Ia(self, threshold: float, metadata_fname: str, 
