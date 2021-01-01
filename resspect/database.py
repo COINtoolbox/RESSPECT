@@ -1062,10 +1062,11 @@ class DataBase:
         for i in range(data.shape[0]):
             if data.iloc[i]['code'] not in [62, 42, 6]:
                 data.at[i, 'code'] = self.SNANA_types[data.iloc[i]['code']]
-        else:
-            snid = data.iloc[i]['id']
-            submodel = data_z[data_z['object_id'].values == snid]['true_submodel'].values[0]
-            data.at[i, 'code'] = self.SNANA_types[data.iloc[i]['code']][submodel]
+            else:
+                flag = data_z['object_id'].values == data.iloc[i]['id']
+                submodel = data_z[flag]['true_submodel'].values[0]
+                data.at[i, 'code'] = \
+                    self.SNANA_types[data.iloc[i]['code']][submodel]
             
         self.photo_Ia_metadata = data
         
