@@ -29,7 +29,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                nclass=2, photo_class_thr=0.5, photo_ids=False, photo_ids_tofile = False,
                photo_ids_froot=' ', classifier_bootstrap=False, save_predictions=False,
                sep_files=False, pred_dir=None, queryable=False, 
-               metric_label='snpcc', dist_loop_root=None, save_alt_class=False, **kwargs):
+               metric_label='snpcc', dist_loop_root=None, save_alt_class=False,
+               SNANA_types=False,  **kwargs):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -97,6 +98,9 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         Default is False.
     screen: bool (optional)
         If True, print on screen number of light curves processed.
+    SNANA_types: bool (optional)
+        If True, translate zenodo types to SNANA codes. 
+        Default is False.
     survey: str (optional)
         'DES' or 'LSST'. Default is 'DES'.
         Name of the survey which characterizes filter set.
@@ -156,9 +160,10 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         if photo_ids and photo_ids_tofile:
             fname = photo_ids_froot + '_' + str(loop) + '.dat'
             data.output_photo_Ia(photo_class_thr, to_file=photo_ids_tofile,
-                                 filename=fname)
+                                 filename=fname, SNANA_types=SNANA_types)
         elif photo_ids:
-            data.output_photo_Ia(photo_class_thr, to_file=False)
+            data.output_photo_Ia(photo_class_thr, to_file=False,
+                                 SNANA_types=SNANA_types)
 
         # choose object to query
         indx = data.make_query(strategy=strategy, batch=batch, queryable=queryable,
@@ -183,7 +188,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
             # save photo ids  
             fname_alt = photo_ids_froot + '_' + str(loop) + '_alt_label.dat'
             data_alt.output_photo_Ia(photo_class_thr, to_file=photo_ids_tofile,
-                                     filename=fname_alt)
+                                     filename=fname_alt, SNAN_types=SNANA_types)
 
             # save metrics for alternate state
             output_metrics_file_alt = output_metrics_file[:-4] + '_alt_label.dat'
