@@ -296,7 +296,7 @@ class Canvas(object):
         h = ph + handles
         rename_labels = labels
         lgd = axis[0].legend(h[1:], rename_labels, loc='upper center',
-                             bbox_to_anchor=(1.025, 1.35),
+                             bbox_to_anchor=(1.15, 1.45),
                              ncol=3, fontsize=25, title='Strategy:')
         plt.setp(lgd.get_title(), fontsize='23')
 
