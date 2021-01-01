@@ -66,6 +66,8 @@ class DataBase:
         Complete information of queried objects.
     queryable_ids: np.array
         Flag for objects available to be queried.
+    SNANA_types: dict
+        Map between PLAsTiCC zenodo and SNANA types.
     telescope_names: list
         Name of telescopes for which costs are given.
     test_features: np.array
@@ -193,6 +195,10 @@ class DataBase:
         self.predicted_class = np.array([])
         self.queried_sample = []
         self.queryable_ids = np.array([])
+        self.SNANA_types = {90:11, 62:{1:3, 2:13}, 42:{1:2, 2:12, 3:14},
+                            67:41, 52:43, 64:51, 95:60, 994:61, 992:62,
+                            993:63, 15:64, 88:70, 92:80, 65:81, 16:83, 
+                            53:84, 991:90, 6:{1:91, 2:93}}
         self.telescope_names = ['4m', '8m']
         self.test_features = np.array([])
         self.test_metadata = pd.DataFrame()
@@ -1011,15 +1017,71 @@ class DataBase:
                 op.write(str(self.validation_prob[i][1]) + ',')
                 op.write(str(self.validation_class[i]) + '\n')
             op.close()
-
-    def output_photo_Ia(self, threshold: float, to_file=True,
-                        filename=' '):
-        """Returns the metadata for  photometrically classified SN Ia.
-
+            
+    def calculate_photoIa(self, threshold: float):
+        """Get photometrically classified Ia sample.
+        
+        Populate the attribute 'photo_Ia_metadata'.
+        
         Parameters
         ----------
         threshold: float
             Probability threshold above which an object is considered Ia.
+        """
+        
+        # photo Ia flag
+        photo_flag = self.validation_prob[:,1] >= threshold
+
+        if 'objid' in self.validation_metadata.keys():
+            id_name = 'objid'
+        elif 'id' in self.validation_metadata.keys():
+            id_name = 'id'
+
+        # get ids
+        photo_Ia_metadata = self.validation_metadata[photo_flag]
+        
+        self.photo_Ia_metadata = photo_Ia_metadata
+        
+
+    def translate_types(self, metadata_fname: str):
+        """Translate types from zenodo to SNANA codes.
+        
+        Populates the attribute 'photo_Ia_metadata'.
+        
+        Parameters
+        ----------
+        metadata_fname: str
+            Full path to PLAsTiCC zenodo test metadata file.
+        """
+        
+        data = self.photo_Ia_metadata.copy(deep=True)
+        data_z = pd.read_csv(metadata_fname)
+        
+        data['type_zenodo'] = self.photo_Ia_metadata['type']
+        
+        for i in range(data.shape[0]):
+            if data.iloc[i]['code'] not in [62, 42, 6]:
+                data.at[i, 'code'] = name[data.iloc[i]['code']]
+        else:
+            snid = data.iloc[i]['id']
+            submodel = data_z[data_z['object_id'].values == snid]['true_submodel'].values[0]
+            data.at[i, 'code'] = name[data.iloc[i]['code']][submodel]
+            
+        self.photo_Ia_metadata = data
+        
+    def output_photo_Ia(self, threshold: float, metadata_fname: str, 
+                        to_file=True, filename=' ', SNANA_types=False):
+        """Returns the metadata for  photometrically classified SN Ia.
+
+        Parameters
+        ----------
+        metadata_fname: str
+            Full path to PLAsTiCC zenodo test metadata file.
+        threshold: float
+            Probability threshold above which an object is considered Ia.
+        SNANA_types: bool (optional)
+            if True, translate type to SNANA codes and
+            add column with original values. Default is False.
         to_file: bool (optional)
             If true, populate the photo_Ia_list attribute. Otherwise
             write to file. Default is False.
@@ -1032,21 +1094,15 @@ class DataBase:
             if to_file is False, otherwise write DataFrame to file.
         """
 
-        # photo Ia flag
-        photo_flag = self.validation_prob[:,1] >= threshold
-
-        if 'objid' in self.validation_metadata.keys():
-            id_name = 'objid'
-        elif 'id' in self.validation_metadata.keys():
-            id_name = 'id'
-
-        # get ids
-        photo_Ia_metadata = self.validation_metadata[photo_flag]
+        # identify metadata
+        self.calculate_photoIa(threshold=threshold)
+        
+        # translate to SNANA types
+        if SNANA_types:
+            self.translate_types(metadata_fname=metadata_fname)
 
         if to_file:
-            photo_Ia_metadata.to_csv(filename, index=False)
-        else:
-            self.photo_Ia_metadata = photo_Ia_metadata
+            self.photo_Ia_metadata.to_csv(filename, index=False)            
 
     def evaluate_classification(self, metric_label='snpcc', screen=False):
         """Evaluate results from classification.
