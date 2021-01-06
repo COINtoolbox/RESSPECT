@@ -997,6 +997,7 @@ class DataBase:
 
         if method == 'RandomForest':
             # estimate classification for validation sample
+            print(self.validation_features.shape)
             self.validation_class = \
                 self.classifier.predict(self.validation_features)
             self.validation_prob = \
