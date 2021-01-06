@@ -3,7 +3,32 @@ from resspect.batch_functions import *
 
 def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
                               pool_metadata, budgets, criteria):
-    '''Document'''
+    """Select batch of queries based on acquistion criteria. Independently
+    models the elements of the batch.
+
+    Parameters
+    ----------
+    class_prob: np.array
+        Classification probability. One value per class per object.
+    id_name: str
+        key to index ids from pool_metadata
+    queryable_ids: np.array
+        Set of ids for objects available for querying.
+    pool_metadata: pandas Dataframe
+        Contains infromation relevant to the poolset such as costs and ids.
+    budgets: tuple of ints
+        budgets for each of the telescopes assumes 0th index is for 4m and
+        1th index is for 8m.
+    criteria: str
+        Acqution strategy to use can be 'uncertainty', 'entropy', 'margin',
+        'least_confident' and 'random'.
+
+    Returns
+    -------
+    acquistion_index: list
+            List of indexes identifying the objects from the pool sampled to be
+            queried. Guranteed to be within budget.
+    """
     pool_ids = pool_metadata[id_name].values
     budget_4m = budgets[0]
     budget_8m = budgets[1]
@@ -95,7 +120,34 @@ def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
 
 def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
                              pool_metadata, budgets, criteria="MI" ):
-    ''' DOCUMENT '''
+    """Select batch of queries based on acquistion criteria. Jointly models the
+    elements of the batch.
+
+    Parameters
+    ----------
+    probs_B_K_C: np.array
+        Classification probabilitity distributions for each datapoint for each
+        model in the committee (or sample from model posterior). B is the number
+        of data points, K is the committee size and C is the number of classes.
+    id_name: str
+        key to index ids from pool_metadata
+    queryable_ids: np.array
+        Set of ids for objects available for querying.
+    pool_metadata: pandas Dataframe
+        Contains infromation relevant to the poolset such as costs and ids.
+    budgets: tuple of ints
+        budgets for each of the telescopes assumes 0th index is for 4m and
+        1th index is for 8m.
+    criteria: str
+        Acqution strategy to use can be 'uncertainty', 'entropy', 'margin',
+        'least_confident' and 'random'.
+
+    Returns
+    -------
+    acquistion_index: list
+            List of indexes identifying the objects from the pool sampled to be
+            queried. Guranteed to be within budget.
+    """
     pool_ids = pool_metadata[id_name].values
     # Specifically queryable ids since we don't need ids to the pool in general.
     index_to_ids = {i: q_id for i, q_id in enumerate(queryable_ids)}
