@@ -88,14 +88,14 @@ class CanonicalPLAsTiCC(object):
         self.train_subsamples = {}
         
     def read_metadata(self, fname: str, sample: str):
-        """Reads metadata from PLAsTiCC zenodo files.
+        """Reads metadata built with "build_plasticc_metadata" function.
         
         Populates the attributes 'metadata_train' or 'metadata_test'.
         
         Parameters
         ----------
         fname: str
-            Complete path to metadata zenodo PLAsTiCC file.
+            Complete path to metadata file.
         sample: str
             Original PLAsTiCC sample, options are: 'train' or
             'test'.        
@@ -108,13 +108,7 @@ class CanonicalPLAsTiCC(object):
         data = pd.read_csv(fname)
         
         type_flag = np.array([item in self.obj_code.keys() 
-                              for item in data['true_target'].values])
-        
-        if self.ddf:
-            ddf_flag = data['ddf_bool'].values == 1
-            final_flag = np.logical_and(type_flag, ddf_flag)
-        else:
-            final_flag = type_flag
+                              for item in data['code_SNANA'].values])
             
         if sample == 'train':
             self.metadata_train = data[final_flag]

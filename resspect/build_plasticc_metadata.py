@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from resspect.snana_fits_to_pd import read_fits
 import re
 import numpy as np
 import pandas as pd
@@ -37,7 +38,8 @@ def get_SNR_headers():
     summary_stats = ['SIM_PEAKMAG_', 'SNR_mean_', 'SNR_max_', 'SNR_std_']
 
     # store SNR statistics
-    SNR_names = ['SNID', 'snana_file_index', 'code_zenodo', 'code_SNANA', 'type', 'redshift']
+    SNR_names = ['SNID', 'snana_file_index', 'code_zenodo', 'code_SNANA',
+                 'type', 'redshift']
     for stats in summary_stats:
         for fil in filters:
             SNR_names.append(stats + str(fil)[2])
@@ -45,23 +47,25 @@ def get_SNR_headers():
     return SNR_names
 
 
-def calculate_SNR(snid: int, train_ids: np.array, 
-                  photo_data: pd.DataFrame, head_data: pd.DataFrame,
-                 snana_file_index: int):
+def calculate_SNR(snid: int, photo_data: pd.DataFrame, 
+                  head_data: pd.DataFrame, code_zenodo: int, 
+                  snana_file_index: int, code_snana: int):
     """Calculate mean, max and std for all LSST filters.
     
     Parameters
     ----------
-    snid: int
-        Object identification number.
-    train_ids: np.array
-        All ids contained in training data from zenodo files.
+    code_snana: int
+        Type identification in SNANA files.
+    code_zenodo: int
+        Type identification in zenodo files.
+    head_data: pd.DataFrame
+        Data from SNANA HEAD files.
     photo_data: pd.DataFrame
         Data from SNANA PHOT files.
     snana_file_index: int
-        Identifies SNANA file hosting this object, [1-10].
-    head_data: pd.DataFrame
-        Data from SNANA HEAD files.
+        Identifies SNANA file hosting photometry for this object, [1-10].
+    snid: int
+        Object identification number.
         
     Returns
     -------
@@ -77,39 +81,35 @@ def calculate_SNR(snid: int, train_ids: np.array,
     
     # LSST filters
     filters = [b'u ', b'g ', b'r ', b'i ', b'z ', b'Y ']
+
+    flag_id_photo = photo_data['SNID'] == snid
+
+    flux = photo_data[flag_id_photo]['FLUXCAL']
+    fluxerr = photo_data[flag_id_photo]['FLUXCALERR']
+
+    SNR_all = flux/fluxerr
+
+    flag_id_head = head_data['SNID'].values == snid
+    redshift = head_data['SIM_REDSHIFT_CMB'].values[flag_id_head][0]
     
-    if snid not in train_ids:
+    # store values
+    line = [snid, snana_file_index, code_zenodo, code_snana, 
+            types_names[code_zenodo], redshift]
 
-        flag_id = photo_data['SNID'] == snid
-
-        flux = photo_data[flag_id]['FLUXCAL']
-        fluxerr = photo_data[flag_id]['FLUXCALERR']
-
-        SNR_all = flux/fluxerr
-
-        redshift = head_data['SIM_REDSHIFT_CMB'].values[indx]
-    
-        # store values
-        line = [snid, snana_file_index, code_zenodo, code_snana, 
-                types_names[code_zenodo], redshift]
-
-        # calculate SNR statistics 
-        for fil in filters:                
-            line.append(head_data['SIM_PEAKMAG_' + str(fil)[2]].values[indx])
-            
-            for f in [np.mean, max, np.std]:
-                flag = photo_data[flag_id]['FLT'] == fil
-                SNR_fil = SNR_all.values[flag]
-                line.append(f(SNR_fil))
+    # calculate SNR statistics 
+    for fil in filters:                
+        line.append(head_data['SIM_PEAKMAG_' + str(fil)[2]].values[flag_id_head][0])
+           
+        for f in [np.mean, max, np.std]:
+            flag_fil = photo_data[flag_id_photo]['FLT'] == fil
+            SNR_fil = SNR_all.values[flag_fil]
+            line.append(f(SNR_fil))
                 
-        return line
-    
-    else:
-        return []
+    return line
 
 
 def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
-                            screen=False):
+                            screen=False, extragal=True):
     """Save canonical metadata to file.
     
     Parameters
@@ -120,6 +120,8 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
         Path to directory containing all SNANA files for PLAsTiCC sim.
     out_fname: str
         Output file name.
+    extragal: bool (optional)
+        If True, search only for extragalactic objects. Default is True.
     screen: bool (optional)
         If True, print intermediate steps to screen. Default is False.
         
@@ -134,6 +136,8 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
                    67:41, 52:43, 64:51, 95:60, 994:61, 992:62,
                    993:63, 15:64, 88:70, 92:80, 65:81, 16:83,
                    53:84, 991:90, 6:{1:91, 2:93}}
+    
+    extragal_zenodo_types = [42, 52, 62, 64, 67, 88, 90, 95]
     
     # read zenodo metadata
     meta = pd.read_csv(fname_meta)
@@ -155,7 +159,13 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
     else: 
         op = open(out_fname, 'a+')
     
-    for code_zenodo in list(SNANA_types.keys())[1:]:
+    # which group to search for
+    if extragal:
+        search_group = extragal_zenodo_types
+    else:
+        search_group = list(SNANA_types.keys())
+    
+    for code_zenodo in search_group:
     
         if screen:
             print(code_zenodo)
@@ -181,20 +191,24 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
                    # read data for 1 object
                     snid_raw = photo[0]['SNID'].values[indx]
                     snid = int(re.sub("[^0-9]", "", str(snid_raw)))
-                
-                    if screen:
-                        print('snid = ', snid)
 
-                    line = calculate_SNR(snid=snid, train_ids=train_ids, 
-                                         photo_data=photo[1], head_data=photo[0],
-                                         snana_file_index=n)
-                
-                    if len(line) > 0:                    
+                    if snid in ids:
+                        
+                        if screen:
+                            print('snid = ', snid)
+                        
+                        line = calculate_SNR(snid=snid, 
+                                             code_zenodo=code_zenodo,
+                                             photo_data=photo[1],
+                                             head_data=photo[0],
+                                             snana_file_index=n,
+                                             code_snana=code_snana)
+                                 
                         for item in line[:-1]:
                             op.write(str(item) + ',')
                         op.write(str(line[-1]) + '\n')
-                    else:
-                        print('Object in training')
+                        
+            del photo
                 
         else:
             for subtype in SNANA_types[code_zenodo].keys():
@@ -212,17 +226,19 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
                         snid_raw = photo[0]['SNID'].values[indx]
                         snid = int(re.sub("[^0-9]", "", str(snid_raw)))
 
-                        line = calculate_SNR(snid=snid, train_ids=train_ids, 
-                                             photo_data=photo[1], head_data=photo[0],
-                                             snana_file_index=n)
-                    
-                        if len(line) > 0:                    
+                        if snid in ids:
+                            line = calculate_SNR(snid=snid, 
+                                                 code_snana=code_snana,
+                                                 code_zenodo=code_zenodo,
+                                                 photo_data=photo[1], 
+                                                 head_data=photo[0],
+                                                 snana_file_index=n)
+                                       
                             for item in line[:-1]:
                                 op.write(str(item) + ',')
                             op.write(str(line[-1]) + '\n')
-                        
-                        else:
-                            print('Object in training!')
+                    
+                    del photo
                 
     op.close()
     
