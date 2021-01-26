@@ -137,7 +137,7 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
                    53:84, 991:90, 6:{1:91, 2:93}}
     
     # read zenodo metadata
-     meta = pd.read_csv(fname_meta)
+    meta = pd.read_csv(fname_meta)
 
     # identify only DDF objects
     ddf_flag = meta['ddf_bool'].values == 1
