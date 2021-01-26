@@ -24,6 +24,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     py_modules=['resspect/bazin',
                 'resspect/build_plasticc_canonical',
+                'resspect/build_plasticc_metadata',
                 'resspect/build_snpcc_canonical',
                 'resspect/classifiers',
                 'resspect/database',
