@@ -15,13 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from resspect import read_fits
 import re
 import numpy as np
 import pandas as pd
 import os
 
-__all__ = ['get_SNR_headers', 'calculate_SNR', 'build_metadata']
+__all__ = ['get_SNR_headers', 'calculate_SNR', 'build_plasticc_metadata']
 
 
 def get_SNR_headers():
