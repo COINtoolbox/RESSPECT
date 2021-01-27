@@ -951,13 +951,7 @@ class DataBase:
             print('   ... train_labels: ', self.train_labels.shape)
             print('   ... pool_features: ', self.pool_features.shape)
 
-        if method == 'RandomForest' and str(self.validation_features) != 'None':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-                bootstrap_clf(random_forest, n_ensembles,
-                              self.train_features, self.train_labels,
-                              self.pool_features, **kwargs)
-
-        elif method == 'RandomForest':
+        if method == 'RandomForest':
             self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
             bootstrap_clf(random_forest, n_ensembles,
                           self.train_features, self.train_labels,
@@ -988,23 +982,15 @@ class DataBase:
             bootstrap_clf(nbg, n_ensembles,
                           self.train_features, self.train_labels,
                           self.pool_features, **kwargs)
-
         else:
-            raise ValueError("The only classifiers implemented are" +
-                              "'RandomForest', 'GradientBoostedTrees'," +
-                              "'KNN', 'MLP' and NB'." +
-                             "\n Feel free to add other options.")
+            raise ValueError('Classifier not recognized!')
 
-        if method == 'RandomForest':
-            # estimate classification for validation sample
-            print(self.validation_features.shape)
-            self.validation_class = \
-                self.classifier.predict(self.validation_features)
-            self.validation_prob = \
-                self.classifier.predict_proba(self.validation_features)
+        self.validation_class = \
+            self.classifier.predict(self.validation_features)
+        self.validation_prob = \
+            self.classifier.predict_proba(self.validation_features)
 
-        else:
-            raise ValueError('Only RandomForest classifier was fully tested!')
+        
 
         if save_predictions:
             id_name = self.identify_keywords()
@@ -1052,7 +1038,7 @@ class DataBase:
         Parameters
         ----------
         metadata_fname: str
-            Full path to PLAsTiCC zenodo test metadata file.
+            Full path to PLAsTiCC zenodo metadata file.
         """
 
         data = self.photo_Ia_metadata.copy(deep=True)
@@ -1062,7 +1048,7 @@ class DataBase:
 
         codes = []
         for i in range(data.shape[0]):
-
+            
             sncode = data.iloc[i]['code']
             if  sncode not in [62, 42, 6]:
                 codes.append(self.SNANA_types[sncode])

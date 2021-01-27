@@ -137,7 +137,7 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
                    993:63, 15:64, 88:70, 92:80, 65:81, 16:83,
                    53:84, 991:90, 6:{1:91, 2:93}}
     
-    extragal_zenodo_types = [42, 52, 62, 64, 67, 88, 90, 95]
+    extragal_zenodo_types = [15, 42, 52, 62, 64, 67, 88, 90, 95]
     
     # read zenodo metadata
     meta = pd.read_csv(fname_meta)
@@ -168,35 +168,23 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
     for code_zenodo in search_group:
     
         if screen:
-            print(code_zenodo)
+            print('code_zenodo: ', code_zenodo)
 
         if code_zenodo not in [62, 42, 6]:
             code_snana = SNANA_types[code_zenodo]
 
             for n in range(1, 11):
-            
-                if screen:
-                    print('n = ', n)
-
                 fname2 = snana_dir + 'LSST_DDF_MODEL' + str(code_snana).zfill(2) + \
                      '/LSST_DDF_NONIa-00' + str(n).zfill(2) + '_PHOT.FITS.gz'
 
                 photo = read_fits(fname2)
 
                 for indx in range(photo[0].shape[0]):
-                 
-                    if screen:
-                        print('indx = ', indx)
-
                    # read data for 1 object
                     snid_raw = photo[0]['SNID'].values[indx]
                     snid = int(re.sub("[^0-9]", "", str(snid_raw)))
 
-                    if snid in ids:
-                        
-                        if screen:
-                            print('snid = ', snid)
-                        
+                    if snid in ids:                        
                         line = calculate_SNR(snid=snid, 
                                              code_zenodo=code_zenodo,
                                              photo_data=photo[1],
@@ -214,7 +202,7 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
             for subtype in SNANA_types[code_zenodo].keys():
                 code_snana = SNANA_types[code_zenodo][subtype]
             
-                for n in range(1, 11):
+                for n in range(1, 11):                    
                     fname2 = snana_dir + 'LSST_DDF_MODEL' + str(code_snana).zfill(2) + \
                              '/LSST_DDF_NONIa-00' + str(n).zfill(2) + '_PHOT.FITS.gz'
 
