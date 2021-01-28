@@ -84,10 +84,12 @@ def calculate_SNR(snid: int, photo_data: pd.DataFrame,
 
     flag_id_photo = photo_data['SNID'] == snid
 
-    flux = photo_data[flag_id_photo]['FLUXCAL']
-    fluxerr = photo_data[flag_id_photo]['FLUXCALERR']
+    flux = photo_data[flag_id_photo]['FLUXCAL'].values
+    fluxerr = photo_data[flag_id_photo]['FLUXCALERR'].values
 
     SNR_all = flux/fluxerr
+    
+    indx = np.random.choice(range(flux.shape[0]))
 
     flag_id_head = head_data['SNID'].values == snid
     redshift = head_data['SIM_REDSHIFT_CMB'].values[flag_id_head][0]
@@ -95,17 +97,26 @@ def calculate_SNR(snid: int, photo_data: pd.DataFrame,
     # store values
     line = [snid, snana_file_index, code_zenodo, code_snana, 
             types_names[code_zenodo], redshift]
-
-    # calculate SNR statistics 
-    for fil in filters:                
+    
+    for fil in filters: 
         line.append(head_data['SIM_PEAKMAG_' + str(fil)[2]].values[flag_id_head][0])
-           
-        for f in [np.mean, max, np.std]:
+        
+    # calculate SNR statistics 
+    for f in [np.mean, max, np.std]:               
+        for fil in filters: 
+            
             flag_fil = photo_data[flag_id_photo]['FLT'] == fil
-            SNR_fil = SNR_all.values[flag_fil]
-            line.append(f(SNR_fil))
-                
-    return line
+            neg_flag = flux > -100
+            flag2 = np.logical_and(flag_fil, neg_flag)
+            
+            if sum(flag2) > 0:
+                SNR_fil = SNR_all[flag2]    
+                line.append(f(SNR_fil))
+    
+    if len(line) == 30:
+        return line
+    else:
+        return []
 
 
 def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
@@ -191,10 +202,11 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
                                              head_data=photo[0],
                                              snana_file_index=n,
                                              code_snana=code_snana)
-                                 
-                        for item in line[:-1]:
-                            op.write(str(item) + ',')
-                        op.write(str(line[-1]) + '\n')
+                        
+                        if len(line) > 0:
+                            for item in line[:-1]:
+                                op.write(str(item) + ',')
+                            op.write(str(line[-1]) + '\n')
                         
             del photo
                 
@@ -221,10 +233,11 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
                                                  photo_data=photo[1], 
                                                  head_data=photo[0],
                                                  snana_file_index=n)
-                                       
-                            for item in line[:-1]:
-                                op.write(str(item) + ',')
-                            op.write(str(line[-1]) + '\n')
+                            
+                            if len(line) > 0:
+                                for item in line[:-1]:
+                                    op.write(str(item) + ',')
+                                op.write(str(line[-1]) + '\n')
                     
                     del photo
                 
