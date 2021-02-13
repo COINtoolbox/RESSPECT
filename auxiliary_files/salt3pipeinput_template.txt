@@ -65,5 +65,6 @@ set_key=2
 
 [cosmofit]
 pro=wfit.exe
-outinput=cosmofit/test.M0DIF
+baseinput=IGNORE_THIS
+outinput=REPLACE_SALT2MU_M0DIF
 prooptions= -ompri 0.3 -dompri 0.01

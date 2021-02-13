@@ -195,7 +195,7 @@ class LightCurve(object):
         op.close()
 
         # separate elements
-        data_all = np.array([elem.split() for elem in lin])
+        data_all = np.array([elem.split() for elem in lin], dtype=object)
 
         # flag useful lines
         flag_lines = np.array([True if len(line) > 1 else False \
@@ -410,10 +410,6 @@ class LightCurve(object):
                         days_since_last_obs=2, feature_method='Bazin',
                         filter_cut='r'):
         """Check if this object can be queried in a given day.
-
-        This checks only r-band mag limit in a given epoch.
-        It there is no observation on that day, use the last available
-        observation.
 
         Parameters
         ----------

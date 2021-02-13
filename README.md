@@ -7,7 +7,11 @@
 
 This repository holds the pipeline of the RESSPECT project, built as part of the inter-collaboration activities developed by the Cosmostatistics Initiative ([COIN](cosmostatistics-initiative.org)) and the LSST Dark Energy Science Collaboration ([DESC](https://lsstdesc.org/)).
 
-This work grew from activities developed within the [COIN Residence Program #4](http://iaacoin.wix.com/crp2017), using as a starting point their [ActSNClass](https://github.com/COINtoolbox/ActSNClass) software. We kindly ask you to include the full citation to the original work if you use this material in your research: [Ishida et al, 2019, MNRAS, 483 (1), 2–18](https://cosmostatistics-initiative.org/wp-content/uploads/2019/06/COIN_ActSNClass.txt).
+This work grew from activities developed within the [COIN Residence Program #4](http://iaacoin.wix.com/crp2017), using as a starting point their [ActSNClass](https://github.com/COINtoolbox/ActSNClass) software. 
+
+The active learning and telescope resources pipeline is described in [Kennamer et al, 2020](https://cosmostatistics-initiative.org/portfolio-item/resspect1/). The pre-processed data set used to obtain the results shown in the paper is available through zenodo at [de Souza et al., 2020](https://zenodo.org/record/4399109#.X-sL21lKhNg).
+
+We kindly ask you to include the full citation for the above mentioned work if you use this material in your research.
 
 Full documentation can be found at [readthedocs](https://resspect.readthedocs.io/en/latest/).
 
@@ -24,7 +28,10 @@ Full documentation can be found at [readthedocs](https://resspect.readthedocs.io
  - setuptools>=41.0.1  
  - scipy>=1.3.0  
  - scikit-learn>=0.20.3  
- - seaborn>=0.9.0  
+ - seaborn>=0.9.0
+ - tox>=3.17
+ - xgboost>=1.0.1
+ - wheel>=0.36.2
  
  
  ### For documentation:

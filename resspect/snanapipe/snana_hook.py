@@ -22,8 +22,13 @@ class SNANAHook():
         pipe = SALT3pipe(finput=self.pipeinput)
         pipe.build(data=False,mode='customize',onlyrun=self.stages)
         pipe.configure()
+        if 'cosmofit' in self.stages:
+            pipe.CosmoFit.finput = pipe.CosmoFit.finput.replace('.temp.'+pipe.timestamp,'')
         if self.glue:
-            pipe.glue(['lcfit','getmu'])
+            if 'lcfit' in self.stages and 'getmu' in self.stages:
+                pipe.glue(['lcfit','getmu'])
+#             if 'getmu' in self.stages and 'cosmofit' in self.stages:
+#                 pipe.glue(['getmu','cosmofit'])
         return pipe
     
     def gen_input(self,data_folder=None,phot_version=None,snid_file=None,salt2mu_prefix=None,
@@ -60,7 +65,12 @@ class SNANAHook():
             config[sec]['outinput'] = outname
             folder = os.path.split(outname)[0]
             if not os.path.isdir(folder):
-                os.mkdir(folder)        
+                os.mkdir(folder)
+        #replace cosmofit outinput
+        for sec in ['cosmofit']:
+            outname = config[sec]['outinput']
+            outname = outname.replace('REPLACE_SALT2MU_M0DIF',salt2mu_prefix+'.M0DIF')
+            config[sec]['outinput'] = outname
         
         with open(outfile, 'w') as configfile:
             config.write(configfile)

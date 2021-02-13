@@ -119,9 +119,9 @@ class Canvas(object):
         self.qbd_mi = pd.DataFrame()
         self.qbd_entropy = pd.DataFrame()
         self.colors = {'Canonical': '#dd0100',                 # red
-                       'RandomSampling': '#d83030',            # blue (scream)
-                       'UncSampling': '#225095',               # blue
-                       'UncSamplingEntropy': '#E1522D',        # orange (scream)
+                       'RandomSampling': '#225095',            # blue
+                       'UncSampling': '#006600',               # blue
+                       'UncSamplingEntropy': '#cc6600',       # orange (scream)
                        'UncSamplingLeastConfident': '#eb34de', # pink
                        'UncSamplingMargin': '#ff8f05',         # orange
                        'QBDMI': '#606048',                     # light brown (scream) 
@@ -285,7 +285,7 @@ class Canvas(object):
                                for item in ax.get_xticks()],
                                fontsize=self.tick_label_size)
 
-            ax.set_xlabel('Number of queries', fontsize=self.axis_label_size)
+            ax.set_xlabel('Number of iterations', fontsize=self.axis_label_size)
             ax.set_ylabel(self.metrics_names[i], fontsize=self.axis_label_size)
 
             axis.append(ax)
@@ -296,11 +296,11 @@ class Canvas(object):
         h = ph + handles
         rename_labels = labels
         lgd = axis[0].legend(h[1:], rename_labels, loc='upper center',
-                             bbox_to_anchor=(1.025, 1.35),
+                             bbox_to_anchor=(1.15, 1.45),
                              ncol=3, fontsize=25, title='Strategy:')
         plt.setp(lgd.get_title(), fontsize='23')
 
-        plt.subplots_adjust(left=0.075, right=0.95, top=0.875, bottom=0.075,
+        plt.subplots_adjust(left=0.075, right=0.95, top=0.85, bottom=0.075,
                             wspace=0.35, hspace=0.35)
         plt.savefig(output_plot_file)
 
