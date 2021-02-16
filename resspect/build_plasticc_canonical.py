@@ -21,6 +21,7 @@ import pandas as pd
 import matplotlib.pylab as plt
 import seaborn as sns
 
+from resspect.build_plasticc_metadata import get_SNR_headers 
 from sklearn.neighbors import NearestNeighbors
 
 __all__ = ['CanonicalPLAsTiCC', 'build_plasticc_canonical']
@@ -39,6 +40,10 @@ class CanonicalPLAsTiCC(object):
         Complete data matrix for the canonical sample.
     ddf: bool
         If True, deal only with DDF objects.
+    filters: str
+        List of LSST filters.
+    galactic_codes: list
+        Codes identifying galactic models.
     metadata_names: list
         List of keywords on which the nearest neighbors will
         be calculated. This corresponds to true redshift.
@@ -49,6 +54,8 @@ class CanonicalPLAsTiCC(object):
     metadata_test: pd.DataFrame
         Metadata for all objects in the PLAsTiCC zenodo test 
         set. If ddf == True this corresponds only to DDF objects.
+    model_set: list
+        List of models to be considered.
     obj_code: dict
         Map between PLAsTiCC class code and astrophysical category.
     test_subsamples: dict
@@ -58,13 +65,16 @@ class CanonicalPLAsTiCC(object):
         Identify sub-samples per type within train sample. 
         Keywords are the same as 'obj_code' attribute.
     
-    
     Methods
     -------   
-    read_metadata(fname: str, sample: str)
-        Reads metadata from PLAsTiCC zenodo files.
+    build_canonical_sample(path_to_test: list)
+        Gather ids and build final canonical sample.
+    find_neighbors(n_neighbors: int, screen: bool)
+        Identify nearest neighbors in test for each object in training.
     find_subsamples()
         Identify subsamples within train and test samples.
+    read_metadata(fname: str, sample: str)
+        Reads metadata from PLAsTiCC zenodo files.
     """
 
     def __init__(self):
@@ -72,7 +82,13 @@ class CanonicalPLAsTiCC(object):
         self.canonical_sample = []
         self.canonical_metadata = pd.DataFrame()
         self.ddf = True
-        self.obj_code = {15: 'TDE',     # use only extragalactic objs
+        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
+        self.galactic_codes = [92, 65,16, 53, 6]       
+        self.metadata_names = get_SNR_headers()
+        self.metadata_train = pd.DataFrame()
+        self.metadata_test = pd.DataFrame()
+        self.model_set = []
+        self.obj_code = {15: 'TDE',  
                          42: 'II',
                          52: 'Iax',
                          62: 'Ibc',
@@ -80,10 +96,12 @@ class CanonicalPLAsTiCC(object):
                          67: '91bg',
                          88: 'AGN',
                          90: 'Ia',
-                         95: 'SLSN'}
-        self.metadata_names = ['object_id', 'true_z']
-        self.metadata_train = pd.DataFrame()
-        self.metadata_test = pd.DataFrame()
+                         95: 'SLSN',
+                         92: 'RRL',
+                         65:'M-dwarf',
+                         16:'EB',
+                         53:'Mira',
+                         6: 'm-lens'} 
         self.test_subsamples = {}
         self.train_subsamples = {}
         
@@ -108,25 +126,43 @@ class CanonicalPLAsTiCC(object):
         data = pd.read_csv(fname)
         
         type_flag = np.array([item in self.obj_code.keys() 
-                              for item in data['code_SNANA'].values])
+                              for item in data['code_zenodo'].values])
             
         if sample == 'train':
-            self.metadata_train = data[final_flag]
+            self.metadata_train = data[type_flag]
         else: 
-            self.metadata_test = data[final_flag]
+            self.metadata_test = data[type_flag]
             
-    def find_subsamples(self):
+    def find_subsamples(self, models='extragal'):
         """Subsamples per object type according to 'true_type' keyword.
         
         Populates attributes 'train_subsamples' and 'test_subsamples'.
+        
+        Parameters
+        ----------
+        models: str (optional)
+           Category of models to be consider. Options are 'galactic',
+           'extragal' or 'all'. Default is 'extragal'.
         """
         
-        for num in self.obj_code.keys():
-            train_flag = self.metadata_train['true_target'].values == num
+        if models == 'all':
+            self.model_set = self.obj_code.keys()
+            
+        elif models == 'extragal':
+            self.model_set = [item for item in list(self.obj_code.keys())
+                              if item not in self.galactic_codes]
+        elif models == 'galactic':
+            self.model_set = self.galactic_codes
+        else:
+            raise ValueError('Invalid models choice. Options are ' +\
+                            '"all", "extragal" and "galactic".')
+            
+        for num in self.model_set:
+            train_flag = self.metadata_train['code_zenodo'].values == num
             self.train_subsamples[num] = \
                 self.metadata_train[train_flag][self.metadata_names]
             
-            test_flag = self.metadata_test['true_target'].values == num
+            test_flag = self.metadata_test['code_zenodo'].values == num
             self.test_subsamples[num] = \
                 self.metadata_test[test_flag][self.metadata_names]
         
@@ -144,7 +180,7 @@ class CanonicalPLAsTiCC(object):
             If true, display steps info on screen. Default is False.
         """
         
-        for sntype in self.obj_code.keys():
+        for sntype in self.model_set:
             if screen:
                 print('Scanning ', self.obj_code[sntype], ' . . . ')
 
@@ -153,27 +189,27 @@ class CanonicalPLAsTiCC(object):
             nbrs = NearestNeighbors(n_neighbors=n,
                                     algorithm='auto')
             
-            nbrs.fit(self.test_subsamples[sntype].values[:,1:])
+            nbrs.fit(self.test_subsamples[sntype].values[:,5:12])
             
             # store indices already used
             vault = []
             
             # match with objects in training
             for i in range(self.train_subsamples[sntype].shape[0]):
-                elem = np.array(self.train_subsamples[sntype].values[i][1:]).reshape(1, -1)
+                elem = np.array(self.train_subsamples[sntype].values[i][5:12]).reshape(1, -1)
                 indices = nbrs.kneighbors(elem, return_distance=False)[0]
                 
                 # only add elements which were not added in a previous loop
                 for indx in indices:
                     if indx not in vault:
-                        element = self.test_subsamples[sntype].iloc[indx]['object_id']
+                        element = self.test_subsamples[sntype].iloc[indx]['SNID']
                         self.canonical_ids.append(element)
                         vault.append(indx)
                     
             if screen:
                 print('     Processed: ', len(vault))
                 
-    def build_canonical_sample(self, path_to_test: list):
+    def build_canonical_sample(self, path_to_test: str):
         """Gather ids and build final canonical sample.
         
         Populates attribute 'canonical_sample' and 'canonical_metadata'.
@@ -181,16 +217,11 @@ class CanonicalPLAsTiCC(object):
         Parameters
         ----------
         path_to_test: list
-            Path to all test sample Bazin files.
+            Path to test sample features files.
         """
-        # store all Bazin fits
-        data_all = []
         
-        for fname in path_to_test:
-            data_temp = pd.read_csv(fname)
-            data_all.append(data_temp)
-            
-        data = pd.concat(data_all, ignore_index=True)
+        # store all Bazin fits
+        data = pd.read_csv(path_to_test)
         
         # identify objs
         all_ids  = data['id'].values
@@ -199,39 +230,79 @@ class CanonicalPLAsTiCC(object):
         
         self.canonical_sample = data[flag]
         
-        test_ids = self.metadata_test['object_id'].values
+        test_ids = self.metadata_test['SNID'].values
         canonical_ids = self.canonical_sample['id'].values
         flag_meta = np.array([item in canonical_ids for item in test_ids])
         self.canonical_metadata = self.metadata_test[flag_meta]
+        
+    def clean_samples(self, input_features_files: dict, output_features_files: dict):
+        """Remove repeated IDS from validation and test samples.
+        
+        Parameters
+        ----------
+        input_features_files: dict
+            Dictionary with paths to features files for val and test samples.
+            Keywords must be ['validation', 'test'].
+            
+        output_features_files: dict
+            Dictionary with paths to output file names. 
+            Keywords must be ['validation', 'test'].
+        
+        Return
+        ------
+            Write test and validation sample to file, eliminating objects
+            present in the canonical sample.
+        """
+        
+        # read data
+        test_features = pd.read_csv(input_features_files['test'])
+        validation_features = pd.read_csv(input_features_files['validation'])
+    
+        # remove repeated ids from other 
+        canonical_ids = self.canonical_sample['id'].values
+        test_ids = test_features['id'].values
+        validation_ids = validation_features['id'].values
+
+        flag_test = np.array([item not in canonical_ids for item in test_ids])
+        flag_validation = np.array([item not in canonical_ids for item in validation_ids])
+
+        new_test = test_features[flag_test]
+        new_validation = validation_features[flag_validation]
+
+        new_test.to_csv(output_features_files['test'], index=False)
+        new_validation.to_csv(output_features_files['validation'], index=False)
 
             
 def build_plasticc_canonical(n_neighbors: int, path_to_metadata: dict,
-                             path_to_features: list,
-                             output_canonical_file: str, 
-                             output_meta_file: str,
-                             screen=False, plot=True, 
-                             plot_fname='compare_train_canonical.png'):
+                             output_meta_file: str, input_features_files:dict,
+                             output_features_files: dict,
+                              plot_fname: str,
+                             screen=False, plot=True, models='extragal'):
     """Build canonical sample for SNPCC data.
 
     Parameters
     ----------
+    input_features_files: dict
+        Dictionary with paths to features files for val and test samples.
+        Keywords must be ['validation', 'test'].        
     n_neighbors: int
         Number of neighbors to identify in test for each obj in train.
-    output_canonical_file: str
-        Complete path to output canonical sample file.
+    output_features_files: dict
+        Output Bazin file name for canonical sample.
+        Keywords must be ['pool', 'test', 'validation'].
     output_meta_file: str
         Complete path to output metadata file for canonical sample.
     path_to_metadata: dict
         Complete path to metadata files.
         Keywords must be ['train', 'test'].
-    path_to_features: list
-        Path to all features files for test sample.
+    plot_fname: str 
+        Complete path for saving plot. Default is 
+    models: str (optional)
+        Class of models to consider. Options are "all", "galactic"
+        and "extragal". Default is "extragal".
     plot: bool (optional)
         If True, plot comparison for redshift and vspec.
         Default is True.
-    plot_fname: str (optional)
-        Complete path for saving plot. Default is 
-        'compare_train_canonical.png'.
     features_method: str (optional)
         Method for feature extraction. Only 'Bazin' is implemented.
     screen: bool (optional)
@@ -243,25 +314,38 @@ def build_plasticc_canonical(n_neighbors: int, path_to_metadata: dict,
     for name in path_to_metadata.keys():
         sample.read_metadata(fname=path_to_metadata[name], sample=name)
         
-    sample.find_subsamples()
-    sample.find_neighbors(n_neighbors=n_neighbors, screen=False)
-    sample.build_canonical_sample(path_to_test=path_to_features)
+    sample.find_subsamples(models=models)
+    sample.find_neighbors(n_neighbors=n_neighbors, screen=screen)
+    sample.build_canonical_sample(path_to_test=input_features_files['test'])
     
     # save result to file
-    sample.canonical_sample.to_csv(output_canonical_file, index=False)
+    sample.canonical_sample.to_csv(output_features_files['pool'], index=False)
     sample.canonical_metadata.to_csv(output_meta_file, index=False)
     
+    # remove repeated ids from test and validation samples
+    sample.clean_samples(input_features_files=input_features_files, 
+                         output_features_files=output_features_files)    
+    
+    if screen:
+        print('Size of original training: ', sample.metadata_train.shape[0])
+        print('Size of canonical: ', sample.canonical_metadata.shape[0])
+    
     if plot:
-        plt.figure(figsize=(10,5))
+        ax = []
+        plt.figure(figsize=(20,10))
 
-        plt.subplot(1,2,1)
-        sns.distplot(sample.canonical_metadata['true_z'], label='canonical')
-        sns.distplot(sample.metadata_train['true_z'], label='train')
+        plt.subplot(2,4,1)
+        sns.distplot(sample.canonical_metadata['redshift'], label='canonical')
+        sns.distplot(sample.metadata_train['redshift'], label='train')
         plt.legend()
 
-        plt.subplot(1,2,2)
-        sns.distplot(sample.canonical_metadata['true_vpec'], label='canonical')
-        sns.distplot(sample.metadata_train['true_vpec'], label='train')
+        for i in range(6):
+            ax[0] = plt.subplot(2,4, i + 1)
+            sns.distplot(sample.canonical_metadata['SIM_PEAKMAG_' + sample.filters[i]],
+                         label='canonical')
+            sns.distplot(sample.metadata_train['SIM_PEAKMAG_' + sample.filters[i]],
+                         label='train')
+        
         plt.savefig(plot_fname)
     
     

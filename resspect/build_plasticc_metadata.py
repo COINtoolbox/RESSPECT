@@ -120,7 +120,7 @@ def calculate_SNR(snid: int, photo_data: pd.DataFrame,
 
 
 def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
-                            screen=False, extragal=True):
+                            screen=False, extragal=True, field='DDF'):
     """Save canonical metadata to file.
     
     Parameters
@@ -133,6 +133,9 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
         Output file name.
     extragal: bool (optional)
         If True, search only for extragalactic objects. Default is True.
+    field: str (optional)
+        Fields to be consider. Options are 'DDF', 'WFD' or 'all'.
+        Default is DDF.
     screen: bool (optional)
         If True, print intermediate steps to screen. Default is False.
         
@@ -153,8 +156,13 @@ def build_plasticc_metadata(fname_meta: str, snana_dir: str, out_fname,
     # read zenodo metadata
     meta = pd.read_csv(fname_meta)
 
-    # identify only DDF objects
-    ddf_flag = meta['ddf_bool'].values == 1
+    if field == 'DDF':
+        # identify only DDF objects
+        ddf_flag = meta['ddf_bool'].values == 1
+    elif field == 'WFD':
+        ddf_flag = meta['ddf_bool'].values == 0
+    else:
+        ddf_flag = np.array([True for i in range(meta.shape[0])])
 
     # get ids
     ids = meta['object_id'].values[ddf_flag]    
