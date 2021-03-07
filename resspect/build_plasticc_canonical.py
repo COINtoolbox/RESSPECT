@@ -161,7 +161,7 @@ class CanonicalPLAsTiCC(object):
             train_flag = self.metadata_train['code_zenodo'].values == num
             self.train_subsamples[num] = \
                 self.metadata_train[train_flag][self.metadata_names]
-            
+
             test_flag = self.metadata_test['code_zenodo'].values == num
             self.test_subsamples[num] = \
                 self.metadata_test[test_flag][self.metadata_names]
@@ -196,13 +196,15 @@ class CanonicalPLAsTiCC(object):
             
             # match with objects in training
             for i in range(self.train_subsamples[sntype].shape[0]):
-                elem = np.array(self.train_subsamples[sntype].values[i][5:12]).reshape(1, -1)
+                subsamp = self.train_subsamples[sntype].values[i][5:12]
+                elem = np.array(subsamp.reshape(1, -1))
                 indices = nbrs.kneighbors(elem, return_distance=False)[0]
                 
                 # only add elements which were not added in a previous loop
                 for indx in indices:
                     if indx not in vault:
-                        element = self.test_subsamples[sntype].iloc[indx]['SNID']
+                        subtype = self.test_subsamples[sntype]
+                        element = subtype.iloc[indx]['SNID']
                         self.canonical_ids.append(element)
                         vault.append(indx)
                     
@@ -331,16 +333,16 @@ def build_plasticc_canonical(n_neighbors: int, path_to_metadata: dict,
         print('Size of canonical: ', sample.canonical_metadata.shape[0])
     
     if plot:
-        ax = []
+        ax = {}
         plt.figure(figsize=(20,10))
 
-        plt.subplot(2,4,1)
+        ax[0] = plt.subplot(2,4,1)
         sns.distplot(sample.canonical_metadata['redshift'], label='canonical')
         sns.distplot(sample.metadata_train['redshift'], label='train')
         plt.legend()
 
         for i in range(6):
-            ax[0] = plt.subplot(2,4, i + 1)
+            ax[i + 1] = plt.subplot(2,4, i + 2)
             sns.distplot(sample.canonical_metadata['SIM_PEAKMAG_' + sample.filters[i]],
                          label='canonical')
             sns.distplot(sample.metadata_train['SIM_PEAKMAG_' + sample.filters[i]],
@@ -348,6 +350,7 @@ def build_plasticc_canonical(n_neighbors: int, path_to_metadata: dict,
         
         plt.savefig(plot_fname)
     
+    return sample
     
 def main():
     return None

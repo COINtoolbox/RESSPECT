@@ -51,10 +51,11 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         Full path to output file to store the queried sample.
     features_method: str (optional)
         Feature extraction method. Currently only 'Bazin' is implemented.
-    classifier: str
+    classifier: str (optional)
         Machine Learning algorithm.
         Currently implemented options are 'RandomForest', 'GradientBoostedTrees',
         'K-NNclassifier','MLPclassifier','SVMclassifier' and 'NBclassifier'.
+        Default is 'RandomForest'.
     sep_files: bool (optional)
         If True, consider train and test samples separately read
         from independent files. Default is False.    
