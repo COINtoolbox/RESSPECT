@@ -971,7 +971,7 @@ class DataBase:
             self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
             bootstrap_clf(mlp, n_ensembles,
                           self.train_features, self.train_labels,
-                          self.pool_features **kwargs)
+                          self.pool_features, **kwargs)
         elif method == 'SVM':
             self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
             bootstrap_clf(svm, n_ensembles,
