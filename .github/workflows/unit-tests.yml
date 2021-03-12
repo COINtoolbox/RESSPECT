@@ -51,16 +51,7 @@ jobs:
         shell: bash -l {0}
         run: echo "RESSPECT_TEST=~/resspect_tests/" >> $GITHUB_ENV
 
-      - name: Copy Files and Run Tox
+      - name: Run Tox
         shell: bash -l {0}
         run: |
-          mkdir -p $RESSPECT_TEST
-          echo "Print out content ---"
-          ls
-          echo "---"
-          cp -v data/tests/*.csv $RESSPECT_TEST/
-          cp data/SIMGEN_PUBLIC_DES.tar.gz $RESSPECT_TEST/
-          cd $RESSPECT_TEST
-          tar xzf SIMGEN_PUBLIC_DES.tar.gz
-          cd -
-          tox -e test -v -rs
+          tox -e py37-unit -v -rs
