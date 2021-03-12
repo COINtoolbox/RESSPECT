@@ -65,7 +65,7 @@ def test_fit_scipy(path_to_test_data):
     
     from resspect import fit_scipy
     
-    fname = path_to_test_data + 'lc_mjd_flux.csv'
+    fname = os.path.join(path_to_test_data, 'lc_mjd_flux.csv')
     data = pd.read_csv(fname)
     
     time = data['mjd'].values
