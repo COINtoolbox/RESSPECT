@@ -19,20 +19,24 @@ def setup_test(env_var="RESSPECT_TEST"):
     Parameters
     ----------
     env_var : str
-        Environment variable that contains the root path to the input data.
+        Environment variable that contains the root path to the input data
+        directory.
 
     Returns
     -------
     str:
-        Path to the input files.
+        Path to the input data directory.
     """
-    path_to_test_data = os.getenv(env_var)
+    path_to_test_data_dir = os.getenv(env_var)
 
-    if path_to_test_data is None:
+    if path_to_test_data_dir is None:
         pytest.skip('Environment variable not set: $RESSPECT_TEST')
 
-    path_to_test_data = os.path.expanduser(path_to_test_data).strip()
+    
+    path_to_test_data_dir = os.path.expanduser(path_to_test_data_dir).strip()
 
+    return path_to_test_data_dir
+    """
     # Clean up test folder to start fresh every time
     if os.path.exists(path_to_test_data):
         shutil.rmtree(path_to_test_data)
@@ -53,3 +57,4 @@ def setup_test(env_var="RESSPECT_TEST"):
     tar.close()
 
     return path_to_test_data
+    """
