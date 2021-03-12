@@ -47,9 +47,17 @@ jobs:
         shell: bash -l {0}
         run: python -m pip install tox tox-conda
 
+      - name: Create test folder
+        shell: bash -l {0}
+        run: mkdir -p ~/resspect_tests
+
       - name: Setup RESSPECT_TEST
         shell: bash -l {0}
         run: echo "RESSPECT_TEST=~/resspect_tests" >> $GITHUB_ENV
+
+      - name: Copy test data to test folder
+        shell: bash -l {0}
+        run: cp -v data/tests/*.csv $RESSPECT_TEST/
 
       - name: Run Tox
         shell: bash -l {0}
