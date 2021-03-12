@@ -51,29 +51,13 @@ jobs:
         shell: bash -l {0}
         run: echo "RESSPECT_TEST=~/resspect_tests" >> $GITHUB_ENV
 
-      - name: Create test folder
-        shell: bash -l {0}
-        run: mkdir -p $RESSPECT_TEST/
-
-      - name: Copy test data to test folder
-        shell: bash -l {0}
-        run: cp -v data/tests/*.csv $RESSPECT_TEST/
-
-      - name: Unpack data for tests
+      - name: Copy Files and Run Tox
         shell: bash -l {0}
         run: |
+          mkdir -p $RESSPECT_TEST/
+          cp -v data/tests/*.csv $RESSPECT_TEST/
           cp data/SIMGEN_PUBLIC_DES.tar.gz $RESSPECT_TEST/
           cd $RESSPECT_TEST
           tar xzf SIMGEN_PUBLIC_DES.tar.gz
           cd -
-          pwd
-
-      - name: Display test folder contents
-        shell: bash -l {0}
-        run: |
-          ls $RESSPECT_TEST
-
-      - name: Run Tox
-        shell: bash -l {0}
-        run: |
           tox -e test -v -rs
