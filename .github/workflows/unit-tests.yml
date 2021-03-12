@@ -54,4 +54,9 @@ jobs:
       - name: Run Tox
         shell: bash -l {0}
         run: |
+          cp data/test/lc_mjd_flux.csv $RESSPECT_TEST
+          tar xzf data/SIMGEN_PUBLIC_DES.tar.gz $RESSPECT_TEST
+          ls $RESSPECT_TEST
           tox -e py37-unit -v -rs
+        env:
+          RESSPECT_TEST: env.RESSPECT_TEST
