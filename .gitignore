@@ -17,3 +17,6 @@ venv2/
 resspect/.ipynb_checkpoints/
 .ipynb_checkpoints/
 __pycache__/
+
+# PyCharm Files
+.idea
