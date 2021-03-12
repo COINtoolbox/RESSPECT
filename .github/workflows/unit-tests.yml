@@ -66,6 +66,8 @@ jobs:
           cd $RESSPECT_TEST
           tar xzvf SIMGEN_PUBLIC_DES.tar.gz
           cd -
+          pwd
+          ls $RESSPECT_TEST
 
       - name: Run Tox
         shell: bash -l {0}
