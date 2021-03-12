@@ -27,14 +27,20 @@ def path_to_test_data(env_var="RESSPECT_TEST"):
     str:
         Path to the input data directory.
     """
-    data_dir = os.getenv(env_var)
+    path = os.getenv(env_var)
 
-    if data_dir is None:
+    if path is None:
         pytest.skip('Environment variable not set: $RESSPECT_TEST')
 
-    data_dir = os.path.expanduser(data_dir.strip())
-        
-    if not os.path.exists(data_dir):
-        pytest.fail(f'Cannot find/read test folder: {data_dir}')
+    path = os.path.expanduser(path.strip())
 
-    return data_dir
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            " Could not find path to input data:\n    {:s}".format(path))
+
+    if not os.access(path, os.R_OK):
+        pytest.fail('\n  Path to input test data exists but is not accessible: '
+                    '\n    {:s}'.format(path))
+
+    print(f"Using the following path to the inputs:\n  {path}\n")
+    return path
