@@ -64,9 +64,13 @@ jobs:
         run: |
           cp data/SIMGEN_PUBLIC_DES.tar.gz $RESSPECT_TEST/
           cd $RESSPECT_TEST
-          tar xzvf SIMGEN_PUBLIC_DES.tar.gz
+          tar xzf SIMGEN_PUBLIC_DES.tar.gz
           cd -
           pwd
+
+      - name: Display test folder contents
+        shell: bash -l {0}
+        run: |
           ls $RESSPECT_TEST
 
       - name: Run Tox
