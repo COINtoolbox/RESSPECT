@@ -31,8 +31,10 @@ def path_to_test_data(env_var="RESSPECT_TEST"):
 
     if data_dir is None:
         pytest.skip('Environment variable not set: $RESSPECT_TEST')
+
+    data_dir = os.path.expanduser(data_dir.strip())
         
     if not os.path.exists(data_dir):
         pytest.fail(f'Cannot find/read test folder: {data_dir}')
 
-    return os.path.expanduser(data_dir.strip())
+    return data_dir
