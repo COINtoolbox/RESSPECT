@@ -59,4 +59,4 @@ jobs:
           ls $RESSPECT_TEST
           tox -e py37-unit -v -rs
         env:
-          RESSPECT_TEST: env.RESSPECT_TEST
+          RESSPECT_TEST: ~/resspect_tests/
