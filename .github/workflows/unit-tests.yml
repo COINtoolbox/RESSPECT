@@ -49,12 +49,13 @@ jobs:
 
       - name: Setup $RESSPECT_TEST
         shell: bash -l {0}
-        run: echo "RESSPECT_TEST=~/resspect_tests/" >> $GITHUB_ENV
+        run: echo "RESSPECT_TEST_PATH=${{ HOME }}/resspect_tests/" >> $GITHUB_ENV
 
       - name: Run Tox
         shell: bash -l {0}
         run: |
-          cp data/tests/lc_mjd_flux.csv $RESSPECT_TEST
-          tar xzf data/SIMGEN_PUBLIC_DES.tar.gz $RESSPECT_TEST
-          ls $RESSPECT_TEST
+          ls $RESSPECT_TEST_PATH
+          cp data/tests/lc_mjd_flux.csv $RESSPECT_TEST_PATH
+          tar xzf data/SIMGEN_PUBLIC_DES.tar.gz $RESSPECT_TEST_PATH
+          ls $RESSPECT_TEST_PATH
           tox -e py37-unit -v -rs

@@ -10,7 +10,7 @@ import tarfile
 
 
 @pytest.fixture(scope='session')
-def path_to_test_data(env_var="RESSPECT_TEST"):
+def path_to_test_data(env_var="RESSPECT_TEST_PATH"):
     """
     PyTest fixture that creates a folder inside $RESSPECT_TEST, copies the tar
     file inside it, decompress the tar file and returns the path to where the
