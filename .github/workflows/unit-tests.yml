@@ -58,5 +58,3 @@ jobs:
           tar xzf data/SIMGEN_PUBLIC_DES.tar.gz $RESSPECT_TEST
           ls $RESSPECT_TEST
           tox -e py37-unit -v -rs
-        env:
-          RESSPECT_TEST: ~/resspect_tests/
