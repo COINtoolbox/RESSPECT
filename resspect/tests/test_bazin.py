@@ -1,5 +1,5 @@
 """
-Tests related to fit_lightcurves.py module.
+Tests related to bazin.py module.
 """
 
 import numpy as np
