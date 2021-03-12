@@ -16,13 +16,13 @@ def test_can_run_learn_loop(extract_feature):
 
 
 @pytest.fixture(scope="function")
-def extract_feature(setup_test):
+def extract_feature(path_to_test_data):
     from resspect import fit_snpcc_bazin
 
-    path_to_data_dir = setup_test
+    path_to_data_dir = path_to_test_data
     output_file = 'output_file.dat'
 
-    fit_snpcc_bazin(path_to_data_dir=path_to_data_dir, features_file=output_file)
+    fit_snpcc_bazin(path_to_data_dir=path_to_test_data, features_file=output_file)
 
     return output_file
 

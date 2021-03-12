@@ -59,6 +59,14 @@ jobs:
         shell: bash -l {0}
         run: cp -v data/tests/*.csv $RESSPECT_TEST/
 
+      - name: Unpack data for tests
+        shell: bash -l {0}
+        run: |
+          cp data/SIMGEN_PUBLIC_DES.tar.gz $RESSPECT_TEST/
+          cd $RESSPECT_TEST
+          tar xzvf SIMGEN_PUBLIC_DES.tar.gz
+          cd -
+
       - name: Run Tox
         shell: bash -l {0}
         run: |

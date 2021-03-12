@@ -56,7 +56,7 @@ def test_errfunc():
     assert np.all(res > 0)
     
     
-def test_fit_scipy(setup_test):
+def test_fit_scipy(path_to_test_data):
     """
     Test the scipy fit to Bazin parametrization.
     """
@@ -65,7 +65,7 @@ def test_fit_scipy(setup_test):
     
     from resspect import fit_scipy
     
-    fname = setup_test + 'lc_mjd_flux.csv'
+    fname = path_to_test_data + 'lc_mjd_flux.csv'
     data = pd.read_csv(fname)
     
     time = data['mjd'].values
