@@ -15,16 +15,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from resspect.bazin import bazin, fit_scipy
-from resspect.exposure_time_calculator import ExpTimeCalc
-from resspect.snana_fits_to_pd import read_fits
-
 import io
 import matplotlib.pylab as plt
 import numpy as np
 import os
 import pandas as pd
 import tarfile
+
+from resspect.bazin import bazin, fit_scipy
+from resspect.exposure_time_calculator import ExpTimeCalc
+from resspect.snana_fits_to_pd import read_fits
+from resspect.lightcurves_utils import read_file
+from resspect.lightcurves_utils import get_sntype
+
 
 __all__ = ['LightCurve', 'fit_snpcc_bazin', 'fit_resspect_bazin',
            'fit_plasticc_bazin']
@@ -163,6 +166,32 @@ class LightCurve(object):
         self.sncode = 0
         self.sntype = ' '
 
+    def _iterate_lc_data(self, lc_data):
+        photometry_raw = []
+        header = []
+        for each_row in lc_data:
+            name = each_row[0]
+            value = each_row[1]
+            if name == 'SNID:':
+                self.id = int(value)
+                self.id_name = 'SNID'
+            elif name == 'SNTYPE:':
+                self.sample = 'test' if value == '-9' else 'train'
+            elif name == 'SIM_REDSHIFT:':
+                self.redshift = float(value)
+            elif name == 'SIM_NON1a:':
+                self.sncode = value
+                self.sntype = get_sntype(value)
+            elif name == 'VARLIST:':
+                header = each_row[1:]
+            elif name == 'OBS:':
+                photometry_raw.append(np.array(each_row[1:]))
+            elif name == 'SIM_PEAKMAG:':
+                self.sim_peakmag = np.array(each_row[1:5]).astype(np.float)
+            elif name == 'SIM_PEAKMJD:':
+                self.sim_pkmjd = float(value)
+        return np.array(photometry_raw), header
+
     def load_snpcc_lc(self, path_to_data: str):
         """Reads one LC from SNPCC data.
 
@@ -174,89 +203,30 @@ class LightCurve(object):
         path_to_data: str
             Path to text file with data from a single SN.
         """
-
         # set the designation of the data set
         self.dataset_name = 'SNPCC'
 
         # set filters
         self.filters = ['g', 'r', 'i', 'z']
+        lc_data = np.array(read_file(path_to_data), dtype=object)
+        photometry_raw, header = self._iterate_lc_data(lc_data)
 
-        # set SN types
-        snii = ['2', '3', '4', '12', '15', '17', '19', '20', '21', '24', '25',
-                '26', '27', '30', '31', '32', '33', '34', '35', '36', '37',
-                '38', '39', '40', '41', '42', '43', '44']
+        # load photometry to data frame
+        self.photometry['mjd'] = np.array(
+            photometry_raw[:, header.index('MJD')]).astype(np.float)
+        self.photometry['band'] = np.array(
+            photometry_raw[:, header.index('FLT')])
+        self.photometry['flux'] = np.array(
+            photometry_raw[:, header.index('FLUXCAL')]).astype(np.float)
+        self.photometry['fluxerr'] = np.array(
+            photometry_raw[:, header.index('FLUXCALERR')]).astype(np.float)
+        self.photometry['SNR'] = np.array(
+            photometry_raw[:, header.index('SNR')]).astype(np.float)
+        self.photometry['MAG'] = np.array(
+            photometry_raw[:, header.index('MAG')]).astype(np.float)
+        self.photometry['MAGERR'] = np.array(
+            photometry_raw[:, header.index('MAGERR')]).astype(np.float)
 
-        snibc = ['1', '5', '6', '7', '8', '9', '10', '11', '13', '14', '16',
-                 '18', '22', '23', '29', '45', '28']
-
-        # read light curve data
-        op = open(path_to_data, 'r')
-        lin = op.readlines()
-        op.close()
-
-        # separate elements
-        data_all = np.array([elem.split() for elem in lin], dtype=object)
-
-        # flag useful lines
-        flag_lines = np.array([True if len(line) > 1 else False \
-                               for line in data_all])
-
-        # get only informative lines
-        data = data_all[flag_lines]
-
-        photometry_raw = []               # store photometry
-        header = []                      # store parameter header
-
-        # get header information
-        for line in data:
-            if line[0] == 'SNID:':
-                self.id = int(line[1])
-                self.id_name = 'SNID'
-            elif line[0] == 'SNTYPE:':
-                if line[1] == '-9':
-                    self.sample = 'test'
-                else:
-                    self.sample = 'train'
-            elif line[0] == 'SIM_REDSHIFT:':
-                self.redshift = float(line[1])
-            elif line[0] == 'SIM_NON1a:':
-                self.sncode = line[1]
-                if line[1] in snibc:
-                    self.sntype = 'Ibc'
-                elif line[1] in snii:
-                    self.sntype = 'II'
-                elif line[1] == '0':
-                    self.sntype = 'Ia'
-                else:
-                    raise ValueError('Unknown supernova type!')
-            elif line[0] == 'VARLIST:':
-                header: list = line[1:]
-            elif line[0] == 'OBS:':
-                photometry_raw.append(np.array(line[1:]))
-            elif line[0] == 'SIM_PEAKMAG:':
-                self.sim_peakmag = np.array([float(item) \
-                                             for item in line[1:5]])
-            elif line[0] == 'SIM_PEAKMJD:':
-                self.sim_pkmjd = float(line[1])
-
-        # transform photometry into array
-        photometry_raw = np.array(photometry_raw)
-
-        # put photometry into data frame
-        self.photometry['mjd'] = np.array([float(item) \
-                         for item in photometry_raw[:, header.index('MJD')]])
-        self.photometry['band'] = \
-                         np.array(photometry_raw[:, header.index('FLT')])
-        self.photometry['flux'] = np.array([float(item) \
-                     for item in photometry_raw[:, header.index('FLUXCAL')]])
-        self.photometry['fluxerr'] = np.array([float(item) \
-                  for item in photometry_raw[:, header.index('FLUXCALERR')]])
-        self.photometry['SNR'] = np.array([float(item) \
-                         for item in photometry_raw[:, header.index('SNR')]])
-        self.photometry['MAG'] = np.array([float(item) \
-                         for item in photometry_raw[:, header.index('MAG')]])
-        self.photometry['MAGERR'] = np.array([float(item) \
-                      for item in photometry_raw[:, header.index('MAGERR')]])
 
     def load_resspect_lc(self, photo_file, snid):
         """
@@ -990,3 +960,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
