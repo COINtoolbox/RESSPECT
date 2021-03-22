@@ -26,7 +26,7 @@ def input_lc():
     """Read an SNPCC light curve.
     """
     
-    path_to_lc = os.getenv('RESSPECT_DIR') + "data/tests/DES_SN848233.DAT"
+    path_to_lc = "../../data/tests/DES_SN848233.DAT"
     lc = LightCurve()
     lc.load_snpcc_lc(path_to_lc)
     
@@ -38,7 +38,7 @@ def test_load_snpcc_lc():
     Test loading a light curve from SNPCC data.
     """
 
-    path_to_lc = os.getenv('RESSPECT_DIR') + "data/tests/DES_SN848233.DAT"
+    path_to_lc = "../../data/tests/DES_SN848233.DAT"
     lc = LightCurve()
     lc.load_snpcc_lc(path_to_lc)
 
@@ -54,7 +54,7 @@ def test_load_resspect_lc():
     Test loading a light curve from RESSPECT sims.
     """
     
-    path_to_lc = os.getenv('RESSPECT_DIR') + "data/tests/RESSPECT_PHOTO.csv.gz"
+    path_to_lc =  "../../data/tests/RESSPECT_PHOTO.csv.gz"
     lc = LightCurve()
     lc.load_resspect_lc(path_to_lc, snid=941867)
     
@@ -68,7 +68,7 @@ def test_load_plasticc_lc():
     Test loading a light curve from PLAsTiCC.
     """
     
-    path_to_lc = os.getenv('RESSPECT_DIR') + "data/tests/plasticc_lightcurves.csv.gz"
+    path_to_lc = "../../data/tests/plasticc_lightcurves.csv.gz"
     lc = LightCurve()
     lc.load_plasticc_lc(path_to_lc, snid=229855)
     
