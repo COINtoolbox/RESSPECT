@@ -38,10 +38,10 @@ def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
 
     cost_4m = pool_metadata['cost_4m'].values[pool_query_filter]
     cost_8m = pool_metadata['cost_8m'].values[pool_query_filter]
-    cost_4m[cost_4m >= 9999.0] = np.inf
-    cost_8m[cost_8m >= 9999.0] = np.inf
-    possible_4m = np.isfinite(cost_4m)
-    possible_8m = np.isfinite(cost_8m)
+    cost_4m[cost_4m >= 9999.0] = 1e8
+    cost_8m[cost_8m >= 9999.0] = 1e8
+    possible_4m = cost_4m < 1e8
+    possible_8m = cost_8m < 1e8
     query_ids = pool_ids[pool_query_filter]
 
     class_probs = class_probs[pool_query_filter]
