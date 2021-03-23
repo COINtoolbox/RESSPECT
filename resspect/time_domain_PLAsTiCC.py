@@ -99,6 +99,9 @@ class PLAsTiCCPhotometry(object):
             If True, calculate cost of taking a spectra in the last 
             observed photometric point. Default is False.
         """
+        # Create the output directory if it doesn't exist
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
 
         features_file = output_dir + 'day_' + str(day) + '.dat'
 
