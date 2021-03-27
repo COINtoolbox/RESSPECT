@@ -6,7 +6,7 @@ from astropy.utils.data import download_file
 URL = "https://github.com/COINtoolbox/RESSPECT/raw/master/data/"
 
 
-def download_data(filename, sub_path='raw_files', env_var='RESSPECT_TEST'):
+def download_data(filename, sub_path='', env_var='RESSPECT_TEST'):
     """Download file from the archive and store it in the local cache.
 
     Parameters
@@ -26,20 +26,21 @@ def download_data(filename, sub_path='raw_files', env_var='RESSPECT_TEST'):
     """
     # Find cache path and make sure it exists
     root_cache_path = os.getenv(env_var)
+    sub_path = os.path.dirname(filename) if sub_path is None else \
+        os.path.join(sub_path, os.path.dirname(filename))
 
     if root_cache_path is None:
         raise ValueError('Environment variable not set: {:s}'.format(env_var))
 
     root_cache_path = os.path.expanduser(root_cache_path)
 
-    cache_path = root_cache_path if sub_path is None \
-        else os.path.join(root_cache_path, sub_path)
+    cache_path = os.path.join(root_cache_path, sub_path)
 
     if not os.path.exists(cache_path):
-        os.makedirs(cache_path, exist_ok=True)
+        os.makedirs(cache_path)
 
     # Now check if the local file exists and download if not
-    local_path = os.path.join(cache_path, filename)
+    local_path = os.path.join(cache_path, os.path.basename(filename))
     if not os.path.exists(local_path):
         tmp_path = download_file(URL + filename, cache=False)
         shutil.move(tmp_path, local_path)
@@ -50,4 +51,3 @@ def download_data(filename, sub_path='raw_files', env_var='RESSPECT_TEST'):
     #
 
     return local_path
-
