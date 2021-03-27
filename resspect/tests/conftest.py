@@ -160,49 +160,6 @@ def path_to_output_data(request, base_temp):
     return path
 
 
-@pytest.fixture(scope='module')
-def path_to_refeference_data(request, env_var='RESSPECT_TEST'):
-    """
-    PyTest fixture that returns the path to where the reference files for a
-    given test module live.
-
-    Parameters
-    ----------
-    request : fixture
-        PyTest's built-in fixture with information about the test itself.
-
-    env_var : str
-        Environment variable that contains the root path to the input data.
-
-    Returns
-    -------
-    str:
-        Path to the reference files.
-    """
-    path_to_test_data = os.getenv(env_var)
-
-    if path_to_test_data is None:
-        pytest.skip('Environment variable not set: $RESSPECT_TEST')
-
-    path_to_test_data = os.path.expanduser(path_to_test_data).strip()
-
-    module_path = request.module.__name__.split('.') + ["refs"]
-    module_path = [item for item in module_path if item not in "tests"]
-    path = os.path.join(path_to_test_data, *module_path)
-
-    if not os.path.exists(path):
-        pytest.fail('\n Path to reference test data does not exist: '
-                    '\n   {:s}'.format(path))
-
-    if not os.access(path, os.R_OK):
-        pytest.fail(
-            '\n Path to reference test data exists but is not accessible: '
-            '\n    {:s}'.format(path))
-
-    print(f"Using the following path to the refs:\n  {path}\n")
-    return path
-
-
 # noinspection PyUnusedLocal
 def pytest_report_header(config):
     """ Adds the test folder to the Pytest Header """
