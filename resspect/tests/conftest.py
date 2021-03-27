@@ -122,8 +122,8 @@ def path_to_input_data(request, env_var='RESSPECT_TEST'):
     path = os.path.join(path_to_test_data, *module_path)
 
     if not os.path.exists(path):
-        raise FileNotFoundError(
-            " Could not find path to input data:\n    {:s}".format(path))
+        print(" Creating empty path to input data")
+        os.makedirs(path)
 
     if not os.access(path, os.R_OK):
         pytest.fail('\n  Path to input test data exists but is not accessible: '
