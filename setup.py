@@ -50,5 +50,6 @@ setuptools.setup(
     license='GNU3',
     author='The RESSPECT team',
     author_email='contact@cosmostatistics-initiative.org',
-    description='resspect - Recommendation System for Spectroscopic Follow-up'
+    description='resspect - Recommendation System for Spectroscopic Follow-up',
+    entry_points={"pytest11": ["pytest_resspect = pytest_resspect.plugin"]},
 )
