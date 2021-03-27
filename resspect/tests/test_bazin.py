@@ -6,6 +6,10 @@ import numpy as np
 import os
 import pytest
 
+from pandas import read_csv
+
+from resspect import testing
+
 
 def test_bazin():
     """
@@ -56,17 +60,14 @@ def test_errfunc():
     assert np.all(res > 0)
     
     
-def test_fit_scipy(path_to_test_data):
+def test_fit_scipy():
     """
     Test the scipy fit to Bazin parametrization.
     """
-    
-    import pandas as pd
-    
     from resspect import fit_scipy
     
-    fname = os.path.join(path_to_test_data, 'lc_mjd_flux.csv')
-    data = pd.read_csv(fname)
+    fname = testing.download_data('tests/lc_mjd_flux.csv')
+    data = read_csv(fname)
     
     time = data['mjd'].values
     flux = data['flux'].values
