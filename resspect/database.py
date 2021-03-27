@@ -283,6 +283,13 @@ class DataBase:
             elif 'id' in data.keys():
                 self.metadata_names = ['id', 'redshift', 'type', 'code',
                                        'orig_sample', 'queryable']
+                
+            if 'last_rmag' in data.keys():
+                self.metadata_names.append('last_rmag')
+
+            for name in self.telescope_names:
+                if 'cost_' + name in data.keys():
+                    self.metadata_names = self.metadata_names + ['cost_' + name]
 
         else:
             raise ValueError('Only "DES" and "LSST" filters are ' + \
@@ -1150,9 +1157,16 @@ class DataBase:
         query_indx: list
             List of indexes identifying the objects to be queried within budget.
         """
+        if screen:
+            print('\n Inside make_query_budget: ')
+            print('       ... classprob: ', self.classprob.shape[0])
+            print('       ... queryable_ids: ', self.queryable_ids.shape[0])
+            print('       ... pool_ids: ', self.pool_metadata.shape[0])
+            
         id_name = self.identify_keywords()
         queryable_ids = self.queryable_ids
         pool_metadata = self.pool_metadata
+        
         if strategy == 'UncSampling':
             query_indx = batch_queries_uncertainty(class_probs=self.classprob,
                                                    id_name=id_name,

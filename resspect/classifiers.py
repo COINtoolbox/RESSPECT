@@ -65,14 +65,14 @@ def bootstrap_clf(clf_function, n_ensembles, train_features,
     classifier_list = list()
     for i in range(n_ensembles):
         x_train, y_train = resample(train_features, train_labels)
-        #predicted_class, class_prob, clf = clf_function(x_train,
-        #                                                y_train,
-        #                                                test_features,
-        #                                                **kwargs)
-        clf = clf_function(**kwargs)
-        clf.fit(x_train, y_train)
-        predicted_class = clf.predict(test_features)
-        class_prob = clf.predict_proba(test_features)
+        predicted_class, class_prob, clf = clf_function(x_train,
+                                                        y_train,
+                                                        test_features,
+                                                        **kwargs)
+        #clf = clf_function(**kwargs)
+        #clf.fit(x_train, y_train)
+        #predicted_class = clf.predict(test_features)
+        #class_prob = clf.predict_proba(test_features)
         
         classifier_list.append((str(i), clf))
         ensemble_probs[:, i, :] = class_prob

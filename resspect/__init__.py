@@ -24,7 +24,7 @@ from .database import *
 from .exposure_time_calculator import *
 from .fit_lightcurves import *
 from .learn_loop import *
-from .metrics import efficiency, purity, fom, accuracy, get_snpcc_metric
+from .metrics import *
 from .query_strategies import *
 from .plot_results import *
 from .snana_fits_to_pd import *
@@ -61,16 +61,14 @@ __all__ = ['accuracy',
            'errfunc',
            'fish_deriv_m',
            'fisher_results',
-           'fisher_most_useful',
+           'find_most_useful',
            'fit_dataset',
            'fit_scipy',
            'fit_snpcc_bazin',
            'fit_plasticc_bazin',
            'fit_resspect_bazin',
            'fom',
-           'full_check',
            'get_cosmo_metric',
-           'get_distances',
            'get_snpcc_metric',
            'get_SNR_headers',
            'gradient_boosted_trees',

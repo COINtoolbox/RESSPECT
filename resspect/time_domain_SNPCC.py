@@ -125,6 +125,9 @@ class SNPCCPhotometry(object):
             Separate by 1 space.
             Default option uses header for Bazin features file.
         """
+        # Create the output directory if it doesn't exist
+        if not os.path.isdir(output_dir):
+            os.makedirs(output_dir)
 
         features_file = output_dir + 'day_' + str(day) + '.dat'
 

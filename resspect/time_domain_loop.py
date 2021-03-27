@@ -281,7 +281,6 @@ def time_domain_loop(days: list,  output_metrics_file: str,
             print('   ... validation: ', data.validation_metadata.shape[0])
             print('   ... pool: ', data.pool_metadata.shape[0], '\n')
 
-        if data.pool_metadata.shape[0] > 0:
             # classify
             if clf_bootstrap:
                 data.classify_bootstrap(method=classifier, screen=screen, **kwargs)
@@ -290,45 +289,46 @@ def time_domain_loop(days: list,  output_metrics_file: str,
 
             # calculate metrics
             data.evaluate_classification(screen=screen)
+            
+            if data.queryable_ids.shape[0] > 0:
 
-            # get index of object to be queried
-            if budgets:
-                indx = data.make_query_budget(budgets=budgets, strategy=strategy,
-                                              screen=False)
-            else:
-                indx = data.make_query(strategy=strategy, batch=batch,
-                                       queryable=queryable,
-                                       query_thre=query_thre, screen=screen)
+                # get index of object to be queried
+                if budgets:
+                    indx = data.make_query_budget(budgets=budgets, strategy=strategy,
+                                                  screen=False)
+                else:
+                    indx = data.make_query(strategy=strategy, batch=batch,
+                                           queryable=queryable,
+                                           query_thre=query_thre, screen=screen)
 
-            if screen:
-                print('\n queried obj index: ', indx)
-                print('Prob [nIa, Ia]: ', data.classprob[indx[0]])
-                print('size of pool: ', data.pool_metadata.shape[0], '\n')
+                if screen:
+                    print('\n queried obj index: ', indx)
+                    print('Prob [nIa, Ia]: ', data.classprob[indx[0]])
+                    print('size of pool: ', data.pool_metadata.shape[0], '\n')
 
-            # update training and test samples
-            data.update_samples(indx, queryable=queryable,
-                                epoch=night)
-
-            if screen:
-                print('\n After update_samples:')
-                print('   ... train: ', data.train_metadata.shape[0])
-                print('   ... test: ', data.test_metadata.shape[0])
-                print('   ... validation: ', data.validation_metadata.shape[0])
-                print('   ... pool: ', data.pool_metadata.shape[0], '\n')
-
-
-            # save metrics for current state
-            data.save_metrics(loop=night - days[0], output_metrics_file=output_metrics_file,
-                              batch=len(indx), epoch=night)
-
-            # save query sample to file
-            if save_full_query:
-                query_fname = output_queried_file[:-4] + '_' + str(night - days[0]) + '.dat' 
-            else:
-                query_fname = output_queried_file
+                # update training and test samples
+                data.update_samples(indx, queryable=queryable,
+                                    epoch=night)
                 
-            data.save_queried_sample(query_fname, loop=night - days[0],
-                                     full_sample=save_full_query, epoch=night)
+                # save metrics for current state
+                data.save_metrics(loop=night - days[0], output_metrics_file=output_metrics_file,
+                                  batch=len(indx), epoch=night)
+
+                if screen:
+                    print('\n After update_samples:')
+                    print('   ... train: ', data.train_metadata.shape[0])
+                    print('   ... test: ', data.test_metadata.shape[0])
+                    print('   ... validation: ', data.validation_metadata.shape[0])
+                    print('   ... pool: ', data.pool_metadata.shape[0], '\n')
+
+                # save query sample to file
+                if save_full_query:
+                    query_fname = output_queried_file[:-4] + '_' + str(night - days[0]) + '.dat' 
+                else:
+                    query_fname = output_queried_file
+                
+                data.save_queried_sample(query_fname, loop=night - days[0],
+                                         full_sample=save_full_query, epoch=night)
 
             # load features for next day
             path_to_features2 = path_to_features_dir + fname_pattern[0] + \
@@ -365,32 +365,41 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                         data.train_labels = np.delete(data.train_labels, indx_today, axis=0)
                         data.train_features = np.delete(data.train_features, indx_today, axis=0)
                         
-                        # get number of queried objects
-                        n = np.array(data.queried_sample).shape[0] * np.array(data.queried_sample).shape[1]
-                        if n < 30:
-                            n1 = n
-                        else:
-                            n1 = n / 30
+                        if data.queryable_ids.shape[0] > 0:
+                            # get number of queried objects
+                            n = np.array(data.queried_sample).shape[0] * np.array(data.queried_sample).shape[1]
                             
-                        # build query data frame
-                        full_header = ['epoch'] + data.metadata_names + data.features_names
-                        queried_sample = pd.DataFrame(data.queried_sample,
-                                                      columns=full_header)
+                            # build query data frame
+                            full_header = ['epoch'] + data.metadata_names + data.features_names
+                            queried_sample = pd.DataFrame(data.queried_sample,
+                                                          columns=full_header)
                         
-                        # get object index in the queried sample
-                        indx_queried = list(queried_sample[id_name].values).index(obj)
+                            # get object index in the queried sample
+                            indx_queried = list(queried_sample[id_name].values).index(obj)
                         
-                        # get flag to isolate object in question
-                        flag2 = queried_sample[id_name].values == obj
+                            # get flag to isolate object in question
+                            flag2 = queried_sample[id_name].values == obj
                         
-                        # get object epoch in the queried sample
-                        obj_epoch = queried_sample['epoch'].values[flag2]
+                            # get object epoch in the queried sample
+                            obj_epoch = queried_sample['epoch'].values[flag2]
                         
-                        # remove old features from queried
-                        queried_sample = queried_sample.drop(queried_sample.index[indx_queried])
+                            # remove old features from queried
+                            queried_sample = queried_sample.drop(queried_sample.index[indx_queried])
                         
                         # update new features of the training with new obs
                         flag = data_tomorrow.pool_metadata[id_name].values == obj
+                        
+                        if data.queryable_ids.shape[0] > 0:
+                            
+                            # update new features in the queried sample
+                            l1 = [obj_epoch[0]] + list(data_tomorrow.pool_metadata[flag].values[0]) + \
+                                 list(data_tomorrow.pool_features[flag][0])
+                            new_query = pd.DataFrame([l1], columns=full_header)
+                            queried_sample = pd.concat([queried_sample, new_query], axis=0,
+                                                        ignore_index=True)
+                        
+                            # update queried sample
+                            data.queried_sample = list(queried_sample.values)
 
                         data.train_metadata = pd.concat([data.train_metadata,
                                                          data_tomorrow.pool_metadata[flag]],
@@ -399,16 +408,6 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                                         data_tomorrow.pool_features[flag], axis=0)
                         data.train_labels = np.append(data.train_labels,
                                                       data_tomorrow.pool_labels[flag], axis=0)
-                        
-                        # update new features in the queried sample
-                        l1 = [obj_epoch[0]] + list(data_tomorrow.pool_metadata[flag].values[0]) + \
-                             list(data_tomorrow.pool_features[flag][0])
-                        new_query = pd.DataFrame([l1], columns=full_header)
-                        queried_sample = pd.concat([queried_sample, new_query], axis=0,
-                                                    ignore_index=True)
-                        
-                        # update queried sample
-                        data.queried_sample = list(queried_sample.values)
                         
                     # remove obj from pool sample
                     data_tomorrow.pool_metadata = data_tomorrow.pool_metadata.drop(\
