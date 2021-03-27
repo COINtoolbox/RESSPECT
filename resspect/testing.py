@@ -3,6 +3,8 @@ import shutil
 
 from astropy.utils.data import download_file
 
+__all__ = ["download_data"]
+
 URL = "https://github.com/COINtoolbox/RESSPECT/raw/master/data/"
 
 

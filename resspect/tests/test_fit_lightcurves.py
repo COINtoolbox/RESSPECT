@@ -19,14 +19,15 @@ import numpy as np
 import os
 import pytest
 
+from resspect import testing
 from resspect.fit_lightcurves import LightCurve
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope='function')
 def input_lc():
-    """Read an SNPCC light curve.
-    """
-    
-    path_to_lc = "../../data/tests/DES_SN848233.DAT"
+    """ Read an SNPCC light curve. """
+
+    path_to_lc = testing.download_data("tests/DES_SN848233.DAT")
     lc = LightCurve()
     lc.load_snpcc_lc(path_to_lc)
     
@@ -34,11 +35,10 @@ def input_lc():
 
 
 def test_load_snpcc_lc():
-    """
-    Test loading a light curve from SNPCC data.
-    """
+    """ Test loading a light curve from SNPCC data. """
 
-    path_to_lc = "../../data/tests/DES_SN848233.DAT"
+    path_to_lc = testing.download_data("tests/DES_SN848233.DAT")
+
     lc = LightCurve()
     lc.load_snpcc_lc(path_to_lc)
 
@@ -50,11 +50,9 @@ def test_load_snpcc_lc():
     
 
 def test_load_resspect_lc():
-    """"
-    Test loading a light curve from RESSPECT sims.
-    """
+    """ Test loading a light curve from RESSPECT sims. """
     
-    path_to_lc =  "../../data/tests/RESSPECT_PHOTO.csv.gz"
+    path_to_lc = testing.download_data("tests/RESSPECT_PHOTO.csv.gz")
     lc = LightCurve()
     lc.load_resspect_lc(path_to_lc, snid=941867)
     
@@ -64,11 +62,9 @@ def test_load_resspect_lc():
     
     
 def test_load_plasticc_lc():
-    """"
-    Test loading a light curve from PLAsTiCC.
-    """
+    """ Test loading a light curve from PLAsTiCC. """
     
-    path_to_lc = "../../data/tests/plasticc_lightcurves.csv.gz"
+    path_to_lc = testing.download_data("tests/plasticc_lightcurves.csv.gz")
     lc = LightCurve()
     lc.load_plasticc_lc(path_to_lc, snid=229855)
     
@@ -78,8 +74,7 @@ def test_load_plasticc_lc():
     
 
 def test_conv_flux_mag(input_lc):
-    """Test flux to magnitude conversion.
-    """
+    """ Test flux to magnitude conversion. """
     
     flux = input_lc.photometry['flux'].values
     mag = input_lc.conv_flux_mag(flux)
@@ -88,8 +83,7 @@ def test_conv_flux_mag(input_lc):
     
 
 def test_check_queryable(input_lc):
-    """Test consistency of queryable tests.
-    """
+    """ Test consistency of queryable tests. """
     
     input_lc.fit_bazin_all()
     
@@ -133,8 +127,7 @@ def test_check_queryable(input_lc):
     
     
 def test_calc_exp_time(input_lc):
-    """Test exposure time calculator.
-    """
+    """ Test exposure time calculator. """
     
     min_mjd = min(input_lc.photometry['mjd'].values)
     input_lc.check_queryable(mjd=min_mjd + 80, filter_lim=24, 
@@ -148,8 +141,7 @@ def test_calc_exp_time(input_lc):
     
     
 def test_fit_bazin(input_lc):
-    """Test bazin fit inside light curve.
-    """
+    """ Test bazin fit inside light curve. """
     
     params = input_lc.fit_bazin(band='r')
     
@@ -157,8 +149,7 @@ def test_fit_bazin(input_lc):
     
     
 def test_fit_bazin_all(input_lc):
-    """Test Bazin fit in all filters.
-    """
+    """ Test Bazin fit in all filters. """
     
     input_lc.fit_bazin_all()
     l1 = len(input_lc.bazin_features)
@@ -168,8 +159,7 @@ def test_fit_bazin_all(input_lc):
     
     
 def test_evaluate_bazin(input_lc):
-    """Test if bazin values are non-negative.
-    """
+    """ Test if bazin values are non-negative. """
     
     min_mjd = min(input_lc.photometry['mjd'].values)
     max_mjd = max(input_lc.photometry['mjd'].values)
@@ -188,7 +178,6 @@ def test_evaluate_bazin(input_lc):
     
     assert not np.isnan(res).any()
         
-    
-    
+
 if __name__ == '__main__':
     pytest.main()
