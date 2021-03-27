@@ -3,9 +3,9 @@ PyTest Configuration file with functions that can be used by any test within
 this folder.
 """
 import os
-from contextlib import contextmanager
-
 import pytest
+
+from contextlib import contextmanager
 
 
 @pytest.fixture(scope="session")
