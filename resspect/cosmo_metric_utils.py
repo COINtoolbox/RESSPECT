@@ -150,6 +150,9 @@ def fisher_results(redshift, mu_err):
     covmat: np.array [2, 2]
         Covariance matrix of Om and w0. Om is first row, w0 is second.
     """
+    if any(np.array(redshift) < 0):
+        raise ValueError('Redshift must be greater than zero! Galaxies must be moving away.')
+
     stepvec = np.array([0, 0.001, 0.00, 0.1, 0., 0.0, 0.0, 0.0])
 
     model = [70., 0.3, 0.7, -1.0, 0.]

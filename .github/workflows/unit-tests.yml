@@ -26,7 +26,7 @@ jobs:
         with:
           path: |
             ~/conda_pkgs_dir
-            ~/dragons_tests
+            ~/resspect_tests
           key: ${{ runner.os }}-${{ env.CACHE_NUMBER }}
 
       - uses: conda-incubator/setup-miniconda@v2
@@ -54,4 +54,4 @@ jobs:
       - name: Run Tox
         shell: bash -l {0}
         run: |
-          tox -e test -v -rs
+          tox -e py37-unit -v
