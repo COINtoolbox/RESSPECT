@@ -166,7 +166,7 @@ class LightCurve(object):
         self.sncode = 0
         self.sntype = ' '
 
-    def _iterate_lc_data(self, lc_data):
+    def _iterate_snpcc_lc_data(self, lc_data):
         photometry_raw = []
         header = []
         for each_row in lc_data:
@@ -209,7 +209,7 @@ class LightCurve(object):
         # set filters
         self.filters = ['g', 'r', 'i', 'z']
         lc_data = np.array(read_file(path_to_data), dtype=object)
-        photometry_raw, header = self._iterate_lc_data(lc_data)
+        photometry_raw, header = self._iterate_snpcc_lc_data(lc_data)
 
         # load photometry to data frame
         self.photometry['mjd'] = np.array(
