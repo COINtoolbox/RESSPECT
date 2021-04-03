@@ -15,17 +15,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import io
+import tarfile
+from typing import Tuple
+
 import matplotlib.pylab as plt
 import numpy as np
-import os
 import pandas as pd
-import tarfile
 
 from resspect.bazin import bazin, fit_scipy
 from resspect.exposure_time_calculator import ExpTimeCalc
 from resspect.snana_fits_to_pd import read_fits
 from resspect.lightcurves_utils import read_file
+from resspect.lightcurves_utils import get_photometry_with_id_name_and_snid
+from resspect.lightcurves_utils import read_plasticc_full_photometry_data
+from resspect.lightcurves_utils import load_plasticc_photometry_df
+from resspect.lightcurves_utils import read_resspect_full_photometry_data
+from resspect.lightcurves_utils import insert_band_column_to_resspect_df
+from resspect.lightcurves_utils import load_resspect_photometry_df
 from resspect.lightcurves_utils import get_sntype
 
 
@@ -166,7 +174,8 @@ class LightCurve(object):
         self.sncode = 0
         self.sntype = ' '
 
-    def _iterate_snpcc_lc_data(self, lc_data):
+    def _iterate_snpcc_lc_data(
+            self, lc_data: np.ndarray) -> Tuple[np.ndarray, list]:
         photometry_raw = []
         header = []
         for each_row in lc_data:
@@ -227,134 +236,40 @@ class LightCurve(object):
         self.photometry['MAGERR'] = np.array(
             photometry_raw[:, header.index('MAGERR')]).astype(np.float)
 
-
-    def load_resspect_lc(self, photo_file, snid):
-        """
-        Return 1 light curve from RESSPECT simulations.
-    
-        Parameters
-        ----------
-        photo_file: str
-            Complete path to light curves file.
-        snid: int
-            Identification number for the desired light curve.
-        """
-
-        if self.full_photometry.shape[0] == 0:
-            if '.tar.gz' in photo_file:
-                tar = tarfile.open(photo_file, 'r:gz')
-                fname = tar.getmembers()[0]
-                content = tar.extractfile(fname).read()
-                self.full_photometry = pd.read_csv(io.BytesIO(content))
-                tar.close()
-            elif '.FITS' in photo_file:
-                df_header, self.full_photometry = \
-                            read_fits(photo_file, drop_separators=True)
-            else:    
-                self.full_photometry = pd.read_csv(photo_file, 
-                                                   index_col=False)
-
-        if 'SNID' in self.full_photometry.keys():
-            flag = self.full_photometry['SNID'] == snid
-            self.id_name = 'SNID'
-        elif 'snid' in self.full_photometry.keys():
-            flag = self.full_photometry['snid'] == snid
-            self.id_name = 'snid'
-        elif 'objid' in self.full_photometry.keys():
-            flag = self.full_photometry['objid'] == snid
-            self.id_name = 'objid'
-        elif 'id' in self.full_photometry.keys():
-            flag = self.full_photometry['id'] == snid
-            self.id_name = 'id'
-
-        photo = self.full_photometry[flag]
-
-        self.dataset_name = 'RESSPECT'                      # name of data set
-        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']       # list of filters  
-        
-        # check filter name
-        if 'b' in str(photo['FLT'].values[0]):
-            band = []
-            for i in range(photo.shape[0]):
-                for f in self.filters:
-                    if "b'" + f + " '" == str(photo['FLT'].values[i]) or \
-                    "b'" + f + "'" == str(photo['FLT'].values[i]) or \
-                    "b'" + f + "' " == str(photo['FLT'].values[i]):
-                        band.append(f)
-            photo.insert(1, 'band', band, True)
-
-        else:
-            photo.insert(1, 'band', photo['FLT'].values, True)
-                        
-        self.id = snid 
-        self.photometry = {}
-        self.photometry['mjd'] = photo['MJD'].values
-        self.photometry['band'] = photo['band'].values
-        self.photometry['flux'] = photo['FLUXCAL'].values
-        self.photometry['fluxerr'] = photo['FLUXCALERR'].values
-
-        if 'SNR' in photo.keys():
-            self.photometry['SNR'] = photo['SNR'].values
-        else:
-            signal = self.photometry['flux']
-            noise = self.photometry['fluxerr']
-            self.photometry['SNR'] = \
-                np.array([signal[i]/noise[i] for i in range(signal.shape[0])])
-            
-        self.photometry = pd.DataFrame(self.photometry)
-        
-    def load_plasticc_lc(self, photo_file: str, snid: int):
-        """
-        Return 1 light curve from PLAsTiCC simulations.
-    
-        Parameters
-        ----------
-        photo_file: str
-            Complete path to light curve file.
-        snid: int
-            Identification number for the desired light curve.
-        """
-
-        # read from file if full photometry not available
-        if self.full_photometry.shape[0] == 0:
-            if '.tar.gz' in photo_file:
-                tar = tarfile.open(photo_file, 'r:gz')
-                fname = tar.getmembers()[0]
-                content = tar.extractfile(fname).read()
-                self.full_photometry = pd.read_csv(io.BytesIO(content))
-            else:
-                self.full_photometry = pd.read_csv(photo_file, 
-                                                   index_col=False)
-
-                if ' ' in self.full_photometry.keys()[0]:
-                    self.full_photometry = pd.read_csv(photo_file, sep=' ',
-                                                       index_col=False)
-
-        if 'object_id' in self.full_photometry.keys():
-            flag = self.full_photometry['object_id'] == snid
-            self.id_name = 'object_id'
-        elif 'SNID' in self.full_photometry.keys():
-            flag = self.full_photometry['SNID'] == snid
-            self.id_name = 'SNID'
-        elif 'snid' in self.full_photometry.keys():
-            flag = self.full_photometry['snid'] == snid
-            self.id_name = 'snid'
-
-        photo = self.full_photometry[flag]
-
-        filter_dict = {0:'u', 1:'g', 2:'r', 3:'i', 4:'z', 5:'Y'}
-           
-        self.dataset_name = 'PLAsTiCC'              # name of data set
-        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']       # list of filters
+    def load_resspect_lc(self, photo_file: str, snid: int):
+        self.dataset_name = 'RESSPECT'
+        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
         self.id = snid
-        self.photometry = {}
-        self.photometry['mjd'] = photo['mjd'].values
-        self.photometry['band'] = [filter_dict[photo['passband'].values[k]] 
-                                   for k in range(photo['passband'].shape[0])]
-        self.photometry['flux'] = photo['flux'].values
-        self.photometry['fluxerr'] = photo['flux_err'].values
-        self.photometry['detected_bool'] = photo['detected_bool'].values
-        self.photometry = pd.DataFrame(self.photometry)
+
+        if self.full_photometry.empty:
+            self.full_photometry = read_resspect_full_photometry_data(
+                photo_file)
+        id_names_list = ['SNID', 'snid', 'objid', 'id']
+        filtered_photometry, self.id_name = get_photometry_with_id_name_and_snid(
+            self.full_photometry, id_names_list, snid)
+        if not filtered_photometry.empty:
+            filtered_photometry = insert_band_column_to_resspect_df(
+                filtered_photometry, self.filters)
+            self.photometry = load_resspect_photometry_df(filtered_photometry)
+
+    def load_plasticc_lc(self, photo_file: str, snid: int):
+        self.dataset_name = 'PLAsTiCC'
+        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
+        self.id = snid
+
+        if self.full_photometry.empty:
+            self.full_photometry = read_plasticc_full_photometry_data(
+                photo_file)
+        id_names_list = ['object_id', 'SNID', 'snid']
+        filtered_photometry, self.id_name = (
+            get_photometry_with_id_name_and_snid(
+                self.full_photometry, id_names_list, snid))
+        filter_mapping_dict = {
+            0: 'u', 1: 'g', 2: 'r', 3: 'i', 4: 'z', 5: 'Y'
+        }
+        if not filtered_photometry.empty:
+            self.photometry = load_plasticc_photometry_df(
+                filtered_photometry, filter_mapping_dict)
 
     def conv_flux_mag(self, flux, zpt=27.5):
         """Convert FLUXCAL to magnitudes.
