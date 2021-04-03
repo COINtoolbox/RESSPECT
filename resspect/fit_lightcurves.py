@@ -28,13 +28,14 @@ from resspect.bazin import bazin, fit_scipy
 from resspect.exposure_time_calculator import ExpTimeCalc
 from resspect.snana_fits_to_pd import read_fits
 from resspect.lightcurves_utils import read_file
+from resspect.lightcurves_utils import load_snpcc_photometry_df
 from resspect.lightcurves_utils import get_photometry_with_id_name_and_snid
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
 from resspect.lightcurves_utils import load_plasticc_photometry_df
 from resspect.lightcurves_utils import read_resspect_full_photometry_data
 from resspect.lightcurves_utils import insert_band_column_to_resspect_df
 from resspect.lightcurves_utils import load_resspect_photometry_df
-from resspect.lightcurves_utils import get_sntype
+from resspect.lightcurves_utils import get_snpcc_sntype
 
 
 __all__ = ['LightCurve', 'fit_snpcc_bazin', 'fit_resspect_bazin',
@@ -190,7 +191,7 @@ class LightCurve(object):
                 self.redshift = float(value)
             elif name == 'SIM_NON1a:':
                 self.sncode = value
-                self.sntype = get_sntype(value)
+                self.sntype = get_snpcc_sntype(value)
             elif name == 'VARLIST:':
                 header = each_row[1:]
             elif name == 'OBS:':
@@ -212,29 +213,14 @@ class LightCurve(object):
         path_to_data: str
             Path to text file with data from a single SN.
         """
-        # set the designation of the data set
         self.dataset_name = 'SNPCC'
-
-        # set filters
         self.filters = ['g', 'r', 'i', 'z']
+
         lc_data = np.array(read_file(path_to_data), dtype=object)
         photometry_raw, header = self._iterate_snpcc_lc_data(lc_data)
 
-        # load photometry to data frame
-        self.photometry['mjd'] = np.array(
-            photometry_raw[:, header.index('MJD')]).astype(np.float)
-        self.photometry['band'] = np.array(
-            photometry_raw[:, header.index('FLT')])
-        self.photometry['flux'] = np.array(
-            photometry_raw[:, header.index('FLUXCAL')]).astype(np.float)
-        self.photometry['fluxerr'] = np.array(
-            photometry_raw[:, header.index('FLUXCALERR')]).astype(np.float)
-        self.photometry['SNR'] = np.array(
-            photometry_raw[:, header.index('SNR')]).astype(np.float)
-        self.photometry['MAG'] = np.array(
-            photometry_raw[:, header.index('MAG')]).astype(np.float)
-        self.photometry['MAGERR'] = np.array(
-            photometry_raw[:, header.index('MAGERR')]).astype(np.float)
+        if photometry_raw.size > 0:
+            self.photometry = load_snpcc_photometry_df(photometry_raw, header)
 
     def load_resspect_lc(self, photo_file: str, snid: int):
         self.dataset_name = 'RESSPECT'
@@ -245,8 +231,10 @@ class LightCurve(object):
             self.full_photometry = read_resspect_full_photometry_data(
                 photo_file)
         id_names_list = ['SNID', 'snid', 'objid', 'id']
-        filtered_photometry, self.id_name = get_photometry_with_id_name_and_snid(
-            self.full_photometry, id_names_list, snid)
+        filtered_photometry, self.id_name = (
+            get_photometry_with_id_name_and_snid(
+                self.full_photometry, id_names_list, snid))
+
         if not filtered_photometry.empty:
             filtered_photometry = insert_band_column_to_resspect_df(
                 filtered_photometry, self.filters)
@@ -267,6 +255,7 @@ class LightCurve(object):
         filter_mapping_dict = {
             0: 'u', 1: 'g', 2: 'r', 3: 'i', 4: 'z', 5: 'Y'
         }
+
         if not filtered_photometry.empty:
             self.photometry = load_plasticc_photometry_df(
                 filtered_photometry, filter_mapping_dict)

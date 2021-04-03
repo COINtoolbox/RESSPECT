@@ -3,14 +3,14 @@
 """
 
 import io
-from typing import AnyStr, Tuple
+import tarfile
+from typing import AnyStr
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
-import tarfile
 
 from resspect.snana_fits_to_pd import read_fits
-
 
 SNPCC_LC_MAPPINGS = {
     "snii": ['2', '3', '4', '12', '15', '17', '19', '20', '21', '24', '25',
@@ -27,7 +27,7 @@ def read_file(file_path: str) -> list:
         return [line for line in lines if len(line) > 1]
 
 
-def get_sntype(value: str) -> str:
+def get_snpcc_sntype(value: str) -> str:
     if value in SNPCC_LC_MAPPINGS["snibc"]:
         return 'Ibc'
     elif value in SNPCC_LC_MAPPINGS["snii"]:
@@ -135,6 +135,26 @@ def load_plasticc_photometry_df(
         'flux': photometry_df['flux'].values,
         'fluxerr': photometry_df['flux_err'].values,
         'detected_bool': photometry_df['detected_bool'].values
+    }
+    return pd.DataFrame(photometry_dict)
 
+
+def load_snpcc_photometry_df(
+        photometry_raw: np.ndarray, header: list) -> pd.DataFrame:
+    photometry_dict = {
+        'mjd': np.array(
+            photometry_raw[:, header.index('MJD')]).astype(np.float),
+        'band': np.array(
+            photometry_raw[:, header.index('FLT')]),
+        'flux': np.array(
+            photometry_raw[:, header.index('FLUXCAL')]).astype(np.float),
+        'fluxerr': np.array(
+            photometry_raw[:, header.index('FLUXCALERR')]).astype(np.float),
+        'SNR': np.array(
+            photometry_raw[:, header.index('SNR')]).astype(np.float),
+        'MAG': np.array(
+            photometry_raw[:, header.index('MAG')]).astype(np.float),
+        'MAGERR': np.array(
+            photometry_raw[:, header.index('MAGERR')]).astype(np.float)
     }
     return pd.DataFrame(photometry_dict)
