@@ -277,9 +277,9 @@ class LightCurve:
         mag: list or np.array
             Magnitude values. If flux < 1e-5 returns 9999.
         """
-      
+
         mag = [zpt - 2.5 * np.log10(f) if f > 1e-5 else 9999 for f in flux]
-       
+
         return np.array(mag)
 
     def check_queryable(self, mjd: float, filter_lim: float, criteria=1,
@@ -344,11 +344,11 @@ class LightCurve:
                 else:
                     surv_flux = self.photometry['flux'].values[surv_flag]
                     self.last_mag = self.conv_flux_mag([surv_flux[-1]])[0]
-            
+
             elif feature_method == 'Bazin':
                 # get first day of observation in this filter
                 mjd_min = min(self.photometry['mjd'].values[surv_flag])
-            
+
                 # estimate flux based on Bazin function
                 fitted_flux = self.evaluate_bazin([mjd - mjd_min])[filter_cut][0]
                 self.last_mag = self.conv_flux_mag([fitted_flux])[0]
@@ -404,7 +404,7 @@ class LightCurve:
             self.exp_time[telescope_name] = 9999
             return 9999
 
-    def fit_bazin(self, band: str):
+    def fit_bazin(self, band: str) -> np.ndarray:
         """Extract Bazin features for one filter.
 
         Parameters
@@ -414,21 +414,22 @@ class LightCurve:
 
         Returns
         -------
-        bazin_param: list
-            Best fit parameters for the Bazin function: 
+        bazin_param: np.ndarray
+            Best fit parameters for the Bazin function:
             [a, b, t0, tfall, trise].
         """
 
         # build filter flag
-        filter_flag = self.photometry['band'] == band
+        band_indices = self.photometry['band'] == band
+        if not sum(band_indices) > (len(self.bazin_features_names) - 1):
+            return np.array([])
 
         # get info for this filter
-        time = self.photometry['mjd'].values[filter_flag]
-        flux = self.photometry['flux'].values[filter_flag]
+        time = self.photometry['mjd'].values[band_indices]
+        flux = self.photometry['flux'].values[band_indices]
 
         # fit Bazin function
         bazin_param = fit_scipy(time - time[0], flux)
-
         return bazin_param
 
     def evaluate_bazin(self, time: np.array):
@@ -446,8 +447,8 @@ class LightCurve:
         """
         # store flux values and starting points
         flux = {}
- 
-        for k in range(len(self.filters)):            
+
+        for k in range(len(self.filters)):
             # store flux values per filter
             flux[self.filters[k]] = []
 
@@ -455,8 +456,8 @@ class LightCurve:
             if 'None' not in self.bazin_features[k * 5 : (k + 1) * 5]:
                 for item in time:
                     flux[self.filters[k]].append(\
-                           bazin(item, self.bazin_features[0 + k * 5], 
-                                 self.bazin_features[1 + k * 5], 
+                           bazin(item, self.bazin_features[0 + k * 5],
+                                 self.bazin_features[1 + k * 5],
                                  self.bazin_features[2 + k * 5],
                                  self.bazin_features[3 + k * 5],
                                  self.bazin_features[4 + k * 5]))
@@ -464,36 +465,18 @@ class LightCurve:
                 flux[self.filters[k]].append(None)
 
         return flux
-        
 
     def fit_bazin_all(self):
-        """Perform Bazin fit for all filters independently and 
-           concatenate results.
-
-        Populates the attributes: bazin_features.
-        """
-        # remove previous fit attempts
-        self.bazin_features = []
-
-        for band in self.filters:
-            # build filter flag
-            filter_flag = self.photometry['band'] == band
-
-            if sum(filter_flag) > 4:
-                best_fit = self.fit_bazin(band)
-
-                if sum([str(item) == 'nan' for item in best_fit]) == 0:
-                    for fit in best_fit:
-                        self.bazin_features.append(fit)
-                else:
-                    for i in range(5):
-                        self.bazin_features.append('None')
+        default_bazin_features = ['None'] * len(self.bazin_features_names)
+        for each_band in self.filters:
+            best_fit = self.fit_bazin(each_band)
+            if (best_fit.size > 0) and (not np.isnan(np.sum(best_fit))):
+                self.bazin_features.extend(best_fit.tolist())
             else:
-                for i in range(5):
-                    self.bazin_features.append('None')
+                self.bazin_features.extend(default_bazin_features)
 
     def plot_bazin_fit(self, save=True, show=False, output_file=' ',
-                       figscale=1, extrapolate=False, 
+                       figscale=1, extrapolate=False,
                        time_flux_pred=None, unit='flux'):
         """
         Plot data and Bazin fitted function.
@@ -525,7 +508,7 @@ class LightCurve:
         # number of columns in the plot
         ncols = len(self.filters) / 2 + len(self.filters) % 2
         fsize = (figscale * 5 * ncols , figscale * 10)
-        
+
         plt.figure(figsize=fsize)
 
         for i in range(len(self.filters)):
@@ -543,11 +526,11 @@ class LightCurve:
                 plot_fit = False
             else:
                 plot_fit = True
-                
+
             # shift to avoid large numbers in x-axis
             time = x - min(x)
-            
-            if plot_fit:                    
+
+            if plot_fit:
                 xaxis = np.linspace(0, max(time), 500)[:, np.newaxis]
                 fitted_flux = self.evaluate_bazin(xaxis)
                 if unit == 'flux':
@@ -566,16 +549,16 @@ class LightCurve:
                     xaxis_extrap = np.sort(np.array(xaxis_extrap))
                     ext_flux = self.evaluate_bazin(xaxis_extrap)
                     if unit == 'flux':
-                        plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
+                        plt.plot(xaxis_extrap, ext_flux[self.filters[i]],
                                  color='red', lw=1.5, ls='--',
                                  label='Bazin extrap')
                     elif unit == 'mag':
                         ext_mag = self.conv_flux_mag(ext_flux[self.filters[i]])
                         ext_mag_flag = ext_mag < 50
-                        plt.plot(xaxis_extrap[ext_mag_flag], 
+                        plt.plot(xaxis_extrap[ext_mag_flag],
                                  ext_mag[ext_mag_flag],
                                  color='red', lw=1.5, ls='--')
-            
+
             if unit == 'flux':
                 plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o',
                              label='obs')
@@ -584,7 +567,7 @@ class LightCurve:
                 mag_obs  = self.conv_flux_mag(y)
                 mag_obs_flag = mag_obs < 50
                 time_mag = time[mag_obs_flag]
-                
+
                 plt.scatter(time_mag, mag_obs[mag_obs_flag], color='blue',
                             label='calc mag', marker='s')
 
@@ -601,7 +584,7 @@ class LightCurve:
 
                 ax = plt.gca()
                 ax.set_ylim(ax.get_ylim()[::-1])
-                plt.ylabel('mag')            
+                plt.ylabel('mag')
 
             plt.xlabel('days since first observation')
             plt.tight_layout()
@@ -689,15 +672,15 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
         header = pd.read_csv(io.BytesIO(content))
         tar.close()
     elif 'FITS' in path_header_file:
-        header, photo = read_fits(path_photo_file, drop_separators=True)    
-    else:   
+        header, photo = read_fits(path_photo_file, drop_separators=True)
+    else:
         header = pd.read_csv(path_header_file, index_col=False)
-    
+
     # add headers to files
     with open(output_file, 'w') as param_file:
         param_file.write('id redshift type code orig_sample uA uB ut0 utfall ' +
                          'utrise gA gB gt0 gtfall gtrise rA rB rt0 rtfall ' +
-                         'rtrise iA iB it0 itfall itrise zA zB zt0 ztfall ' + 
+                         'rtrise iA iB it0 itfall itrise zA zB zt0 ztfall ' +
                          'ztrise YA YB Yt0 Ytfall Ytrise\n')
 
     # check id flag
@@ -731,8 +714,8 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
         subtype_name = 'SNTYPE_SUBCLASS'
 
     lc = LightCurve()
-    
-    for snid in header[id_name].values:      
+
+    for snid in header[id_name].values:
 
         # load individual light curves                       
         lc.load_resspect_lc(path_photo_file, snid)
@@ -784,9 +767,9 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file:str,
     sample: str
 	'train' or 'test'. Default is None.
     """
-    types = {90: 'Ia', 67: '91bg', 52:'Iax', 42:'II', 62:'Ibc', 
+    types = {90: 'Ia', 67: '91bg', 52:'Iax', 42:'II', 62:'Ibc',
              95: 'SLSN', 15:'TDE', 64:'KN', 88:'AGN', 92:'RRL', 65:'M-dwarf',
-             16:'EB',53:'Mira', 6:'MicroL', 991:'MicroLB', 992:'ILOT', 
+             16:'EB',53:'Mira', 6:'MicroL', 991:'MicroLB', 992:'ILOT',
              993:'CART', 994:'PISN',995:'MLString'}
 
     # count survivers
@@ -809,7 +792,7 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file:str,
     with open(output_file, 'w') as param_file:
         param_file.write('id redshift type code orig_sample uA uB ut0 utfall ' +
                          'utrise gA gB gt0 gtfall gtrise rA rB rt0 rtfall ' +
-                         'rtrise iA iB it0 itfall itrise zA zB zt0 ztfall ' + 
+                         'rtrise iA iB it0 itfall itrise zA zB zt0 ztfall ' +
                          'ztrise YA YB Yt0 Ytfall Ytrise\n')
 
     # check id flag
@@ -823,17 +806,17 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file:str,
         id_name = 'object_id'
 
     lc = LightCurve()
-    
-    for snid in header[id_name].values:      
+
+    for snid in header[id_name].values:
 
         # load individual light curves                      
-        lc.load_plasticc_lc(path_photo_file, snid) 
+        lc.load_plasticc_lc(path_photo_file, snid)
         lc.fit_bazin_all()
 
         # get model name 
         lc.redshift = header['true_z'][header[lc.id_name] == snid].values[0]
         lc.sntype = \
-            types[header['true_target'][header[lc.id_name] == snid].values[0]] 
+            types[header['true_target'][header[lc.id_name] == snid].values[0]]
         lc.sncode = header['true_target'][header[lc.id_name] == snid].values[0]
         lc.sample = sample
 

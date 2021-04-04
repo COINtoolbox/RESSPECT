@@ -89,7 +89,7 @@ def fit_scipy(time, flux):
 
     Returns
     -------
-    output : list of float
+    output : np.ndarray of floats
         best fit parameter values
 
     """
