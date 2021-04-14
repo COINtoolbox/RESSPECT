@@ -55,13 +55,17 @@ class ExpTimeCalc(object):
     magsarray: np.array
         Span of possible limiting magnitudes
     num_atm_eff: np.array
-        Numerator of atmospheric efficiency. XXXXX
+       Atmospheric transmission at each center wavelength of 
+       the instrument filters (ugrizY). 
+       Default: [0.7,0.8,0.9,0.9,0.9,0.95]
     pixelsize: float
         Pixels size in arc/pix.
     RON_pix: float
         Readout noise per pixel, electrons.
     prim_refl_filt: np.array
-        XXXXXXXX
+        Reflectivity of the primary mirror at each center 
+        wavelength of the instrument filters (ugrizY). 
+        Default: [0.89,0.89,0.88,0.87,0.88,0.9]
     seeing: dict
         Seeing in different bands (keywords) in arcsec.
     texparray: np.array
@@ -173,7 +177,8 @@ class ExpTimeCalc(object):
         fwhm: float (optional)
             FWHM. Default is 1.0.
         nread: int (optional)
-            XXXX. Default is 1.
+            Number of times CCD is readout, i.e. for higher 
+            readout rates, this increases the noise. Default: 1.
         skyADU: float (optional)
             Sky brightness in ADU. Default is 120. 
             Only used if 'skymode' \in ['ADU', 'ADU-FWHM']. 
@@ -318,7 +323,8 @@ class ExpTimeCalc(object):
         fwhm: float (optional)
             FWHM. Default is 1.0.
         nread: int (optional)
-            XXXX. Default is 1.
+            Number of times CCD is readout, i.e. for higher readout rates, 
+            this increases the noise. Default: 1
         skyADU: float (optional)
             Sky brightness in ADU. Default is 120. 
             Only used if 'skymode' \in ['ADU', 'ADU-FWHM'].
@@ -387,7 +393,8 @@ class ExpTimeCalc(object):
         fwhm: float (optional)
             FWHM. Default is 1.0.
         nread: int (optional)
-            XXXX. Default is 1.
+            Number of times CCD is readout, i.e. for higher readout rates, 
+            this increases the noise. Default: 1
         skyADU: float (optional)
             Sky brightness in ADU. Default is 120. 
             Only used if 'skymode' \in ['ADU', 'ADU-FWHM'].
