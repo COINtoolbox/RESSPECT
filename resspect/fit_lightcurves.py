@@ -351,7 +351,7 @@ class LightCurve(object):
                 tar = tarfile.open(photo_file, 'r:gz')
                 fname = tar.getmembers()[0]
                 content = tar.extractfile(fname).read()
-                self.full_photometry = pd.read_csv(io.BytesIO(contente))
+                self.full_photometry = pd.read_csv(io.BytesIO(content))
             else:
                 self.full_photometry = pd.read_csv(photo_file, 
                                                    index_col=False)
@@ -920,7 +920,7 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file:str,
     if '.tar.gz' in path_header_file:
         tar = tarfile.open(path_header_file, 'r:gz')
         fname = tar.getmembers()[0]
-        content = tar.extracfile(fname).read()
+        content = tar.extractfile(fname).read()
         header = pd.read_csv(io.BytesIO(content))
         tar.close()
     else:
