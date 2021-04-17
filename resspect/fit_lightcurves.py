@@ -198,7 +198,7 @@ class LightCurve:
             elif name == 'OBS:':
                 photometry_raw.append(np.array(each_row[1:]))
             elif name == 'SIM_PEAKMAG:':
-                self.sim_peakmag = np.array(each_row[1:5]).astype(np.float)
+                self.sim_peakmag = np.array(each_row[1:5]).astype(float)
             elif name == 'SIM_PEAKMJD:':
                 self.sim_pkmjd = float(value)
         return np.array(photometry_raw), header

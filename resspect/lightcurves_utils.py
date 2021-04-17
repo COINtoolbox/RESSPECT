@@ -159,18 +159,18 @@ def load_snpcc_photometry_df(
         photometry_raw: np.ndarray, header: list) -> pd.DataFrame:
     photometry_dict = {
         'mjd': np.array(
-            photometry_raw[:, header.index('MJD')]).astype(np.float),
+            photometry_raw[:, header.index('MJD')]).astype(float),
         'band': np.array(
             photometry_raw[:, header.index('FLT')]),
         'flux': np.array(
-            photometry_raw[:, header.index('FLUXCAL')]).astype(np.float),
+            photometry_raw[:, header.index('FLUXCAL')]).astype(float),
         'fluxerr': np.array(
-            photometry_raw[:, header.index('FLUXCALERR')]).astype(np.float),
+            photometry_raw[:, header.index('FLUXCALERR')]).astype(float),
         'SNR': np.array(
-            photometry_raw[:, header.index('SNR')]).astype(np.float),
+            photometry_raw[:, header.index('SNR')]).astype(float),
         'MAG': np.array(
-            photometry_raw[:, header.index('MAG')]).astype(np.float),
+            photometry_raw[:, header.index('MAG')]).astype(float),
         'MAGERR': np.array(
-            photometry_raw[:, header.index('MAGERR')]).astype(np.float)
+            photometry_raw[:, header.index('MAGERR')]).astype(float)
     }
     return pd.DataFrame(photometry_dict)
