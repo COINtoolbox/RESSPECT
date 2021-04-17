@@ -42,7 +42,7 @@ __all__ = ['LightCurve', 'fit_snpcc_bazin', 'fit_resspect_bazin',
            'fit_plasticc_bazin']
 
 
-class LightCurve(object):
+class LightCurve:
     """ Light Curve object, holding meta and photometric data.
 
     Attributes
@@ -55,7 +55,7 @@ class LightCurve(object):
     dataset_name: str
         Name of the survey or data set being analyzed.
     exp_time: dict
-        Exposure time required to take a spectra. 
+        Exposure time required to take a spectra.
         Keywords indicate telescope e.g.['4m', '8m'].
     filters: list
         List of broad band filters.
@@ -68,7 +68,7 @@ class LightCurve(object):
     last_mag: float
         r-band magnitude of last observed epoch.
     photometry: pd.DataFrame
-        Photometry information. 
+        Photometry information.
         Minimum keys --> [mjd, band, flux, fluxerr].
     redshift: float
         Redshift
@@ -175,8 +175,9 @@ class LightCurve(object):
         self.sncode = 0
         self.sntype = ' '
 
-    def _iterate_snpcc_lc_data(
-            self, lc_data: np.ndarray) -> Tuple[np.ndarray, list]:
+    def _get_snpcc_photometry_raw_and_header(
+            self, lc_data: np.ndarray,
+            sntype_test_value: str = "-9") -> Tuple[np.ndarray, list]:
         photometry_raw = []
         header = []
         for each_row in lc_data:
@@ -186,7 +187,7 @@ class LightCurve(object):
                 self.id = int(value)
                 self.id_name = 'SNID'
             elif name == 'SNTYPE:':
-                self.sample = 'test' if value == '-9' else 'train'
+                self.sample = 'test' if value == sntype_test_value else 'train'
             elif name == 'SIM_REDSHIFT:':
                 self.redshift = float(value)
             elif name == 'SIM_NON1a:':
@@ -217,7 +218,8 @@ class LightCurve(object):
         self.filters = ['g', 'r', 'i', 'z']
 
         lc_data = np.array(read_file(path_to_data), dtype=object)
-        photometry_raw, header = self._iterate_snpcc_lc_data(lc_data)
+        photometry_raw, header = self._get_snpcc_photometry_raw_and_header(
+            lc_data)
 
         if photometry_raw.size > 0:
             self.photometry = load_snpcc_photometry_df(photometry_raw, header)

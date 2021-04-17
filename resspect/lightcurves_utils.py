@@ -6,6 +6,7 @@ import io
 import tarfile
 from typing import AnyStr
 from typing import Tuple
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -13,28 +14,28 @@ import pandas as pd
 from resspect.snana_fits_to_pd import read_fits
 
 SNPCC_LC_MAPPINGS = {
-    "snii": ['2', '3', '4', '12', '15', '17', '19', '20', '21', '24', '25',
+    "snii": {'2', '3', '4', '12', '15', '17', '19', '20', '21', '24', '25',
              '26', '27', '30', '31', '32', '33', '34', '35', '36', '37', '38',
-             '39', '40', '41', '42', '43', '44'],
-    "snibc": ['1', '5', '6', '7', '8', '9', '10', '11', '13', '14', '16',
-              '18', '22', '23', '29', '45', '28']
+             '39', '40', '41', '42', '43', '44'},
+    "snibc": {'1', '5', '6', '7', '8', '9', '10', '11', '13', '14', '16',
+              '18', '22', '23', '29', '45', '28'}
 }
 
 
 def read_file(file_path: str) -> list:
     with open(file_path, "r") as file:
         lines = [line.split() for line in file.readlines()]
-        return [line for line in lines if len(line) > 1]
+        return list(filter(lambda x: len(x) > 1, lines))
 
 
 def get_snpcc_sntype(value: str) -> str:
     if value in SNPCC_LC_MAPPINGS["snibc"]:
         return 'Ibc'
-    elif value in SNPCC_LC_MAPPINGS["snii"]:
+    if value in SNPCC_LC_MAPPINGS["snii"]:
         return 'II'
-    elif value == '0':
+    if value == '0':
         return 'Ia'
-    raise ValueError('Unknown supernova type!')
+    raise ValueError('Unknown SNPCC supernova type!')
 
 
 def read_tar_file(file_path: str) -> AnyStr:
@@ -44,28 +45,42 @@ def read_tar_file(file_path: str) -> AnyStr:
 
 
 def read_resspect_full_photometry_data(file_path: str) -> pd.DataFrame:
-    if '.tar.gz' in file_path:
+    if file_path.endswith('.tar.gz'):
         tar_content = read_tar_file(file_path)
         return pd.read_csv(io.BytesIO(tar_content))
-    elif '.FITS' in file_path:
+    if file_path.endswith('.FITS'):
         _, full_photometry = read_fits(
             file_path, drop_separators=True)
         return full_photometry
-    else:
+    if file_path.endswith(('.csv', '.csv.gz')):
         return pd.read_csv(file_path, index_col=False)
+    raise ValueError(f"Unknown RESSPECT photometry data file: {file_path}")
 
 
 def get_photometry_with_id_name_and_snid(
         full_photometry: pd.DataFrame,
-        id_names_list: list, snid: int) -> Tuple[pd.DataFrame, str]:
-    snid_indices = pd.Series()
-    id_name = None
-    for each_id in id_names_list:
-        if each_id in full_photometry.keys():
-            snid_indices = full_photometry[each_id] == snid
-            id_name = each_id
-            break
-    return full_photometry[snid_indices], id_name
+        id_names_list: list, snid: int) -> Tuple[
+        pd.DataFrame, Union[str, None]]:
+    """
+    This function loads photometry data of the given SNID.
+    The full_photometry DataFrame should contain one the column name passed in
+    id_names_list. Otherwise the function returns empty dataframe and none snid
+    name
+
+    Parameters
+    ----------
+    full_photometry
+        photometry DataFrame
+    id_names_list
+        list of available SNID column names
+    snid
+        SNID
+    """
+    for snid_column_name in id_names_list:
+        if snid_column_name in full_photometry.keys():
+            snid_indices = full_photometry[snid_column_name] == snid
+            return full_photometry[snid_indices], snid_column_name
+    return pd.DataFrame(), None
 
 
 def _update_resspect_filter_values(
@@ -108,14 +123,15 @@ def load_resspect_photometry_df(photometry_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def read_plasticc_full_photometry_data(file_path: str) -> pd.DataFrame:
-    if '.tar.gz' in file_path:
+    if file_path.endswith('.tar.gz'):
         tar_content = read_tar_file(file_path)
         return pd.read_csv(io.BytesIO(tar_content))
-    else:
+    if file_path.endswith(('.csv', '.csv.gz')):
         full_photometry = pd.read_csv(file_path, index_col=False)
         if ' ' in full_photometry.keys()[0]:
             full_photometry = pd.read_csv(file_path, sep=' ', index_col=False)
-    return full_photometry
+        return full_photometry
+    raise ValueError(f"Unknown PLAsTiCC photometry data file: {file_path}")
 
 
 def _update_plasticc_filter_values(
