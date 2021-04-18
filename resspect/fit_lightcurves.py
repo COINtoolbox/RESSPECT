@@ -192,7 +192,7 @@ class LightCurve:
                 self.redshift = float(value)
             elif name == 'SIM_NON1a:':
                 self.sncode = value
-                self.sntype = get_snpcc_sntype(value)
+                self.sntype = get_snpcc_sntype(int(value))
             elif name == 'VARLIST:':
                 header = each_row[1:]
             elif name == 'OBS:':

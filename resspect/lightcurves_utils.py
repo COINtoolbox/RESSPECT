@@ -14,21 +14,21 @@ import pandas as pd
 from resspect.snana_fits_to_pd import read_fits
 
 SNPCC_LC_MAPPINGS = {
-    "snii": {'2', '3', '4', '12', '15', '17', '19', '20', '21', '24', '25',
-             '26', '27', '30', '31', '32', '33', '34', '35', '36', '37', '38',
-             '39', '40', '41', '42', '43', '44'},
-    "snibc": {'1', '5', '6', '7', '8', '9', '10', '11', '13', '14', '16',
-              '18', '22', '23', '29', '45', '28'}
+    "snii": {2, 3, 4, 12, 15, 17, 19, 20, 21, 24, 25,
+             26, 27, 30, 31, 32, 33, 34, 35, 36, 37, 38,
+             39, 40, 41, 42, 43, 44},
+    "snibc": {1, 5, 6, 7, 8, 9, 10, 11, 13, 14, 16,
+              18, 22, 23, 29, 45, 28}
 }
 
 
 def read_file(file_path: str) -> list:
-    with open(file_path, "r") as file:
-        lines = [line.split() for line in file.readlines()]
+    with open(file_path, "r") as input_file:
+        lines = [line.split() for line in input_file.readlines()]
         return list(filter(lambda x: len(x) > 1, lines))
 
 
-def get_snpcc_sntype(value: str) -> str:
+def get_snpcc_sntype(value: int) -> str:
     if value in SNPCC_LC_MAPPINGS["snibc"]:
         return 'Ibc'
     if value in SNPCC_LC_MAPPINGS["snii"]:
