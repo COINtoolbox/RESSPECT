@@ -15,22 +15,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import io
+import tarfile
+from typing import Tuple
+
+import matplotlib.pylab as plt
+import numpy as np
+import pandas as pd
+
 from resspect.bazin import bazin, fit_scipy
 from resspect.exposure_time_calculator import ExpTimeCalc
 from resspect.snana_fits_to_pd import read_fits
+from resspect.lightcurves_utils import read_file
+from resspect.lightcurves_utils import load_snpcc_photometry_df
+from resspect.lightcurves_utils import get_photometry_with_id_name_and_snid
+from resspect.lightcurves_utils import read_plasticc_full_photometry_data
+from resspect.lightcurves_utils import load_plasticc_photometry_df
+from resspect.lightcurves_utils import read_resspect_full_photometry_data
+from resspect.lightcurves_utils import insert_band_column_to_resspect_df
+from resspect.lightcurves_utils import load_resspect_photometry_df
+from resspect.lightcurves_utils import get_snpcc_sntype
 
-import io
-import matplotlib.pylab as plt
-import numpy as np
-import os
-import pandas as pd
-import tarfile
 
 __all__ = ['LightCurve', 'fit_snpcc_bazin', 'fit_resspect_bazin',
            'fit_plasticc_bazin']
 
 
-class LightCurve(object):
+class LightCurve:
     """ Light Curve object, holding meta and photometric data.
 
     Attributes
@@ -43,7 +55,7 @@ class LightCurve(object):
     dataset_name: str
         Name of the survey or data set being analyzed.
     exp_time: dict
-        Exposure time required to take a spectra. 
+        Exposure time required to take a spectra.
         Keywords indicate telescope e.g.['4m', '8m'].
     filters: list
         List of broad band filters.
@@ -56,7 +68,7 @@ class LightCurve(object):
     last_mag: float
         r-band magnitude of last observed epoch.
     photometry: pd.DataFrame
-        Photometry information. 
+        Photometry information.
         Minimum keys --> [mjd, band, flux, fluxerr].
     redshift: float
         Redshift
@@ -163,6 +175,34 @@ class LightCurve(object):
         self.sncode = 0
         self.sntype = ' '
 
+    def _get_snpcc_photometry_raw_and_header(
+            self, lc_data: np.ndarray,
+            sntype_test_value: str = "-9") -> Tuple[np.ndarray, list]:
+        photometry_raw = []
+        header = []
+        for each_row in lc_data:
+            name = each_row[0]
+            value = each_row[1]
+            if name == 'SNID:':
+                self.id = int(value)
+                self.id_name = 'SNID'
+            elif name == 'SNTYPE:':
+                self.sample = 'test' if value == sntype_test_value else 'train'
+            elif name == 'SIM_REDSHIFT:':
+                self.redshift = float(value)
+            elif name == 'SIM_NON1a:':
+                self.sncode = value
+                self.sntype = get_snpcc_sntype(int(value))
+            elif name == 'VARLIST:':
+                header = each_row[1:]
+            elif name == 'OBS:':
+                photometry_raw.append(np.array(each_row[1:]))
+            elif name == 'SIM_PEAKMAG:':
+                self.sim_peakmag = np.array(each_row[1:5]).astype(float)
+            elif name == 'SIM_PEAKMJD:':
+                self.sim_pkmjd = float(value)
+        return np.array(photometry_raw), header
+
     def load_snpcc_lc(self, path_to_data: str):
         """Reads one LC from SNPCC data.
 
@@ -174,217 +214,53 @@ class LightCurve(object):
         path_to_data: str
             Path to text file with data from a single SN.
         """
-
-        # set the designation of the data set
         self.dataset_name = 'SNPCC'
-
-        # set filters
         self.filters = ['g', 'r', 'i', 'z']
 
-        # set SN types
-        snii = ['2', '3', '4', '12', '15', '17', '19', '20', '21', '24', '25',
-                '26', '27', '30', '31', '32', '33', '34', '35', '36', '37',
-                '38', '39', '40', '41', '42', '43', '44']
+        lc_data = np.array(read_file(path_to_data), dtype=object)
+        photometry_raw, header = self._get_snpcc_photometry_raw_and_header(
+            lc_data)
 
-        snibc = ['1', '5', '6', '7', '8', '9', '10', '11', '13', '14', '16',
-                 '18', '22', '23', '29', '45', '28']
+        if photometry_raw.size > 0:
+            self.photometry = load_snpcc_photometry_df(photometry_raw, header)
 
-        # read light curve data
-        op = open(path_to_data, 'r')
-        lin = op.readlines()
-        op.close()
-
-        # separate elements
-        data_all = np.array([elem.split() for elem in lin], dtype=object)
-
-        # flag useful lines
-        flag_lines = np.array([True if len(line) > 1 else False \
-                               for line in data_all])
-
-        # get only informative lines
-        data = data_all[flag_lines]
-
-        photometry_raw = []               # store photometry
-        header = []                      # store parameter header
-
-        # get header information
-        for line in data:
-            if line[0] == 'SNID:':
-                self.id = int(line[1])
-                self.id_name = 'SNID'
-            elif line[0] == 'SNTYPE:':
-                if line[1] == '-9':
-                    self.sample = 'test'
-                else:
-                    self.sample = 'train'
-            elif line[0] == 'SIM_REDSHIFT:':
-                self.redshift = float(line[1])
-            elif line[0] == 'SIM_NON1a:':
-                self.sncode = line[1]
-                if line[1] in snibc:
-                    self.sntype = 'Ibc'
-                elif line[1] in snii:
-                    self.sntype = 'II'
-                elif line[1] == '0':
-                    self.sntype = 'Ia'
-                else:
-                    raise ValueError('Unknown supernova type!')
-            elif line[0] == 'VARLIST:':
-                header: list = line[1:]
-            elif line[0] == 'OBS:':
-                photometry_raw.append(np.array(line[1:]))
-            elif line[0] == 'SIM_PEAKMAG:':
-                self.sim_peakmag = np.array([float(item) \
-                                             for item in line[1:5]])
-            elif line[0] == 'SIM_PEAKMJD:':
-                self.sim_pkmjd = float(line[1])
-
-        # transform photometry into array
-        photometry_raw = np.array(photometry_raw)
-
-        # put photometry into data frame
-        self.photometry['mjd'] = np.array([float(item) \
-                         for item in photometry_raw[:, header.index('MJD')]])
-        self.photometry['band'] = \
-                         np.array(photometry_raw[:, header.index('FLT')])
-        self.photometry['flux'] = np.array([float(item) \
-                     for item in photometry_raw[:, header.index('FLUXCAL')]])
-        self.photometry['fluxerr'] = np.array([float(item) \
-                  for item in photometry_raw[:, header.index('FLUXCALERR')]])
-        self.photometry['SNR'] = np.array([float(item) \
-                         for item in photometry_raw[:, header.index('SNR')]])
-        self.photometry['MAG'] = np.array([float(item) \
-                         for item in photometry_raw[:, header.index('MAG')]])
-        self.photometry['MAGERR'] = np.array([float(item) \
-                      for item in photometry_raw[:, header.index('MAGERR')]])
-
-    def load_resspect_lc(self, photo_file, snid):
-        """
-        Return 1 light curve from RESSPECT simulations.
-    
-        Parameters
-        ----------
-        photo_file: str
-            Complete path to light curves file.
-        snid: int
-            Identification number for the desired light curve.
-        """
-
-        if self.full_photometry.shape[0] == 0:
-            if '.tar.gz' in photo_file:
-                tar = tarfile.open(photo_file, 'r:gz')
-                fname = tar.getmembers()[0]
-                content = tar.extractfile(fname).read()
-                self.full_photometry = pd.read_csv(io.BytesIO(content))
-                tar.close()
-            elif '.FITS' in photo_file:
-                df_header, self.full_photometry = \
-                            read_fits(photo_file, drop_separators=True)
-            else:    
-                self.full_photometry = pd.read_csv(photo_file, 
-                                                   index_col=False)
-
-        if 'SNID' in self.full_photometry.keys():
-            flag = self.full_photometry['SNID'] == snid
-            self.id_name = 'SNID'
-        elif 'snid' in self.full_photometry.keys():
-            flag = self.full_photometry['snid'] == snid
-            self.id_name = 'snid'
-        elif 'objid' in self.full_photometry.keys():
-            flag = self.full_photometry['objid'] == snid
-            self.id_name = 'objid'
-        elif 'id' in self.full_photometry.keys():
-            flag = self.full_photometry['id'] == snid
-            self.id_name = 'id'
-
-        photo = self.full_photometry[flag]
-
-        self.dataset_name = 'RESSPECT'                      # name of data set
-        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']       # list of filters  
-        
-        # check filter name
-        if 'b' in str(photo['FLT'].values[0]):
-            band = []
-            for i in range(photo.shape[0]):
-                for f in self.filters:
-                    if "b'" + f + " '" == str(photo['FLT'].values[i]) or \
-                    "b'" + f + "'" == str(photo['FLT'].values[i]) or \
-                    "b'" + f + "' " == str(photo['FLT'].values[i]):
-                        band.append(f)
-            photo.insert(1, 'band', band, True)
-
-        else:
-            photo.insert(1, 'band', photo['FLT'].values, True)
-                        
-        self.id = snid 
-        self.photometry = {}
-        self.photometry['mjd'] = photo['MJD'].values
-        self.photometry['band'] = photo['band'].values
-        self.photometry['flux'] = photo['FLUXCAL'].values
-        self.photometry['fluxerr'] = photo['FLUXCALERR'].values
-
-        if 'SNR' in photo.keys():
-            self.photometry['SNR'] = photo['SNR'].values
-        else:
-            signal = self.photometry['flux']
-            noise = self.photometry['fluxerr']
-            self.photometry['SNR'] = \
-                np.array([signal[i]/noise[i] for i in range(signal.shape[0])])
-            
-        self.photometry = pd.DataFrame(self.photometry)
-        
-    def load_plasticc_lc(self, photo_file: str, snid: int):
-        """
-        Return 1 light curve from PLAsTiCC simulations.
-    
-        Parameters
-        ----------
-        photo_file: str
-            Complete path to light curve file.
-        snid: int
-            Identification number for the desired light curve.
-        """
-
-        # read from file if full photometry not available
-        if self.full_photometry.shape[0] == 0:
-            if '.tar.gz' in photo_file:
-                tar = tarfile.open(photo_file, 'r:gz')
-                fname = tar.getmembers()[0]
-                content = tar.extractfile(fname).read()
-                self.full_photometry = pd.read_csv(io.BytesIO(content))
-            else:
-                self.full_photometry = pd.read_csv(photo_file, 
-                                                   index_col=False)
-
-                if ' ' in self.full_photometry.keys()[0]:
-                    self.full_photometry = pd.read_csv(photo_file, sep=' ',
-                                                       index_col=False)
-
-        if 'object_id' in self.full_photometry.keys():
-            flag = self.full_photometry['object_id'] == snid
-            self.id_name = 'object_id'
-        elif 'SNID' in self.full_photometry.keys():
-            flag = self.full_photometry['SNID'] == snid
-            self.id_name = 'SNID'
-        elif 'snid' in self.full_photometry.keys():
-            flag = self.full_photometry['snid'] == snid
-            self.id_name = 'snid'
-
-        photo = self.full_photometry[flag]
-
-        filter_dict = {0:'u', 1:'g', 2:'r', 3:'i', 4:'z', 5:'Y'}
-           
-        self.dataset_name = 'PLAsTiCC'              # name of data set
-        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']       # list of filters
+    def load_resspect_lc(self, photo_file: str, snid: int):
+        self.dataset_name = 'RESSPECT'
+        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
         self.id = snid
-        self.photometry = {}
-        self.photometry['mjd'] = photo['mjd'].values
-        self.photometry['band'] = [filter_dict[photo['passband'].values[k]] 
-                                   for k in range(photo['passband'].shape[0])]
-        self.photometry['flux'] = photo['flux'].values
-        self.photometry['fluxerr'] = photo['flux_err'].values
-        self.photometry['detected_bool'] = photo['detected_bool'].values
-        self.photometry = pd.DataFrame(self.photometry)
+
+        if self.full_photometry.empty:
+            self.full_photometry = read_resspect_full_photometry_data(
+                photo_file)
+        id_names_list = ['SNID', 'snid', 'objid', 'id']
+        filtered_photometry, self.id_name = (
+            get_photometry_with_id_name_and_snid(
+                self.full_photometry, id_names_list, snid))
+
+        if not filtered_photometry.empty:
+            filtered_photometry = insert_band_column_to_resspect_df(
+                filtered_photometry, self.filters)
+            self.photometry = load_resspect_photometry_df(filtered_photometry)
+
+    def load_plasticc_lc(self, photo_file: str, snid: int):
+        self.dataset_name = 'PLAsTiCC'
+        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
+        self.id = snid
+
+        if self.full_photometry.empty:
+            self.full_photometry = read_plasticc_full_photometry_data(
+                photo_file)
+        id_names_list = ['object_id', 'SNID', 'snid']
+        filtered_photometry, self.id_name = (
+            get_photometry_with_id_name_and_snid(
+                self.full_photometry, id_names_list, snid))
+        filter_mapping_dict = {
+            0: 'u', 1: 'g', 2: 'r', 3: 'i', 4: 'z', 5: 'Y'
+        }
+
+        if not filtered_photometry.empty:
+            self.photometry = load_plasticc_photometry_df(
+                filtered_photometry, filter_mapping_dict)
 
     def conv_flux_mag(self, flux, zpt=27.5):
         """Convert FLUXCAL to magnitudes.
@@ -990,3 +866,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
