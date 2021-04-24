@@ -23,6 +23,7 @@ from typing import Tuple
 import matplotlib.pylab as plt
 import numpy as np
 import pandas as pd
+import progressbar
 
 from resspect.bazin import bazin, fit_scipy
 from resspect.exposure_time_calculator import ExpTimeCalc
@@ -36,6 +37,7 @@ from resspect.lightcurves_utils import read_resspect_full_photometry_data
 from resspect.lightcurves_utils import insert_band_column_to_resspect_df
 from resspect.lightcurves_utils import load_resspect_photometry_df
 from resspect.lightcurves_utils import get_snpcc_sntype
+from resspect.lightcurves_utils import SNPCC_FEATURES_HEADER
 
 
 __all__ = ['LightCurve', 'fit_snpcc_bazin', 'fit_resspect_bazin',
@@ -596,56 +598,44 @@ class LightCurve:
             plt.show()
 
 
-def fit_snpcc_bazin(path_to_data_dir: str, features_file: str):
+def _get_snpcc_features_to_write(snpcc_data: 'LightCurve') -> list:
+    features_list = [snpcc_data.id, snpcc_data.redshift, snpcc_data.sntype,
+                     snpcc_data.sncode, snpcc_data.sample]
+    features_list.extend(snpcc_data.bazin_features)
+    return features_list
+
+
+def fit_snpcc_bazin(
+        path_to_data_dir: str, features_file: str,
+        file_prefix: str = "DES_SN"):
     """Perform Bazin fit to all objects in the SNPCC data.
 
-    Parameters
-    ----------
-    path_to_data_dir: str
-        Path to directory containing the set of individual files,
-        one for each light curve.
-    features_file: str
-        Path to output file where results should be stored.
-    """
+     Parameters
+     ----------
+     path_to_data_dir: str
+         Path to directory containing the set of individual files,
+         one for each light curve.
+     features_file: str
+         Path to output file where results should be stored.
+     file_prefix: str
+        File names prefix
+     """
+    files_list = os.listdir(path_to_data_dir)
+    files_list = [each_file for each_file in files_list
+                  if each_file.startswith(file_prefix)]
+    with open(features_file, 'w') as output_file:
+        output_file.write(' '.join(SNPCC_FEATURES_HEADER) + '\n')
+        for each_file in progressbar.progressbar(files_list):
+            light_curve_data = LightCurve()
+            light_curve_data.load_snpcc_lc(
+                os.path.join(path_to_data_dir, each_file))
+            light_curve_data.fit_bazin_all()
+            if 'None' not in light_curve_data.bazin_features:
+                current_features = _get_snpcc_features_to_write(
+                    light_curve_data)
+                output_file.write(' '.join(str(each_feature) for each_feature
+                                           in current_features) + '\n')
 
-    # read file names
-    file_list_all = os.listdir(path_to_data_dir)
-    lc_list = [elem for elem in file_list_all if 'DES_SN' in elem]
-
-    # count survivers
-    count_surv = 0
-
-    # add headers to files
-    with open(features_file, 'w') as param_file:
-        param_file.write('id redshift type code orig_sample gA gB ' + \
-                         'gt0 gtfall gtrise rA rB rt0 rtfall rtrise' + \
-                         ' iA iB it0 itfall itrise zA zB zt0 ztfall' + \
-                         ' ztrise\n')
-
-    for file in lc_list:
-
-        # fit individual light curves
-        lc = LightCurve()
-        lc.load_snpcc_lc(path_to_data_dir + file)
-        lc.fit_bazin_all()
-
-        print(lc_list.index(file), ' - id:', lc.id)
-
-        # append results to the correct matrix
-        if 'None' not in lc.bazin_features:
-            count_surv = count_surv + 1
-            print('Survived: ', count_surv)
-
-            # save features to file
-            with open(features_file, 'a') as param_file:
-                param_file.write(str(lc.id) + ' ' + str(lc.redshift) + ' ' + \
-                                 str(lc.sntype) + ' ')
-                param_file.write(str(lc.sncode) + ' ' + str(lc.sample) + ' ')
-                for item in lc.bazin_features:
-                    param_file.write(str(item) + ' ')
-                param_file.write('\n')
-
-    param_file.close()
 
 def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
                        output_file: str, sample=None):

@@ -21,6 +21,11 @@ SNPCC_LC_MAPPINGS = {
               18, 22, 23, 29, 45, 28}
 }
 
+SNPCC_FEATURES_HEADER = ['id', 'redshift', 'type', 'code', 'orig_sample',
+                      'gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA', 'rB',
+                      'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0', 'itfall', 'itrise',
+                      'zA', 'zB', 'zt0', 'ztfall', 'ztrise']
+
 
 def read_file(file_path: str) -> list:
     with open(file_path, "r") as input_file:
