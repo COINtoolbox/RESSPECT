@@ -28,7 +28,7 @@ SNPCC_FEATURES_HEADER = [
     'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztrise'
 ]
 
-PLASTICC_FEATURES_HEADER = [
+PLASTICC_RESSPECT_FEATURES_HEADER = [
     'id', 'redshift', 'type', 'code', 'orig_sample', 'uA', 'uB', 'ut0',
     'utfall', 'utrise', 'gA', 'gB', 'gt0', 'gtfall' ,'gtrise', 'rA', 'rB',
     'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0', 'itfall', 'itrise', 'zA',
@@ -65,16 +65,18 @@ def read_tar_file(file_path: str) -> AnyStr:
         return tar.extractfile(tar_members).read()
 
 
-def read_resspect_full_photometry_data(file_path: str) -> pd.DataFrame:
+def read_resspect_full_photometry_data(file_path: str) -> Tuple[
+        pd.DataFrame, pd.DataFrame]:
+    header = pd.DataFrame([])
     if file_path.endswith('.tar.gz'):
         tar_content = read_tar_file(file_path)
-        return pd.read_csv(io.BytesIO(tar_content))
+        return header, pd.read_csv(io.BytesIO(tar_content))
     if file_path.endswith('.FITS'):
-        _, full_photometry = read_fits(
+        header, full_photometry = read_fits(
             file_path, drop_separators=True)
-        return full_photometry
+        return header, full_photometry
     if file_path.endswith(('.csv', '.csv.gz')):
-        return pd.read_csv(file_path, index_col=False)
+        return header, pd.read_csv(file_path, index_col=False)
     raise ValueError(f"Unknown RESSPECT photometry data file: {file_path}")
 
 
@@ -203,3 +205,15 @@ def find_available_key_name_in_header(
         if each_key in header_keys:
             return each_key
     return None
+
+
+def get_resspect_header_data(
+        path_header_file: str, path_photo_file: str) -> pd.DataFrame:
+    if path_header_file.endswith(('tar.gz', '.csv', 'csv.gz')):
+        _, meta_header = read_resspect_full_photometry_data(path_header_file)
+    elif path_header_file.endswith('.FITS'):
+        meta_header, _ = read_resspect_full_photometry_data(path_photo_file)
+    else:
+        raise ValueError(
+            f"Unknown RESSPECT header data file: {path_header_file}")
+    return meta_header
