@@ -467,6 +467,7 @@ class LightCurve:
         return flux
 
     def fit_bazin_all(self):
+        self.bazin_features = []
         default_bazin_features = ['None'] * len(self.bazin_features_names)
         for each_band in self.filters:
             best_fit = self.fit_bazin(each_band)
