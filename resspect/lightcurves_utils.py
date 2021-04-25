@@ -21,10 +21,26 @@ SNPCC_LC_MAPPINGS = {
               18, 22, 23, 29, 45, 28}
 }
 
-SNPCC_FEATURES_HEADER = ['id', 'redshift', 'type', 'code', 'orig_sample',
-                      'gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA', 'rB',
-                      'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0', 'itfall', 'itrise',
-                      'zA', 'zB', 'zt0', 'ztfall', 'ztrise']
+SNPCC_FEATURES_HEADER = [
+    'id', 'redshift', 'type', 'code', 'orig_sample',
+    'gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA', 'rB',
+    'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0', 'itfall',
+    'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztrise'
+]
+
+PLASTICC_FEATURES_HEADER = [
+    'id', 'redshift', 'type', 'code', 'orig_sample', 'uA', 'uB', 'ut0',
+    'utfall', 'utrise', 'gA', 'gB', 'gt0', 'gtfall' ,'gtrise', 'rA', 'rB',
+    'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0', 'itfall', 'itrise', 'zA',
+    'zB', 'zt0', 'ztfall', 'ztrise', 'YA', 'YB', 'Yt0', 'Ytfall', 'Ytrise'
+]
+
+PLASTICC_TARGET_TYPES = {
+    90: 'Ia', 67: '91bg', 52: 'Iax', 42: 'II', 62: 'Ibc',
+    95: 'SLSN', 15: 'TDE', 64: 'KN', 88: 'AGN', 92: 'RRL', 65: 'M-dwarf',
+    16: 'EB', 53: 'Mira', 6: 'MicroL', 991: 'MicroLB', 992: 'ILOT',
+    993: 'CART', 994: 'PISN', 995: 'MLString'
+}
 
 
 def read_file(file_path: str) -> list:
@@ -179,3 +195,11 @@ def load_snpcc_photometry_df(
             photometry_raw[:, header.index('MAGERR')]).astype(float)
     }
     return pd.DataFrame(photometry_dict)
+
+
+def find_available_key_name_in_header(
+        header_keys: list, keys_to_find: list) -> Union[str, None]:
+    for each_key in keys_to_find:
+        if each_key in header_keys:
+            return each_key
+    return None
