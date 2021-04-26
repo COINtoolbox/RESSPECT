@@ -33,7 +33,7 @@ def get_snpcc_sntype(value: int) -> str:
         return 'Ibc'
     if value in SNPCC_LC_MAPPINGS["snii"]:
         return 'II'
-    if value == '0':
+    if value == 0:
         return 'Ia'
     raise ValueError('Unknown SNPCC supernova type!')
 
