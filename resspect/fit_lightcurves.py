@@ -27,7 +27,8 @@ import progressbar
 
 from resspect.bazin import bazin, fit_scipy
 from resspect.exposure_time_calculator import ExpTimeCalc
-from resspect.lightcurves_utils import read_file, get_resspect_header_data
+from resspect.lightcurves_utils import read_file
+from resspect.lightcurves_utils import get_resspect_header_data
 from resspect.lightcurves_utils import load_snpcc_photometry_df
 from resspect.lightcurves_utils import get_photometry_with_id_name_and_snid
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
@@ -181,6 +182,16 @@ class LightCurve:
     def _get_snpcc_photometry_raw_and_header(
             self, lc_data: np.ndarray,
             sntype_test_value: str = "-9") -> Tuple[np.ndarray, list]:
+        """
+        Reads SNPCC photometry raw and header data
+
+        Parameters
+        ----------
+        lc_data
+            SNPCC light curve data
+        sntype_test_value
+            test sample SNTYPE value
+        """
         photometry_raw = []
         header = []
         for each_row in lc_data:
@@ -228,6 +239,17 @@ class LightCurve:
             self.photometry = load_snpcc_photometry_df(photometry_raw, header)
 
     def load_resspect_lc(self, photo_file: str, snid: int):
+        """
+        Return 1 light curve from RESSPECT simulations.
+
+        Parameters
+        ----------
+        photo_file: str
+            Complete path to light curves file.
+        snid: int
+            Identification number for the desired light curve.
+        """
+
         self.dataset_name = 'RESSPECT'
         self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
         self.id = snid
@@ -246,6 +268,16 @@ class LightCurve:
             self.photometry = load_resspect_photometry_df(filtered_photometry)
 
     def load_plasticc_lc(self, photo_file: str, snid: int):
+        """
+        Return 1 light curve from PLAsTiCC simulations.
+
+        Parameters
+        ----------
+        photo_file: str
+            Complete path to light curve file.
+        snid: int
+            Identification number for the desired light curve.
+        """
         self.dataset_name = 'PLAsTiCC'
         self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
         self.id = snid
@@ -470,6 +502,10 @@ class LightCurve:
         return flux
 
     def fit_bazin_all(self):
+        """
+        Perform Bazin fit for all filters independently and concatenate results.
+        Populates the attributes: bazin_features.
+        """
         self.bazin_features = []
         default_bazin_features = ['None'] * len(self.bazin_features_names)
         for each_band in self.filters:
@@ -480,6 +516,7 @@ class LightCurve:
                 self.bazin_features.extend(default_bazin_features)
 
     def clear_data(self):
+        """ Reset to default values """
         self.photometry = []
         self.redshift = None
         self.sntype = None
@@ -606,15 +643,34 @@ class LightCurve:
             plt.show()
 
 
-def _get_features_to_write(snpcc_data: LightCurve) -> list:
-    features_list = [snpcc_data.id, snpcc_data.redshift, snpcc_data.sntype,
-                     snpcc_data.sncode, snpcc_data.sample]
-    features_list.extend(snpcc_data.bazin_features)
+def _get_features_to_write(light_curve_data: LightCurve) -> list:
+    """
+    Returns features list to write
+
+    Parameters
+    ----------
+    light_curve_data
+        fitted light curve data
+    """
+    features_list = [light_curve_data.id, light_curve_data.redshift,
+                     light_curve_data.sntype, light_curve_data.sncode,
+                     light_curve_data.sample]
+    features_list.extend(light_curve_data.bazin_features)
     return features_list
 
 
 def write_features_to_output_file(
         light_curve_data: LightCurve, features_file: IO):
+    """
+    Writes fitted light curve data to output features file
+
+    Parameters
+    ----------
+    light_curve_data
+        fitted ligtht curve data
+    features_file
+        features output file
+    """
     current_features = _get_features_to_write(
         light_curve_data)
     features_file.write(

@@ -44,12 +44,28 @@ PLASTICC_TARGET_TYPES = {
 
 
 def read_file(file_path: str) -> list:
+    """
+     This function reads input file and filters empty entries
+
+     Parameters
+     ----------
+     file_path
+         input file path
+     """
     with open(file_path, "r") as input_file:
         lines = [line.split() for line in input_file.readlines()]
         return list(filter(lambda x: len(x) > 1, lines))
 
 
 def get_snpcc_sntype(value: int) -> str:
+    """
+     This function returns SNPCC class using SNPCC_LC_MAPPINGS
+
+     Parameters
+     ----------
+     value
+         sncode value
+     """
     if value in SNPCC_LC_MAPPINGS["snibc"]:
         return 'Ibc'
     if value in SNPCC_LC_MAPPINGS["snii"]:
@@ -60,6 +76,14 @@ def get_snpcc_sntype(value: int) -> str:
 
 
 def read_tar_file(file_path: str) -> AnyStr:
+    """
+     Reads tarfile using with gzip compression and returns tarfile contents
+
+     Parameters
+     ----------
+     file_path
+         tarfile path
+     """
     with tarfile.open(file_path, 'r:gz') as tar:
         tar_members = tar.getmembers()[0]
         return tar.extractfile(tar_members).read()
@@ -67,6 +91,14 @@ def read_tar_file(file_path: str) -> AnyStr:
 
 def read_resspect_full_photometry_data(file_path: str) -> Tuple[
         pd.DataFrame, pd.DataFrame]:
+    """
+     Reads RESSPECT full photometry data to pandas dataframe
+
+     Parameters
+     ----------
+     file_path
+         RESSPECT data file path, one of (tar.gz, FITS, csv, csv.gz)
+     """
     header = pd.DataFrame([])
     if file_path.endswith('.tar.gz'):
         tar_content = read_tar_file(file_path)
@@ -108,6 +140,17 @@ def get_photometry_with_id_name_and_snid(
 
 def _update_resspect_filter_values(
         filters_array: np.ndarray, filters: list) -> np.ndarray:
+    """
+     Returns updated filter values array by converting binary strings to proper
+     filter values
+
+     Parameters
+     ----------
+     filters_array
+        array with binary string filter values
+     filters
+        available filter values
+     """
     updated_band = np.zeros_like(filters_array)
     for each_filter in filters:
         first_case = "b'" + each_filter + " '"
@@ -121,6 +164,17 @@ def _update_resspect_filter_values(
 
 def insert_band_column_to_resspect_df(
         photometry_df: pd.DataFrame, filters: list) -> pd.DataFrame:
+    """
+     Inserts band column(filter values) to RESSPECT dataframe by copying 'FLT'
+     column values to a new column 'band'
+     Also updates the filter values if they are binary strings.
+     Parameters
+     ----------
+     photometry_df
+         RESSPECT photometry dataframes
+     filters
+        Available filter values
+     """
     if 'b' in str(photometry_df['FLT'].values[0]):
         updated_band = _update_resspect_filter_values(
             photometry_df['FLT'].values, filters)
@@ -131,6 +185,15 @@ def insert_band_column_to_resspect_df(
 
 
 def load_resspect_photometry_df(photometry_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Returns updated RESSPECT photometry dataframe by dropping unnecessary
+     columns ('SNID', 'FLT' and 'SIM_MAGOBS' columns are dropped here)
+
+    Parameters
+    ----------
+    photometry_df
+        RESSPECT photometry dataframe
+    """
     photometry_dict = {
         'mjd': photometry_df['MJD'].values,
         'band': photometry_df['band'].values,
@@ -146,6 +209,14 @@ def load_resspect_photometry_df(photometry_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def read_plasticc_full_photometry_data(file_path: str) -> pd.DataFrame:
+    """
+     Reads PLAsTiCC full photometry data to pandas dataframe
+
+     Parameters
+     ----------
+     file_path
+         PLAsTiCC data file path, one of (tar.gz, csv, csv.gz)
+     """
     if file_path.endswith('.tar.gz'):
         tar_content = read_tar_file(file_path)
         return pd.read_csv(io.BytesIO(tar_content))
@@ -159,6 +230,17 @@ def read_plasticc_full_photometry_data(file_path: str) -> pd.DataFrame:
 
 def _update_plasticc_filter_values(
         filters_array: np.ndarray, mapping_dict: dict) -> np.ndarray:
+    """
+    Updates PLAsTiCC filters id array by proper filter names
+
+    Parameters
+    ----------
+    filters_array
+        PLAsTiCC filters array
+    mapping_dict
+        filter id to name mapping dict
+        ex: { 0: 'u', 1: 'g', ..}
+    """
     updated_filters_array = np.zeros_like(filters_array, dtype=object)
     for key, value in mapping_dict.items():
         updated_filters_array[filters_array == key] = value
@@ -167,6 +249,18 @@ def _update_plasticc_filter_values(
 
 def load_plasticc_photometry_df(
         photometry_df: pd.DataFrame, filter_mapping_dict) -> pd.DataFrame:
+    """
+    Returns updated PLAsTiCC photometry dataframe by dropping unnecessary
+     columns
+
+    Parameters
+    ----------
+    photometry_df
+        PLAsTiCC photometry dataframe
+    filter_mapping_dict
+        filter id to name mapping dict
+        ex: { 0: 'u', 1: 'g', ..}
+    """
     photometry_dict = {
         'mjd': photometry_df['mjd'].values,
         'band': _update_plasticc_filter_values(
@@ -180,6 +274,15 @@ def load_plasticc_photometry_df(
 
 def load_snpcc_photometry_df(
         photometry_raw: np.ndarray, header: list) -> pd.DataFrame:
+    """
+    Loads SNPCC photometry raw data to pandas dataframe
+    Parameters
+    ----------
+    photometry_raw
+        SNPCC photometry raw array
+    header
+        SNPCC header column names list
+    """
     photometry_dict = {
         'mjd': np.array(
             photometry_raw[:, header.index('MJD')]).astype(float),
@@ -201,6 +304,17 @@ def load_snpcc_photometry_df(
 
 def find_available_key_name_in_header(
         header_keys: list, keys_to_find: list) -> Union[str, None]:
+    """
+    Iteratively checks if one of the item of key_to_find is in header_keys list
+    and returns the item which passes the condition
+
+    Parameters
+    ----------
+    header_keys
+        available header keys
+    keys_to_find
+        interesting keys list to search
+    """
     for each_key in keys_to_find:
         if each_key in header_keys:
             return each_key
@@ -209,6 +323,17 @@ def find_available_key_name_in_header(
 
 def get_resspect_header_data(
         path_header_file: str, path_photo_file: str) -> pd.DataFrame:
+    """
+    Reads RESSPECT meta header content: If header is a FITS file, photometry
+    file will be used to extract the header content
+
+    Parameters
+    ----------
+    path_header_file
+        RESSPECT header file path
+    path_photo_file
+        RESSPECT photometry file path
+    """
     if path_header_file.endswith(('tar.gz', '.csv', 'csv.gz')):
         _, meta_header = read_resspect_full_photometry_data(path_header_file)
     elif path_header_file.endswith('.FITS'):
