@@ -16,18 +16,19 @@
 # limitations under the License.
 
 import os
-import io
-import tarfile
+from typing import IO
 from typing import Tuple
+
 
 import matplotlib.pylab as plt
 import numpy as np
 import pandas as pd
+import progressbar
 
 from resspect.bazin import bazin, fit_scipy
 from resspect.exposure_time_calculator import ExpTimeCalc
-from resspect.snana_fits_to_pd import read_fits
 from resspect.lightcurves_utils import read_file
+from resspect.lightcurves_utils import get_resspect_header_data
 from resspect.lightcurves_utils import load_snpcc_photometry_df
 from resspect.lightcurves_utils import get_photometry_with_id_name_and_snid
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
@@ -36,7 +37,10 @@ from resspect.lightcurves_utils import read_resspect_full_photometry_data
 from resspect.lightcurves_utils import insert_band_column_to_resspect_df
 from resspect.lightcurves_utils import load_resspect_photometry_df
 from resspect.lightcurves_utils import get_snpcc_sntype
-
+from resspect.lightcurves_utils import SNPCC_FEATURES_HEADER
+from resspect.lightcurves_utils import find_available_key_name_in_header
+from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
+from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
 
 __all__ = ['LightCurve', 'fit_snpcc_bazin', 'fit_resspect_bazin',
            'fit_plasticc_bazin']
@@ -178,6 +182,16 @@ class LightCurve:
     def _get_snpcc_photometry_raw_and_header(
             self, lc_data: np.ndarray,
             sntype_test_value: str = "-9") -> Tuple[np.ndarray, list]:
+        """
+        Reads SNPCC photometry raw and header data
+
+        Parameters
+        ----------
+        lc_data
+            SNPCC light curve data
+        sntype_test_value
+            test sample SNTYPE value
+        """
         photometry_raw = []
         header = []
         for each_row in lc_data:
@@ -225,12 +239,23 @@ class LightCurve:
             self.photometry = load_snpcc_photometry_df(photometry_raw, header)
 
     def load_resspect_lc(self, photo_file: str, snid: int):
+        """
+        Return 1 light curve from RESSPECT simulations.
+
+        Parameters
+        ----------
+        photo_file: str
+            Complete path to light curves file.
+        snid: int
+            Identification number for the desired light curve.
+        """
+
         self.dataset_name = 'RESSPECT'
         self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
         self.id = snid
 
         if self.full_photometry.empty:
-            self.full_photometry = read_resspect_full_photometry_data(
+            _, self.full_photometry = read_resspect_full_photometry_data(
                 photo_file)
         id_names_list = ['SNID', 'snid', 'objid', 'id']
         filtered_photometry, self.id_name = (
@@ -243,6 +268,16 @@ class LightCurve:
             self.photometry = load_resspect_photometry_df(filtered_photometry)
 
     def load_plasticc_lc(self, photo_file: str, snid: int):
+        """
+        Return 1 light curve from PLAsTiCC simulations.
+
+        Parameters
+        ----------
+        photo_file: str
+            Complete path to light curve file.
+        snid: int
+            Identification number for the desired light curve.
+        """
         self.dataset_name = 'PLAsTiCC'
         self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
         self.id = snid
@@ -277,9 +312,9 @@ class LightCurve:
         mag: list or np.array
             Magnitude values. If flux < 1e-5 returns 9999.
         """
-      
+
         mag = [zpt - 2.5 * np.log10(f) if f > 1e-5 else 9999 for f in flux]
-       
+
         return np.array(mag)
 
     def check_queryable(self, mjd: float, filter_lim: float, criteria=1,
@@ -344,11 +379,11 @@ class LightCurve:
                 else:
                     surv_flux = self.photometry['flux'].values[surv_flag]
                     self.last_mag = self.conv_flux_mag([surv_flux[-1]])[0]
-            
+
             elif feature_method == 'Bazin':
                 # get first day of observation in this filter
                 mjd_min = min(self.photometry['mjd'].values[surv_flag])
-            
+
                 # estimate flux based on Bazin function
                 fitted_flux = self.evaluate_bazin([mjd - mjd_min])[filter_cut][0]
                 self.last_mag = self.conv_flux_mag([fitted_flux])[0]
@@ -404,7 +439,7 @@ class LightCurve:
             self.exp_time[telescope_name] = 9999
             return 9999
 
-    def fit_bazin(self, band: str):
+    def fit_bazin(self, band: str) -> np.ndarray:
         """Extract Bazin features for one filter.
 
         Parameters
@@ -414,21 +449,22 @@ class LightCurve:
 
         Returns
         -------
-        bazin_param: list
-            Best fit parameters for the Bazin function: 
+        bazin_param: np.ndarray
+            Best fit parameters for the Bazin function:
             [a, b, t0, tfall, trise].
         """
 
         # build filter flag
-        filter_flag = self.photometry['band'] == band
+        band_indices = self.photometry['band'] == band
+        if not sum(band_indices) > (len(self.bazin_features_names) - 1):
+            return np.array([])
 
         # get info for this filter
-        time = self.photometry['mjd'].values[filter_flag]
-        flux = self.photometry['flux'].values[filter_flag]
+        time = self.photometry['mjd'].values[band_indices]
+        flux = self.photometry['flux'].values[band_indices]
 
         # fit Bazin function
         bazin_param = fit_scipy(time - time[0], flux)
-
         return bazin_param
 
     def evaluate_bazin(self, time: np.array):
@@ -446,8 +482,8 @@ class LightCurve:
         """
         # store flux values and starting points
         flux = {}
- 
-        for k in range(len(self.filters)):            
+
+        for k in range(len(self.filters)):
             # store flux values per filter
             flux[self.filters[k]] = []
 
@@ -455,8 +491,8 @@ class LightCurve:
             if 'None' not in self.bazin_features[k * 5 : (k + 1) * 5]:
                 for item in time:
                     flux[self.filters[k]].append(\
-                           bazin(item, self.bazin_features[0 + k * 5], 
-                                 self.bazin_features[1 + k * 5], 
+                           bazin(item, self.bazin_features[0 + k * 5],
+                                 self.bazin_features[1 + k * 5],
                                  self.bazin_features[2 + k * 5],
                                  self.bazin_features[3 + k * 5],
                                  self.bazin_features[4 + k * 5]))
@@ -464,36 +500,31 @@ class LightCurve:
                 flux[self.filters[k]].append(None)
 
         return flux
-        
 
     def fit_bazin_all(self):
-        """Perform Bazin fit for all filters independently and 
-           concatenate results.
-
+        """
+        Perform Bazin fit for all filters independently and concatenate results.
         Populates the attributes: bazin_features.
         """
-        # remove previous fit attempts
         self.bazin_features = []
-
-        for band in self.filters:
-            # build filter flag
-            filter_flag = self.photometry['band'] == band
-
-            if sum(filter_flag) > 4:
-                best_fit = self.fit_bazin(band)
-
-                if sum([str(item) == 'nan' for item in best_fit]) == 0:
-                    for fit in best_fit:
-                        self.bazin_features.append(fit)
-                else:
-                    for i in range(5):
-                        self.bazin_features.append('None')
+        default_bazin_features = ['None'] * len(self.bazin_features_names)
+        for each_band in self.filters:
+            best_fit = self.fit_bazin(each_band)
+            if (best_fit.size > 0) and (not np.isnan(np.sum(best_fit))):
+                self.bazin_features.extend(best_fit.tolist())
             else:
-                for i in range(5):
-                    self.bazin_features.append('None')
+                self.bazin_features.extend(default_bazin_features)
+
+    def clear_data(self):
+        """ Reset to default values """
+        self.photometry = []
+        self.redshift = None
+        self.sntype = None
+        self.sncode = None
+        self.sample = None
 
     def plot_bazin_fit(self, save=True, show=False, output_file=' ',
-                       figscale=1, extrapolate=False, 
+                       figscale=1, extrapolate=False,
                        time_flux_pred=None, unit='flux'):
         """
         Plot data and Bazin fitted function.
@@ -525,7 +556,7 @@ class LightCurve:
         # number of columns in the plot
         ncols = len(self.filters) / 2 + len(self.filters) % 2
         fsize = (figscale * 5 * ncols , figscale * 10)
-        
+
         plt.figure(figsize=fsize)
 
         for i in range(len(self.filters)):
@@ -543,11 +574,11 @@ class LightCurve:
                 plot_fit = False
             else:
                 plot_fit = True
-                
+
             # shift to avoid large numbers in x-axis
             time = x - min(x)
-            
-            if plot_fit:                    
+
+            if plot_fit:
                 xaxis = np.linspace(0, max(time), 500)[:, np.newaxis]
                 fitted_flux = self.evaluate_bazin(xaxis)
                 if unit == 'flux':
@@ -566,16 +597,16 @@ class LightCurve:
                     xaxis_extrap = np.sort(np.array(xaxis_extrap))
                     ext_flux = self.evaluate_bazin(xaxis_extrap)
                     if unit == 'flux':
-                        plt.plot(xaxis_extrap, ext_flux[self.filters[i]], 
+                        plt.plot(xaxis_extrap, ext_flux[self.filters[i]],
                                  color='red', lw=1.5, ls='--',
                                  label='Bazin extrap')
                     elif unit == 'mag':
                         ext_mag = self.conv_flux_mag(ext_flux[self.filters[i]])
                         ext_mag_flag = ext_mag < 50
-                        plt.plot(xaxis_extrap[ext_mag_flag], 
+                        plt.plot(xaxis_extrap[ext_mag_flag],
                                  ext_mag[ext_mag_flag],
                                  color='red', lw=1.5, ls='--')
-            
+
             if unit == 'flux':
                 plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o',
                              label='obs')
@@ -584,7 +615,7 @@ class LightCurve:
                 mag_obs  = self.conv_flux_mag(y)
                 mag_obs_flag = mag_obs < 50
                 time_mag = time[mag_obs_flag]
-                
+
                 plt.scatter(time_mag, mag_obs[mag_obs_flag], color='blue',
                             label='calc mag', marker='s')
 
@@ -601,7 +632,7 @@ class LightCurve:
 
                 ax = plt.gca()
                 ax.set_ylim(ax.get_ylim()[::-1])
-                plt.ylabel('mag')            
+                plt.ylabel('mag')
 
             plt.xlabel('days since first observation')
             plt.tight_layout()
@@ -612,58 +643,72 @@ class LightCurve:
             plt.show()
 
 
-def fit_snpcc_bazin(path_to_data_dir: str, features_file: str):
-    """Perform Bazin fit to all objects in the SNPCC data.
+def _get_features_to_write(light_curve_data: LightCurve) -> list:
+    """
+    Returns features list to write
 
     Parameters
     ----------
-    path_to_data_dir: str
-        Path to directory containing the set of individual files,
-        one for each light curve.
-    features_file: str
-        Path to output file where results should be stored.
+    light_curve_data
+        fitted light curve data
     """
+    features_list = [light_curve_data.id, light_curve_data.redshift,
+                     light_curve_data.sntype, light_curve_data.sncode,
+                     light_curve_data.sample]
+    features_list.extend(light_curve_data.bazin_features)
+    return features_list
 
-    # read file names
-    file_list_all = os.listdir(path_to_data_dir)
-    lc_list = [elem for elem in file_list_all if 'DES_SN' in elem]
 
-    # count survivers
-    count_surv = 0
+def write_features_to_output_file(
+        light_curve_data: LightCurve, features_file: IO):
+    """
+    Writes fitted light curve data to output features file
 
-    # add headers to files
-    with open(features_file, 'w') as param_file:
-        param_file.write('id redshift type code orig_sample gA gB ' + \
-                         'gt0 gtfall gtrise rA rB rt0 rtfall rtrise' + \
-                         ' iA iB it0 itfall itrise zA zB zt0 ztfall' + \
-                         ' ztrise\n')
+    Parameters
+    ----------
+    light_curve_data
+        fitted ligtht curve data
+    features_file
+        features output file
+    """
+    current_features = _get_features_to_write(
+        light_curve_data)
+    features_file.write(
+        ' '.join(str(each_feature) for each_feature
+                 in current_features) + '\n')
 
-    for file in lc_list:
 
-        # fit individual light curves
-        lc = LightCurve()
-        lc.load_snpcc_lc(path_to_data_dir + file)
-        lc.fit_bazin_all()
+def fit_snpcc_bazin(
+        path_to_data_dir: str, features_file: str,
+        file_prefix: str = "DES_SN"):
+    """Perform Bazin fit to all objects in the SNPCC data.
 
-        print(lc_list.index(file), ' - id:', lc.id)
+     Parameters
+     ----------
+     path_to_data_dir: str
+         Path to directory containing the set of individual files,
+         one for each light curve.
+     features_file: str
+         Path to output file where results should be stored.
+     file_prefix: str
+        File names prefix
+     """
+    files_list = os.listdir(path_to_data_dir)
+    files_list = [each_file for each_file in files_list
+                  if each_file.startswith(file_prefix)]
+    with open(features_file, 'w') as snpcc_features_file:
+        snpcc_features_file.write(' '.join(SNPCC_FEATURES_HEADER) + '\n')
+        for each_file in progressbar.progressbar(files_list):
+            light_curve_data = LightCurve()
+            light_curve_data.load_snpcc_lc(
+                os.path.join(path_to_data_dir, each_file))
+            light_curve_data.fit_bazin_all()
+            if 'None' not in light_curve_data.bazin_features:
+                write_features_to_output_file(
+                    light_curve_data, snpcc_features_file)
 
-        # append results to the correct matrix
-        if 'None' not in lc.bazin_features:
-            count_surv = count_surv + 1
-            print('Survived: ', count_surv)
 
-            # save features to file
-            with open(features_file, 'a') as param_file:
-                param_file.write(str(lc.id) + ' ' + str(lc.redshift) + ' ' + \
-                                 str(lc.sntype) + ' ')
-                param_file.write(str(lc.sncode) + ' ' + str(lc.sample) + ' ')
-                for item in lc.bazin_features:
-                    param_file.write(str(item) + ' ')
-                param_file.write('\n')
-
-    param_file.close()
-
-def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
+def fit_resspect_bazin(path_photo_file: str, path_header_file: str,
                        output_file: str, sample=None):
     """Perform Bazin fit to all objects in a given RESSPECT data file.
 
@@ -676,103 +721,42 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file:str,
     output_file: str
         Output file where the features will be stored.
     sample: str
-	'train' or 'test'. Default is None.
+        'train' or 'test'. Default is None.
     """
-    # count survivers
-    count_surv = 0
+    meta_header = get_resspect_header_data(path_header_file, path_photo_file)
 
-    # read header information
-    if '.tar.gz' in path_header_file:
-        tar = tarfile.open(path_header_file, 'r:gz')
-        fname = tar.getmembers()[0]
-        content = tar.extractfile(fname).read()
-        header = pd.read_csv(io.BytesIO(content))
-        tar.close()
-    elif 'FITS' in path_header_file:
-        header, photo = read_fits(path_photo_file, drop_separators=True)    
-    else:   
-        header = pd.read_csv(path_header_file, index_col=False)
-    
-    # add headers to files
-    with open(output_file, 'w') as param_file:
-        param_file.write('id redshift type code orig_sample uA uB ut0 utfall ' +
-                         'utrise gA gB gt0 gtfall gtrise rA rB rt0 rtfall ' +
-                         'rtrise iA iB it0 itfall itrise zA zB zt0 ztfall ' + 
-                         'ztrise YA YB Yt0 Ytfall Ytrise\n')
+    meta_header_keys = meta_header.keys().tolist()
+    id_name = find_available_key_name_in_header(
+        meta_header_keys, ['SNID', 'snid', 'objid'])
+    z_name = find_available_key_name_in_header(
+        meta_header_keys, ['redshift', 'REDSHIFT_FINAL'])
+    type_name = find_available_key_name_in_header(
+        meta_header_keys, ['type', 'SIM_TYPE_NAME', 'TYPE'])
+    subtype_name = find_available_key_name_in_header(
+        meta_header_keys, ['code', 'SIM_TYPE_INDEX', 'SNTYPE_SUBCLASS'])
 
-    # check id flag
-    if 'SNID' in header.keys():
-        id_name = 'SNID'
-    elif 'snid' in header.keys():
-        id_name = 'snid'
-    elif 'objid' in header.keys():
-        id_name = 'objid'
+    light_curve_data = LightCurve()
+    snid_values = meta_header[id_name]
 
-    # check redshift flag
-    if 'redshift' in header.keys():
-        z_name = 'redshift'
-    elif 'REDSHIFT_FINAL' in header.keys():
-        z_name = 'REDSHIFT_FINAL'
-
-    # check type flag
-    if 'type' in header.keys():
-        type_name = 'type'
-    elif 'SIM_TYPE_NAME' in header.keys():
-        type_name = 'SIM_TYPE_NAME'
-    elif 'TYPE' in header.keys():
-        type_name = 'TYPE'
-
-    # check subtype flag
-    if 'code' in header.keys():
-        subtype_name = 'code'
-    elif 'SIM_TYPE_INDEX' in header.keys():
-        subtype_name = 'SIM_TYPE_NAME'
-    elif 'SNTYPE_SUBCLASS' in header.keys():
-        subtype_name = 'SNTYPE_SUBCLASS'
-
-    lc = LightCurve()
-    
-    for snid in header[id_name].values:      
-
-        # load individual light curves                       
-        lc.load_resspect_lc(path_photo_file, snid)
-
-        # fit all bands                
-        lc.fit_bazin_all()
-
-        # get model name 
-        lc.redshift = header[z_name][header[lc.id_name] == snid].values[0]
-        lc.sntype = header[type_name][header[lc.id_name] == snid].values[0]
-        lc.sncode = header[subtype_name][header[lc.id_name] == snid].values[0]
-        lc.sample = sample
-
-        # append results to the correct matrix
-        if 'None' not in lc.bazin_features:
-            count_surv = count_surv + 1
-            print('Survived: ', count_surv)
-
-            # save features to file
-            with open(output_file, 'a') as param_file:
-                param_file.write(str(lc.id) + ' ' + str(lc.redshift) + ' ' + \
-                                 str(lc.sntype) + ' ')
-                param_file.write(str(lc.sncode) + ' ' + str(lc.sample) + ' ')
-                for item in lc.bazin_features:
-                    param_file.write(str(item) + ' ')
-                param_file.write('\n')
-
-        lc.redshift = None
-        lc.sntype = None
-        lc.sncode = None
-        lc.sample = None
-        lc.photometry = []
-
-    param_file.close()
+    with open(output_file, 'w') as ressepect_features_file:
+        ressepect_features_file.write(
+            ' '.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
+        for index, each_snid in progressbar.progressbar(snid_values.items()):
+            light_curve_data.load_resspect_lc(path_photo_file, each_snid)
+            light_curve_data.fit_bazin_all()
+            light_curve_data.redshift = meta_header[z_name][index]
+            light_curve_data.sncode = meta_header[subtype_name][index]
+            light_curve_data.sntype = meta_header[type_name][index]
+            light_curve_data.sample = sample
+            if 'None' not in light_curve_data.bazin_features:
+                write_features_to_output_file(
+                    light_curve_data, ressepect_features_file)
+            light_curve_data.clear_data()
 
 
-def fit_plasticc_bazin(path_photo_file: str, path_header_file:str,
+def fit_plasticc_bazin(path_photo_file: str, path_header_file: str,
                        output_file: str, sample=None):
     """Perform Bazin fit to all objects in a given PLAsTiCC data file.
-
     Parameters
     ----------
     path_photo_file: str
@@ -782,82 +766,30 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file:str,
     output_file: str
         Output file where the features will be stored.
     sample: str
-	'train' or 'test'. Default is None.
+        'train' or 'test'. Default is None.
     """
-    types = {90: 'Ia', 67: '91bg', 52:'Iax', 42:'II', 62:'Ibc', 
-             95: 'SLSN', 15:'TDE', 64:'KN', 88:'AGN', 92:'RRL', 65:'M-dwarf',
-             16:'EB',53:'Mira', 6:'MicroL', 991:'MicroLB', 992:'ILOT', 
-             993:'CART', 994:'PISN',995:'MLString'}
+    meta_header = read_plasticc_full_photometry_data(path_header_file)
+    meta_header_keys = meta_header.keys().tolist()
+    id_name = find_available_key_name_in_header(
+        meta_header_keys, ['SNID', 'snid', 'objid', 'object_id'])
+    light_curve_data = LightCurve()
+    snid_values = meta_header[id_name]
 
-    # count survivers
-    count_surv = 0
-
-    # read header information
-    if '.tar.gz' in path_header_file:
-        tar = tarfile.open(path_header_file, 'r:gz')
-        fname = tar.getmembers()[0]
-        content = tar.extractfile(fname).read()
-        header = pd.read_csv(io.BytesIO(content))
-        tar.close()
-    else:
-        header = pd.read_csv(path_header_file, index_col=False)
-
-        if ' ' in header.keys()[0]:
-            header = pd.read_csv(path_header_file, sep=' ', index_col=False)
-
-    # add headers to files
-    with open(output_file, 'w') as param_file:
-        param_file.write('id redshift type code orig_sample uA uB ut0 utfall ' +
-                         'utrise gA gB gt0 gtfall gtrise rA rB rt0 rtfall ' +
-                         'rtrise iA iB it0 itfall itrise zA zB zt0 ztfall ' + 
-                         'ztrise YA YB Yt0 Ytfall Ytrise\n')
-
-    # check id flag
-    if 'SNID' in header.keys():
-        id_name = 'SNID'
-    elif 'snid' in header.keys():
-        id_name = 'snid'
-    elif 'objid' in header.keys():
-        id_name = 'objid'
-    elif 'object_id' in header.keys():
-        id_name = 'object_id'
-
-    lc = LightCurve()
-    
-    for snid in header[id_name].values:      
-
-        # load individual light curves                      
-        lc.load_plasticc_lc(path_photo_file, snid) 
-        lc.fit_bazin_all()
-
-        # get model name 
-        lc.redshift = header['true_z'][header[lc.id_name] == snid].values[0]
-        lc.sntype = \
-            types[header['true_target'][header[lc.id_name] == snid].values[0]] 
-        lc.sncode = header['true_target'][header[lc.id_name] == snid].values[0]
-        lc.sample = sample
-
-        # append results to the correct matrix
-        if 'None' not in lc.bazin_features:
-            count_surv = count_surv + 1
-            print('Survived: ', count_surv)
-
-            # save features to file
-            with open(output_file, 'a') as param_file:
-                param_file.write(str(lc.id) + ' ' + str(lc.redshift) + ' ' + \
-                                 str(lc.sntype) + ' ')
-                param_file.write(str(lc.sncode) + ' ' + str(lc.sample) + ' ')
-                for item in lc.bazin_features:
-                    param_file.write(str(item) + ' ')
-                param_file.write('\n')
-
-        lc.photometry = []
-        lc.redshift = None
-        lc.sntype = None
-        lc.sncode = None
-        lc.sample = None
-
-    param_file.close()
+    with open(output_file, 'w') as plasticc_features_file:
+        plasticc_features_file.write(
+            ' '.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
+        for index, each_snid in progressbar.progressbar(snid_values.items()):
+            light_curve_data.load_plasticc_lc(path_photo_file, each_snid)
+            light_curve_data.fit_bazin_all()
+            light_curve_data.redshift = meta_header['true_z'][index]
+            light_curve_data.sncode = meta_header['true_target'][index]
+            light_curve_data.sntype = PLASTICC_TARGET_TYPES[
+                light_curve_data.sncode]
+            light_curve_data.sample = sample
+            if 'None' not in light_curve_data.bazin_features:
+                write_features_to_output_file(
+                    light_curve_data, plasticc_features_file)
+            light_curve_data.clear_data()
 
 
 def main():

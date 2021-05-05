@@ -12,3 +12,4 @@ seaborn>=0.9.0
 tox>=3.17
 xgboost>=1.0.1
 wheel>=0.36.2
+progressbar2>=3.53.1
