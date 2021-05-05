@@ -48,9 +48,9 @@ def bazin(time, a, b, t0, tfall, trise):
         response variable (flux)
 
     """
-    X = np.exp(-(time - t0) / tfall) / (1 + np.exp((time - t0) / trise))
-
-    return a * X + b
+    with np.errstate(over='ignore', invalid='ignore'):
+        X = np.exp(-(time - t0) / tfall) / (1 + np.exp((time - t0) / trise))
+        return a * X + b
 
 
 def errfunc(params, time, flux):
