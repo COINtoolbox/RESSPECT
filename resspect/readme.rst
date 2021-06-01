@@ -8,7 +8,7 @@ List of modules:
 
 :batch_functions.py: functions for batch strategies
 :bazin.py: functions to find best-fit parameters to the Bazin function
-:buiold_plasticc_canonical.py: constructs the canonical sample for PLAsTiCC data
+:build_plasticc_canonical.py: constructs the canonical sample for PLAsTiCC data
 :build_snpcc_canonical.py: constructs the canonical sample for SNPCC data
 :classifiers.py: machine learning classifiers
 :cosmo_metrics_utils.py: cosmology metric and auxiliary functions
