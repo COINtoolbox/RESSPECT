@@ -39,10 +39,9 @@ def bazin(time, a, b, t0, tfall, r):
         Time of maximum
     tfall: float
         Characteristic decline time
-    # trise: float
-    #     Characteristic raise time
     r: float
-        WRITE ABOUT r
+        Ratio of the characteristic decline time (tfall) and the characteristic raise time (trise). This ratio is enforced to be >1.
+
 
     Returns
     -------
@@ -52,7 +51,6 @@ def bazin(time, a, b, t0, tfall, r):
     """
     with np.errstate(over='ignore', invalid='ignore'):
         e = np.exp(-(time - t0) / tfall)
-        # r = tfall / trise
         X = e / (1  + e**r)
         return a * X + b
 
@@ -63,7 +61,7 @@ def errfunc(params, time, flux, fluxerr):
     Parameters
     ----------
     params : list of float
-        light curve parameters: (a, b, t0, tfall, trise)
+        light curve parameters: (a, b, t0, tfall, r)
     time : array_like
         exploratory variable (time of observation)
     flux : array_like
