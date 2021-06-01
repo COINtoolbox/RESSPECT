@@ -167,7 +167,7 @@ The designation for each parameter are stored in:
    :linenos:
 
    >>> lc.bazin_features_names
-   ['a', 'b', 't0', 'tfall', 'trsise']
+   ['a', 'b', 't0', 'tfall', 'r']
 
 It is possible to perform the fit in all filters at once and visualize the result using:
 
