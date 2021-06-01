@@ -53,11 +53,13 @@ def test_errfunc():
     # add noise
     flux = [np.random.normal(loc=item, scale=0.01) for item in flux_fid]
     
+    # find error
+    fluxerr = (flux - flux_fid)**2
+
     # construct parameters vector
     params = [a, b, t0, tfall, r]
 
-    # HAVE TO ADD FLUXERR BELOW AS ERFFUNC WAS CHANGED
-    res = errfunc(params, time, flux)
+    res = errfunc(params, time, flux, fluxerr)
     
     assert not np.isnan(res).any()
     assert np.all(res > 0)
