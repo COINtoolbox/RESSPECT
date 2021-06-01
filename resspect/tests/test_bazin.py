@@ -23,9 +23,10 @@ def test_bazin():
     b = 1
     t0 = 10
     tfall = 3
-    trise = 4
-    
-    res = bazin(time, a, b, t0, tfall, trise)
+    # trise = 4
+    r = 4
+
+    res = bazin(time, a, b, t0, tfall, r)
     
     assert not np.isnan(res).any()
 
@@ -43,17 +44,19 @@ def test_errfunc():
     b = 1
     t0 = 10
     tfall = 3
-    trise = 4
-    
+    # trise = 4
+    r = 4
+
     # calculate fiducial flux values
-    flux_fid = bazin(time, a, b, t0, tfall, trise)
+    flux_fid = bazin(time, a, b, t0, tfall, r)
     
     # add noise
     flux = [np.random.normal(loc=item, scale=0.01) for item in flux_fid]
     
     # construct parameters vector
-    params = [a, b, t0, tfall, trise]
+    params = [a, b, t0, tfall, r]
 
+    # HAVE TO ADD FLUXERR BELOW AS ERFFUNC WAS CHANGED
     res = errfunc(params, time, flux)
     
     assert not np.isnan(res).any()
@@ -71,8 +74,9 @@ def test_fit_scipy():
     
     time = data['mjd'].values
     flux = data['flux'].values
+    fluxerr = data['fluxerr'].values
     
-    res = fit_scipy(time, flux)
+    res = fit_scipy(time, flux,fluxerr)
     
     assert not np.isnan(res).any()
 
