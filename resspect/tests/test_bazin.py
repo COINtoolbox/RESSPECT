@@ -23,8 +23,8 @@ def test_bazin():
     b = 1
     t0 = 10
     tfall = 3
-    # trise = 4
-    r = 4
+    trise = 4
+    r = tfall/trise
 
     res = bazin(time, a, b, t0, tfall, r)
     
@@ -44,8 +44,8 @@ def test_errfunc():
     b = 1
     t0 = 10
     tfall = 3
-    # trise = 4
-    r = 4
+    trise = 4
+    r = tfall/trise
 
     # calculate fiducial flux values
     flux_fid = bazin(time, a, b, t0, tfall, r)
