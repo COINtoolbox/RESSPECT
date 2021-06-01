@@ -117,7 +117,7 @@ def fit_scipy(time, flux, fluxerr):
     A = 2*flux.max()
     #guess = [A, 0, t0, scale, scale/2]
     guess = [A, 0, t0, scale, 2.]
-    result = sciopt.least_squares(errfunc, guess, args=(time, flux, fluxerr), method='trf', loss='linear',\
+    result = least_squares(errfunc, guess, args=(time, flux, fluxerr), method='trf', loss='linear',\
                                   bounds=([1.e-3, -np.inf, 0, 1.e-3, 1], np.inf))
 
     return result.x
