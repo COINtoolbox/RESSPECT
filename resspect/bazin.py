@@ -23,7 +23,7 @@ from scipy.optimize import least_squares
 __all__ = ['bazin', 'errfunc', 'fit_scipy']
 
 
-def bazin(time, a, b, t0, tfall, trise):
+def bazin(time, a, b, t0, tfall, r):
     """
     Parametric light curve function proposed by Bazin et al., 2009.
 
@@ -39,8 +39,10 @@ def bazin(time, a, b, t0, tfall, trise):
         Time of maximum
     tfall: float
         Characteristic decline time
-    trise: float
-        Characteristic raise time
+    # trise: float
+    #     Characteristic raise time
+    r: float
+        WRITE ABOUT r
 
     Returns
     -------
@@ -49,11 +51,12 @@ def bazin(time, a, b, t0, tfall, trise):
 
     """
     with np.errstate(over='ignore', invalid='ignore'):
-        X = np.exp(-(time - t0) / tfall) / (1 + np.exp((time - t0) / trise))
+        e = np.exp(-(time - t0) / tfall)
+        # r = tfall / trise
+        X = e / (1  + e**r)
         return a * X + b
 
-
-def errfunc(params, time, flux):
+def errfunc(params, time, flux, fluxerr):
     """
     Absolute difference between theoretical and measured flux.
 
@@ -65,6 +68,8 @@ def errfunc(params, time, flux):
         exploratory variable (time of observation)
     flux : array_like
         response variable (measured flux)
+    fluxerr : array_like
+        error in response variable (flux)
 
     Returns
     -------
@@ -73,10 +78,10 @@ def errfunc(params, time, flux):
 
     """
 
-    return abs(flux - bazin(time, *params))
+    return abs(flux - bazin(time, *params)) / fluxerr
 
 
-def fit_scipy(time, flux):
+def fit_scipy(time, flux, fluxerr):
     """
     Find best-fit parameters using scipy.least_squares.
 
@@ -86,6 +91,8 @@ def fit_scipy(time, flux):
         exploratory variable (time of observation)
     flux : array_like
         response variable (measured flux)
+    fluxerr : array_like
+        error in response variable (flux)
 
     Returns
     -------
@@ -94,10 +101,24 @@ def fit_scipy(time, flux):
 
     """
     flux = np.asarray(flux)
-    t0 = time[flux.argmax()] - time[0]
-    guess = [0, 0, t0, 40, -5]
-
-    result = least_squares(errfunc, guess, args=(time, flux), method='lm')
+    imax = flux.argmax()
+    t0 = time[imax]
+    try:
+        scale = t[imax-2:imax+2].std()/2
+        assert(not np.isnan(scale))
+    except:
+        try:
+            scale = t[imax-1:imax+1].std()/2
+            assert(not np.isnan(scale))
+        except:
+            scale=50
+    if scale<1:
+        scale=50
+    A = 2*flux.max()
+    #guess = [A, 0, t0, scale, scale/2]
+    guess = [A, 0, t0, scale, 2.]
+    result = sciopt.least_squares(errfunc, guess, args=(time, flux, fluxerr), method='trf', loss='linear',\
+                                  bounds=([1.e-3, -np.inf, 0, 1.e-3, 1], np.inf))
 
     return result.x
 
