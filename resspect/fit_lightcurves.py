@@ -462,9 +462,10 @@ class LightCurve:
         # get info for this filter
         time = self.photometry['mjd'].values[band_indices]
         flux = self.photometry['flux'].values[band_indices]
+        fluxerr = self.photometry['fluxerr'].values[band_indices]
 
         # fit Bazin function
-        bazin_param = fit_scipy(time - time[0], flux)
+        bazin_param = fit_scipy(time - time[0], flux, fluxerr)
         return bazin_param
 
     def evaluate_bazin(self, time: np.array):
