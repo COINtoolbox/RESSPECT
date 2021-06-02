@@ -76,7 +76,7 @@ def test_fit_scipy():
     
     time = data['mjd'].values
     flux = data['flux'].values
-    fluxerr = data['fluxerr'].values
+    fluxerr = 1
     
     res = fit_scipy(time, flux,fluxerr)
     
