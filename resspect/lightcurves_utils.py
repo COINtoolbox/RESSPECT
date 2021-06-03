@@ -42,6 +42,13 @@ PLASTICC_TARGET_TYPES = {
     993: 'CART', 994: 'PISN', 995: 'MLString'
 }
 
+SNPCC_META_HEADER = ['snid', 'orig_sample', 'sntype', 'z', 'g_pkmag',
+                     'r_pkmag', 'i_pkmag', 'z_pkmag', 'g_SNR', 'r_SNR',
+                     'i_SNR', 'z_SNR']
+
+SNPCC_CANONICAL_FEATURES = ['z', 'g_pkmag', 'r_pkmag', 'i_pkmag',
+                            'z_pkmag', 'g_SNR', 'r_SNR', 'i_SNR', 'z_SNR']
+
 
 def read_file(file_path: str) -> list:
     """

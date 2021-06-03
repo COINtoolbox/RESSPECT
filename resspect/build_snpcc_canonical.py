@@ -15,20 +15,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
+import glob
 import os
-import pandas as pd
-import matplotlib.pylab as plt
 
+import matplotlib.pylab as plt
+import numpy as np
+import pandas as pd
+import progressbar
 from sklearn.neighbors import NearestNeighbors, KernelDensity
 
-from resspect.fit_lightcurves import LightCurve
 from resspect.database import DataBase
+from resspect.fit_lightcurves import LightCurve
+from resspect.lightcurves_utils import SNPCC_CANONICAL_FEATURES
+from resspect.lightcurves_utils import SNPCC_META_HEADER
 
 __all__ = ['Canonical', 'build_snpcc_canonical', 'plot_snpcc_train_canonical']
 
 
-class Canonical(object):
+class Canonical:
     """Canonical sample object.
 
     Attributes
@@ -91,11 +95,13 @@ class Canonical(object):
         self.train_ibc_id = np.array([])
         self.train_ii_data = pd.DataFrame()
         self.train_ii_id = np.array([])
+        self.header = None
 
-    def snpcc_get_canonical_info(self, path_to_rawdata_dir: str,
+    def snpcc_get_canonical_info(self, path_to_rawdata: str,
                                  canonical_output_file: str,
-                                 compute=True, save=True,
-                                 canonical_input_file='', screen=False):
+                                 compute_meta_data: bool = True,
+                                 save: bool = True,
+                                 canonical_input_file: str = None):
         """
         Load SNPCC metada data required to characterize objects.
 
@@ -103,72 +109,60 @@ class Canonical(object):
 
         Parameters
         ----------
-        path_to_rawdata_dir: str
+        path_to_rawdata: str
             Complete path to directory holding raw data files.
         canonical_output_file: str
             Complete path to output canonical sample file.
         canonical_input_file: str (optional)
             Path to input file if required metadata was previously calculated.
             If name is give, 'compute' must be False.
-        compute: bool (optional)
+        compute_meta_data: bool (optional)
             Compute required metada from raw data files.
             Default is True.
         save: bool (optional)
             Save metadata to file. Default is True.
-        screen: bool (optional)
-            If true, display steps info on screen. Default is False.  
         """
-
-        if compute:
-            # read file names
-            file_list_all = os.listdir(path_to_rawdata_dir)
-            lc_list = [elem for elem in file_list_all if 'DES_SN' in elem]
-
-            sim_info_matrix = []
-
-            for fname in lc_list:
-
-                if screen:
-                    print('Processed for canonical: ', str(lc_list.index(fname)))
-
-                # fit individual light curves
-                lc = LightCurve()
-                lc.load_snpcc_lc(path_to_rawdata_dir + fname)
-
-                # store information for id, redshift and sim peak magnitude
-                line = [lc.id, lc.sample, lc.sntype, lc.redshift]
-                for val in lc.sim_peakmag:
-                    line.append(val)
-
-                # calculate mean SNR for each filter
-                for f in lc.filters:
-                    filter_flag = lc.photometry['band'].values == f
-                    if sum(filter_flag) > 0:
-                        snr = lc.photometry['SNR'].values[filter_flag]
-                        mean_snr = np.mean(snr)
-                        line.append(mean_snr)
-                    else:
-                        line.append(0)
-
-                sim_info_matrix.append(line)
-
-            metadata_header = ['snid', 'orig_sample', 'sntype', 'z', 'g_pkmag',
-                               'r_pkmag', 'i_pkmag', 'z_pkmag', 'g_SNR',
-                               'r_SNR', 'i_SNR', 'z_SNR']
-            self.meta_data = pd.DataFrame(sim_info_matrix,
-                                          columns=metadata_header)
-
+        if compute_meta_data:
+            snpcc_sim_meta_info = self.get_light_curves_meta_data(
+                path_to_rawdata)
+            self.meta_data = pd.DataFrame(snpcc_sim_meta_info,
+                                          columns=SNPCC_META_HEADER)
         else:
             if not canonical_input_file:
                 raise ValueError('File not found! Set "calculate = True" '
                                  'to build canonical info file.')
-
-            else:
-                self.meta_data = pd.read_csv(canonical_input_file, sep=' ',
-                                             index_col=False)
-
+            self.meta_data = pd.read_csv(canonical_input_file, sep=' ',
+                                         index_col=False)
         if save:
             self.meta_data.to_csv(canonical_output_file, sep=' ', index=False)
+
+    def get_light_curves_meta_data(self, path_to_rawdata: str) -> list:
+        light_cure_files = _get_files_list(path_to_rawdata)
+        snpcc_sim_meta_info = []
+        for each_file in light_cure_files:
+            snpcc_sim_meta_info.append(
+                self.process_light_curve_file(each_file))
+        return snpcc_sim_meta_info
+
+    def process_light_curve_file(self, file_path: str) -> list:
+        light_curve_data = LightCurve()
+        light_curve_data.load_snpcc_lc(file_path)
+        meta_info = get_light_curve_meta_info(light_curve_data)
+        meta_info.extend(self._process_light_curve_filters(light_curve_data))
+        return meta_info
+
+    @staticmethod
+    def _process_light_curve_filters(light_curve_data: LightCurve) -> list:
+        snr_info = []
+        for each_filter in light_curve_data.filters:
+            filter_indices = (
+                    light_curve_data.photometry['band'].values == each_filter)
+            if np.sum(filter_indices) > 0:
+                snr_info.append(np.mean(
+                    light_curve_data.photometry['SNR'].values[filter_indices]))
+            else:
+                snr_info.append(0)
+        return snr_info
 
     def snpcc_identify_samples(self):
         """Identify training and test sample.
@@ -177,52 +171,90 @@ class Canonical(object):
         train_ibc_id, train_ii_data, train_ibc_id, test_ia_data, test_ia_id,
         test_ibc_data, test_ibc_id, test_ii_data and test_ii_id.
         """
+        train_indices, ia_indices, ibc_indices, ii_indices = (
+            self._get_train_and_class_indices())
+        self._load_train_samples(train_indices, ia_indices, ibc_indices,
+                                 ii_indices)
+        self._load_test_samples(train_indices, ia_indices, ibc_indices,
+                                ii_indices)
 
-        # define parameters
-        features_list = ['z', 'g_pkmag', 'r_pkmag', 'i_pkmag',
-                         'z_pkmag', 'g_SNR', 'r_SNR', 'i_SNR', 'z_SNR']
+    def _load_train_samples(self, train_indices, ia_indices,
+                            ibc_indices, ii_indices):
+        # get training sample
+
+        self.train_ia_data = self.meta_data[
+            SNPCC_CANONICAL_FEATURES][np.logical_and(train_indices, ia_indices)]
+        self.train_ia_id = self.meta_data[
+            'snid'].values[np.logical_and(train_indices, ia_indices)]
+        self.train_ibc_data = self.meta_data[
+            SNPCC_CANONICAL_FEATURES][np.logical_and(train_indices, ibc_indices)]
+        self.train_ibc_id = self.meta_data[
+            'snid'].values[np.logical_and(train_indices, ibc_indices)]
+        self.train_ii_data = self.meta_data[
+            SNPCC_CANONICAL_FEATURES][np.logical_and(train_indices, ii_indices)]
+        self.train_ii_id = self.meta_data[
+            'snid'].values[np.logical_and(train_indices, ii_indices)]
+
+    def _load_test_samples(self, train_indices, ia_indices,
+                           ibc_indices, ii_indices):
+        # get test sample
+        self.test_ia_data = self.meta_data[
+            SNPCC_CANONICAL_FEATURES][np.logical_and(~train_indices, ia_indices)]
+        self.test_ia_id = self.meta_data[
+            'snid'].values[np.logical_and(~train_indices, ia_indices)]
+        self.test_ibc_data = self.meta_data[
+            SNPCC_CANONICAL_FEATURES][np.logical_and(~train_indices, ibc_indices)]
+        self.test_ibc_id = self.meta_data[
+            'snid'].values[np.logical_and(~train_indices, ibc_indices)]
+        self.test_ii_data = self.meta_data[
+            SNPCC_CANONICAL_FEATURES][np.logical_and(~train_indices, ii_indices)]
+        self.test_ii_id = self.meta_data[
+            'snid'].values[np.logical_and(~train_indices, ii_indices)]
+
+    def _get_train_and_class_indices(self):
         train_flag = self.meta_data['orig_sample'].values == 'train'
         ia_flag = self.meta_data['sntype'].values == 'Ia'
         ibc_flag = self.meta_data['sntype'].values == 'Ibc'
         ii_flag = self.meta_data['sntype'].values == 'II'
+        return train_flag, ia_flag, ibc_flag, ii_flag
 
-        # get training sample
-        self.train_ia_data = \
-            self.meta_data[features_list][np.logical_and(train_flag, ia_flag)]
-        self.train_ia_id = \
-            self.meta_data['snid'].values[np.logical_and(train_flag, ia_flag)]
-        self.train_ibc_data = \
-            self.meta_data[features_list][np.logical_and(train_flag, ibc_flag)]
-        self.train_ibc_id = \
-            self.meta_data['snid'].values[np.logical_and(train_flag, ibc_flag)]
-        self.train_ii_data = \
-            self.meta_data[features_list][np.logical_and(train_flag, ii_flag)]
-        self.train_ii_id = \
-            self.meta_data['snid'].values[np.logical_and(train_flag, ii_flag)]
+    @staticmethod
+    def _get_nearest_neighbor_indices(
+            nearest_neighbor_class: NearestNeighbors,
+            current_test_sample: pd.DataFrame,
+            current_train_sample: np.ndarray):
+        nearest_neighbor_class.fit(current_test_sample)
+        neighbor_indices = nearest_neighbor_class.kneighbors(
+            current_train_sample)
+        return neighbor_indices[1]
 
-        # get test sample
-        self.test_ia_data = \
-            self.meta_data[features_list][np.logical_and(~train_flag, ia_flag)]
-        self.test_ia_id = \
-            self.meta_data['snid'].values[np.logical_and(~train_flag, ia_flag)]
-        self.test_ibc_data = \
-            self.meta_data[features_list][np.logical_and(~train_flag, ibc_flag)]
-        self.test_ibc_id = \
-            self.meta_data['snid'].values[np.logical_and(~train_flag, ibc_flag)]
-        self.test_ii_data = \
-            self.meta_data[features_list][np.logical_and(~train_flag, ii_flag)]
-        self.test_ii_id = \
-            self.meta_data['snid'].values[np.logical_and(~train_flag, ii_flag)]
+    def _update_canonical_ids(self, nearest_neighbor_indices: list):
+        test_ids = [self.test_ia_id, self.test_ibc_id, self.test_ii_id]
+        sampled_indices = []
+        for index, samples in enumerate(nearest_neighbor_indices):
+            for each_sample in samples:
+                for current_index in each_sample:
+                    # only add elements which were not already added
+                    # to sampled_indices
+                    if current_index not in sampled_indices:
+                        current_id = test_ids[index][current_index]
+                        self.canonical_ids.append(current_id)
+                        sampled_indices.append(current_index)
+                        break
 
-    def find_neighbors(self, screen=False):
-        """Identify 1 nearest neighbor for each object in training.
-
+    def find_neighbors(self, number_of_neighbors: int = 10,
+                       nearest_neighbor_algorithm: str = 'auto'):
+        """
+        Identify 1 nearest neighbor for each object in training.
         Populates attribute: canonical_ids.
 
         Parameters
         ----------
-        screen: bool (optional)
-            If true, display steps info on screen. Default is False.
+        number_of_neighbors: int
+            number of neighbors in each sample
+        nearest_neighbor_algorithm
+            algorithm to estimate nearest neighbors, check scikit
+            NearestNeighbors documentation
         """
 
         # gather samples by type
@@ -230,40 +262,69 @@ class Canonical(object):
                          self.train_ii_data]
         test_samples = [self.test_ia_data, self.test_ibc_data,
                         self.test_ii_data]
-        test_ids = [self.test_ia_id, self.test_ibc_id, self.test_ii_id]
-        types = ['Ia', 'Ibc', 'II']
 
-        # store the objects already chosen
-        vault = []
+        nearest_neighbor_indices = []
+        for index, each_test_sample in enumerate(
+                progressbar.progressbar(test_samples)):
+            nearest_neighbor_class = NearestNeighbors(
+                n_neighbors=number_of_neighbors,
+                algorithm=nearest_neighbor_algorithm)
+            current_train_sample = train_samples[index].values
+            nearest_neighbor_indices.append(
+                self._get_nearest_neighbor_indices(nearest_neighbor_class,
+                                                   each_test_sample,
+                                                   current_train_sample))
+        self._update_canonical_ids(nearest_neighbor_indices)
 
-        # find nearest neighbor
-        for i in range(len(test_samples)):
-            if screen:
-                print('Scanning ', types[i], ' . . . ')
 
-            # find 10 neighbors in case there are repetitions
-            nbrs = NearestNeighbors(n_neighbors=10, algorithm='auto')
-            nbrs.fit(test_samples[i])
-            for j in range(train_samples[i].shape[0]):
+def get_light_curve_meta_info(light_curve_data: LightCurve) -> list:
+    """
+        Get ligtht curve meta information
 
-                # search samples by type
-                stype = np.array(train_samples[i].values[j]).reshape(1, -1)
-                indices = nbrs.kneighbors(stype)
+    Parameters
+    ----------
+    light_curve_data
+        LightCurve class instance
+    """
+    meta_info = [light_curve_data.id, light_curve_data.sample,
+                 light_curve_data.sntype, light_curve_data.redshift]
+    meta_info.extend(light_curve_data.sim_peakmag.tolist())
+    return meta_info
 
-                # only add elements which were not added in a previous loop
-                done = False
-                count = 0
-                while not done:
-                    if indices[1][0][count] not in vault:
-                        element = test_ids[i][indices[1][0][count]]
-                        self.canonical_ids.append(element)
-                        vault.append(indices[1][0][count])
-                        done = True
-                    else:
-                        count = count + 1
 
-            if screen:
-                print('Processed: ', len(vault))
+def _get_files_list(folder_path: str, file_name_prefix: str = 'DES') -> list:
+    """
+        Load file names with file name prefix
+
+    Parameters
+    ----------
+    folder_path
+        folder path to load files from
+    file_name_prefix
+        file names prefix
+    """
+    folder_path = os.path.join(folder_path, file_name_prefix + '*')
+    return glob.glob(folder_path)
+
+
+def get_meta_data_from_features(path_to_features: str,
+                                features_method: str,
+                                screen: bool = True) -> DataBase:
+    """
+        Get metadata from features file
+       #TODO: maybe update screen argument after refactoring DataBase()
+
+    Parameters
+    ----------
+    path_to_features: str
+        Complete path to Bazin features files
+    features_method: str (optional)
+        Method for feature extraction. Only 'Bazin' is implemented.
+    """
+    data = DataBase()
+    data.load_features(path_to_file=path_to_features, method=features_method,
+                       screen=screen)
+    return data
 
 
 def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,
@@ -296,7 +357,7 @@ def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,
         Save simulation metadata information to file.
         Default is True.
     screen: bool (optional)
-            If true, display steps info on screen. Default is False.     
+            If true, display steps info on screen. Default is False.
 
     Returns
     -------
@@ -306,40 +367,36 @@ def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,
 
     # initiate canonical object
     sample = Canonical()
-
     # get necessary info
-    sample.snpcc_get_canonical_info(path_to_rawdata_dir=path_to_raw_data,
+    sample.snpcc_get_canonical_info(path_to_rawdata=path_to_raw_data,
                                     canonical_output_file=output_info_file,
                                     canonical_input_file=input_info_file,
-                                    compute=compute, save=save, screen=screen)
+                                    compute_meta_data=compute, save=save)
 
-    sample.snpcc_identify_samples()                 # identify samples
-    sample.find_neighbors(screen=screen)            # find neighbors
+    # identify samples
+    sample.snpcc_identify_samples()
+    # find neighbors
+    sample.find_neighbors()
 
     # get metadata from features file
-    data = DataBase()
-    data.load_features(path_to_file=path_to_features, method=features_method,
-                        screen=screen)
-    sample.header = data.metadata
-
+    features_data = get_meta_data_from_features(
+        path_to_features, features_method, screen)
+    sample.header = features_data.metadata
     # identify new samples
-    for i in range(data.metadata.shape[0]):
-        if data.metadata.iloc[i]['id'] in sample.canonical_ids:
-            data.metadata.at[i, 'queryable'] = True
-        else:
-            data.metadata.at[i, 'queryable'] = False
+
+    features_data.metadata["queryable"][
+        features_data.metadata["id"].isin(sample.canonical_ids)] = True
+    features_data.metadata["queryable"][
+        ~features_data.metadata["id"].isin(sample.canonical_ids)] = False
 
     # save to file
-    features = pd.DataFrame(data.features, columns=data.features_names)
-    data.data = pd.concat([data.metadata, features], axis=1)
-    data.data.to_csv(output_canonical_file, sep=' ', index=False)
+    features = pd.DataFrame(features_data.features,
+                            columns=features_data.features_names)
+    features_data.data = pd.concat([features_data.metadata, features], axis=1)
+    features_data.data.to_csv(output_canonical_file, sep=' ', index=False)
 
     # update Canonical object
-    sample.canonical_sample = data.data
-
-    if screen:
-        print('Built canonical sample!')
-
+    sample.canonical_sample = features_data.data
     return sample
 
 
