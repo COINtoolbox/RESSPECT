@@ -134,9 +134,9 @@ def fit_scipy(time, flux, fluxerr):
     b_guess = 0
     t0_guess = time[imax]
     
-    tfall_guess = t[imax-2:imax+2].std()/2
+    tfall_guess = time[imax-2:imax+2].std()/2
     if np.isnan(tfall_guess):
-        tfall_guess = t[imax-1:imax+1].std()/2
+        tfall_guess = time[imax-1:imax+1].std()/2
         if np.isnan(tfall_guess):
             tfall_guess=50
     if tfall_guess<1:
