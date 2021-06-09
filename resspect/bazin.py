@@ -102,11 +102,11 @@ def fit_scipy(time, flux, fluxerr):
     imax = flux.argmax()
     t0 = time[imax]
     try:
-        scale = time[imax-2:imax+2].std()/2
+        scale = t[imax-2:imax+2].std()/2
         assert(not np.isnan(scale))
     except:
         try:
-            scale = time[imax-1:imax+1].std()/2
+            scale = t[imax-1:imax+1].std()/2
             assert(not np.isnan(scale))
         except:
             scale=50
