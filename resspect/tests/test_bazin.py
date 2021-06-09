@@ -24,7 +24,7 @@ def test_bazin():
     t0 = 10
     tfall = 3
     trise = 4
-
+    
     res = bazin(time, a, b, t0, tfall, trise)
     
     assert not np.isnan(res).any()
@@ -55,7 +55,7 @@ def test_errfunc():
     fluxerr = (flux - flux_fid)**2
 
     # construct parameters vector
-    params = [a, b, t0, tfall, r]
+    params = [a, b, t0, tfall, trise]
 
     res = errfunc(params, time, flux, fluxerr)
     
