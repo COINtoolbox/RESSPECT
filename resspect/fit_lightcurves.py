@@ -163,7 +163,7 @@ class LightCurve:
 
     def __init__(self):
         self.bazin_features = []
-        self.bazin_features_names = ['a', 'b', 't0', 'tfall', 'trsise']
+        self.bazin_features_names = ['a', 'b', 't0', 'tfall', 'trise']
         self.dataset_name = ' '
         self.exp_time = {}
         self.filters = []
