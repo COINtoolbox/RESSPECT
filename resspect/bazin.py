@@ -23,7 +23,7 @@ from scipy.optimize import least_squares
 __all__ = ['bazin', 'errfunc', 'fit_scipy']
 
 
-def bazin(time, a, b, t0, tfall, r):
+def bazin(time, a, b, t0, tfall, trise):
     """
     Parametric light curve function proposed by Bazin et al., 2009.
 
@@ -39,10 +39,8 @@ def bazin(time, a, b, t0, tfall, r):
         Time of maximum
     tfall: float
         Characteristic decline time
-    # trise: float
-    #     Characteristic raise time
-    r: float
-        WRITE ABOUT r
+    trise: float
+        Characteristic raise time
 
     Returns
     -------
@@ -51,10 +49,37 @@ def bazin(time, a, b, t0, tfall, r):
 
     """
     with np.errstate(over='ignore', invalid='ignore'):
-        e = np.exp(-(time - t0) / tfall)
-        # r = tfall / trise
-        X = e / (1  + e**r)
+        X = np.exp(-(time - t0) / tfall) / (1 + np.exp(-(time - t0) / trise))
         return a * X + b
+
+def bazinr(time, a, b, t0, tfall, r):
+    """
+    A wrapper function for bazin() which replaces trise by r = tfall/trise.
+
+    Parameters
+    ----------
+    time : np.array
+        exploratory variable (time of observation)
+    a: float
+        Normalization parameter
+    b: float
+        Shift parameter
+    t0: float
+        Time of maximum
+    tfall: float
+        Characteristic decline time
+    r: float
+        Ratio of tfall to trise. This ratio is enforced to be >1.
+
+    Returns
+    -------
+    array_like
+        response variable (flux)
+
+    """
+
+    trise = tfall/r
+    return bazin(time, a, b, t0, tfall, trise)
 
 def errfunc(params, time, flux, fluxerr):
     """
@@ -63,7 +88,7 @@ def errfunc(params, time, flux, fluxerr):
     Parameters
     ----------
     params : list of float
-        light curve parameters: (a, b, t0, tfall, trise)
+        light curve parameters: (a, b, t0, tfall, r)
     time : array_like
         exploratory variable (time of observation)
     flux : array_like
@@ -102,25 +127,42 @@ def fit_scipy(time, flux, fluxerr):
     """
     flux = np.asarray(flux)
     imax = flux.argmax()
-    t0 = time[imax]
-    try:
-        scale = t[imax-2:imax+2].std()/2
-        assert(not np.isnan(scale))
-    except:
-        try:
-            scale = t[imax-1:imax+1].std()/2
-            assert(not np.isnan(scale))
-        except:
-            scale=50
-    if scale<1:
-        scale=50
-    A = 2*flux.max()
-    #guess = [A, 0, t0, scale, scale/2]
-    guess = [A, 0, t0, scale, 2.]
-    result = sciopt.least_squares(errfunc, guess, args=(time, flux, fluxerr), method='trf', loss='linear',\
-                                  bounds=([1.e-3, -np.inf, 0, 1.e-3, 1], np.inf))
+    flux_max = flux[imax]
+    
+    # Parameter guess
+    a_guess = 2*flux_max
+    b_guess = 0
+    t0_guess = time[imax]
+    
+    tfall_guess = t[imax-2:imax+2].std()/2
+    if np.isnan(tfall_guess):
+        tfall_guess = t[imax-1:imax+1].std()/2
+        if np.isnan(tfall_guess):
+            tfall_guess=50
+    if tfall_guess<1:
+        tfall_guess=50
 
-    return result.x
+    r_guess = 2
+
+    guess = [a_guess,b_guess,t0_guess,tfall_guess,r_guess]
+
+    # Parameter bounds
+    a_bounds = [1.e-3, np.inf]
+    b_bounds = [-np.inf, np.inf]
+    t0_bounds = [-0.5*time.max(), 1.5*time.max()]
+    tfall_bounds = [1.e-3, np.inf]
+    r_bounds = [1, np.inf]
+    
+    bounds = [[a_bounds[0], b_bounds[0], t0_bounds[0], tfall_bounds[0], r_bounds[0]],
+              [a_bounds[1], b_bounds[1], t0_bounds[1], tfall_bounds[1], r_bounds[1]]]
+    
+    result = least_squares(errfunc, guess, args=(time, flux, fluxerr), method='trf', loss='linear',bounds=bounds)
+    
+    a_fit,b_fit,t0_fit,tfall_fit,r_fit = result.x
+    trise_fit = tfall_fit/r_fit
+    final_result = np.array([a_fit,b_fit,t0_fit,tfall_fit,trise_fit])
+    
+    return final_result
 
 def main():
     return None

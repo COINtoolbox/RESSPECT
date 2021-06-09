@@ -24,9 +24,8 @@ def test_bazin():
     t0 = 10
     tfall = 3
     trise = 4
-    r = tfall/trise
 
-    res = bazin(time, a, b, t0, tfall, r)
+    res = bazin(time, a, b, t0, tfall, trise)
     
     assert not np.isnan(res).any()
 
@@ -45,10 +44,9 @@ def test_errfunc():
     t0 = 10
     tfall = 3
     trise = 4
-    r = tfall/trise
-
+    
     # calculate fiducial flux values
-    flux_fid = bazin(time, a, b, t0, tfall, r)
+    flux_fid = bazin(time, a, b, t0, tfall, trise)
     
     # add noise
     flux = [np.random.normal(loc=item, scale=0.01) for item in flux_fid]
