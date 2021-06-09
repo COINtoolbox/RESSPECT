@@ -103,7 +103,7 @@ def errfunc(params, time, flux, fluxerr):
 
     """
 
-    return abs(flux - bazin(time, *params)) / fluxerr
+    return abs(flux - bazinr(time, *params)) / fluxerr
 
 
 def fit_scipy(time, flux, fluxerr):
