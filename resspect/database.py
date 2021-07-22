@@ -283,7 +283,7 @@ class DataBase:
             elif 'id' in data.keys():
                 self.metadata_names = ['id', 'redshift', 'type', 'code',
                                        'orig_sample', 'queryable']
-                
+
             if 'last_rmag' in data.keys():
                 self.metadata_names.append('last_rmag')
 
@@ -997,7 +997,7 @@ class DataBase:
         self.validation_prob = \
             self.classifier.predict_proba(self.validation_features)
 
-        
+
 
         if save_predictions:
             id_name = self.identify_keywords()
@@ -1055,7 +1055,7 @@ class DataBase:
 
         codes = []
         for i in range(data.shape[0]):
-            
+
             sncode = data.iloc[i]['code']
             if  sncode not in [62, 42, 6]:
                 codes.append(self.SNANA_types[sncode])
@@ -1134,13 +1134,14 @@ class DataBase:
             print('Metrics values: ', self.metrics_list_values)
 
 
-    def make_query_budget(self, budgets, strategy='UncSampling', screen=False) -> list:
+    def make_query_budget(self, budgets, strategy='UncSampling', screen=False,
+                          num_batches=5) -> list:
         """Identify new object to be added to the training sample.
 
         Parameters
         ----------
         budgets: tuple of ints
-            Budgets for 4m and 8m respectively. 
+            Budgets for 4m and 8m respectively.
         strategy: str (optional)
             Strategy used to choose the most informative object.
             Current implementation accepts 'UncSampling' and
@@ -1151,29 +1152,32 @@ class DataBase:
             If true, display on screen information about the
             displacement in order and classificaion probability due to
             constraints on queryable sample. Default is False.
-
+        num_batches: int (optional)
+            The number of batches to be considered by the cosmo metric.
         Returns
         -------
-        query_indx: list
-            List of indexes identifying the objects to be queried within budget.
+        query_indx: dict
+            Dictionary of list of indexes identifying the objects to be
+            queried within budget.
         """
         if screen:
             print('\n Inside make_query_budget: ')
             print('       ... classprob: ', self.classprob.shape[0])
             print('       ... queryable_ids: ', self.queryable_ids.shape[0])
             print('       ... pool_ids: ', self.pool_metadata.shape[0])
-            
+
         id_name = self.identify_keywords()
         queryable_ids = self.queryable_ids
         pool_metadata = self.pool_metadata
-        
+
         if strategy == 'UncSampling':
             query_indx = batch_queries_uncertainty(class_probs=self.classprob,
                                                    id_name=id_name,
                                                    queryable_ids=queryable_ids,
                                                    pool_metadata=pool_metadata,
                                                    budgets=budgets,
-                                                   criteria="uncertainty" )
+                                                   criteria="uncertainty",
+                                                   num_batches=num_batches)
 
         elif strategy == 'UncSamplingEntropy':
             query_indx = batch_queries_uncertainty(class_probs=self.classprob,
@@ -1181,7 +1185,8 @@ class DataBase:
                                                    queryable_ids=queryable_ids,
                                                    pool_metadata=pool_metadata,
                                                    budgets=budgets,
-                                                   criteria="entropy" )
+                                                   criteria="entropy",
+                                                   num_batches=num_batches)
 
         elif strategy == 'UncSamplingLeastConfident':
             query_indx = batch_queries_uncertainty(class_probs=self.classprob,
@@ -1189,7 +1194,8 @@ class DataBase:
                                                    queryable_ids=queryable_ids,
                                                    pool_metadata=pool_metadata,
                                                    budgets=budgets,
-                                                   criteria="least_confident" )
+                                                   criteria="least_confident",
+                                                   num_batches=num_batches)
 
         elif strategy == 'UncSamplingMargin':
             query_indx = batch_queries_uncertainty(class_probs=self.classprob,
@@ -1197,7 +1203,8 @@ class DataBase:
                                                    queryable_ids=queryable_ids,
                                                    pool_metadata=pool_metadata,
                                                    budgets=budgets,
-                                                   criteria="margin" )
+                                                   criteria="margin",
+                                                   num_batches=num_batches)
 
         elif strategy == 'QBDMI':
             query_indx = batch_queries_mi_entropy(probs_B_K_C=self.ensemble_probs,
@@ -1205,7 +1212,8 @@ class DataBase:
                                                   queryable_ids=queryable_ids,
                                                   pool_metadata=pool_metadata,
                                                   budgets=budgets,
-                                                  criteria="MI" )
+                                                  criteria="MI",
+                                                  num_batches=num_batches)
 
         elif strategy =='QBDEntropy':
             query_indx = batch_queries_mi_entropy(probs_B_K_C=self.ensemble_probs,
@@ -1213,7 +1221,8 @@ class DataBase:
                                                   queryable_ids=queryable_ids,
                                                   pool_metadata=pool_metadata,
                                                   budgets=budgets,
-                                                  criteria="entropy" )
+                                                  criteria="entropy",
+                                                  num_batches=num_batches)
 
         elif strategy == 'RandomSampling':
             query_indx = batch_queries_uncertainty(class_probs=self.classprob,
@@ -1221,16 +1230,21 @@ class DataBase:
                                                    queryable_ids=queryable_ids,
                                                    pool_metadata=pool_metadata,
                                                    budgets=budgets,
-                                                   criteria="random" )
+                                                   criteria="random",
+                                                   num_batches=num_batches)
 
         else:
             raise ValueError('Invalid strategy.')
 
-        for n in query_indx:
+
+        #TODO RUN THE COSMO metric HERE
+        batch_selection = 0
+
+        for n in query_indx[batch_selection]:
             if self.pool_metadata[id_name].values[n] not in self.queryable_ids:
                 raise ValueError('Chosen object is not available for query!')
 
-        return query_indx
+        return query_indx[batch_selection]
 
     def make_query(self, strategy='UncSampling', batch=1,
                    screen=False, queryable=False, query_thre=1.0) -> list:

@@ -1,8 +1,10 @@
 import numpy as np
 from resspect.batch_functions import *
+from scipy.special import softmax
 
+# Change to return multiple batches
 def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
-                              pool_metadata, budgets, criteria):
+                              pool_metadata, budgets, criteria, num_batches, temperature=1.):
     """Select batch of queries based on acquistion criteria. Independently
     models the elements of the batch.
 
@@ -22,11 +24,15 @@ def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
     criteria: str
         Acqution strategy to use can be 'uncertainty', 'entropy', 'margin',
         'least_confident' and 'random'.
+    num_batches: int
+        The number of batches to generate.
+    temperature: int
+        Temperature to use for softmax function over scores.
 
     Returns
     -------
-    acquistion_index: list
-            List of indexes identifying the objects from the pool sampled to be
+    acquistion_index: dict
+            Dictionary of lists of indexes identifying the objects from the pool sampled to be
             queried. Guranteed to be within budget.
     """
     pool_ids = pool_metadata[id_name].values
@@ -45,6 +51,7 @@ def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
     query_ids = pool_ids[pool_query_filter]
 
     class_probs = class_probs[pool_query_filter]
+    acquistion_dict = dict()
 
     if criteria == 'uncertainty':
         score = abs(class_probs[:, 1] - 0.5)
@@ -66,60 +73,100 @@ def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
 
     cost_4m_possible = cost_4m[possible_4m]
     score_4m = score[possible_4m]
-    if reversed:
-        order_4m = score_4m.argsort()[::-1]
-    else:
-        order_4m = score_4m.argsort()
-
-    cost_4m_order = cost_4m_possible[order_4m]
-    query_ids_4m_possible = query_ids[possible_4m][order_4m]
-
-    # Record acquistions as IDs
-    acquistions_4m = []
-    total_cost_4m = 0.
-    for q_id, c_4m in zip(query_ids_4m_possible, cost_4m_order):
-        if (total_cost_4m + c_4m) < budget_4m:
-            acquistions_4m.append(q_id)
-            total_cost_4m += c_4m
-
-    acquistions =  acquistions_4m.copy()
-
     cost_8m_possible = cost_8m[possible_8m]
     score_8m = score[possible_8m]
-    if reversed:
-        order_8m = score_8m.argsort()[::-1]
-    else:
-        order_8m = score_8m.argsort()
+    for batch_num in range(num_batches):
+        # RANDOMLY GENERATE ORDERS BASED ON THE SCORE LOOK INTO MALLOWS MODEL, PLACKETT-LUCE, or TALLIS-DANISE
+        # SEE:
+        # https://cs.stackexchange.com/questions/73795/sorting-in-a-probabilistic-order
+        # this might also be useful:
+        # https://papers.nips.cc/paper/2018/file/a381c2c35c9157f6b67fd07d5a200ae1-Paper.pdf
+        # MAYBE DON'T DEAL WITH GENERATING RANDOM ORDERS AND DO SAMPLING INSTEAD
+        # OR COULD DO AN EPSILON GREED STRATEGY
+        # cost_4m_possible = cost_4m[possible_4m]
+        # score_4m = score[possible_4m]
+        if reversed:
+            # select objects with highest score
+            prob_select_4m = softmax(score_4m/temperature)
+            size_4m = prob_select_4m.shape[0]
+            order_4m = np.random.choice(np.arange(size_4m), size=size_4m,
+                                        replace=False, p=prob_select_4m)
+            #order_4m = score_4m.argsort()[::-1]
+        else:
+            # select objects with lowest score
+            prob_select_4m = softmax(-1*score_4m/temperature)
+            size_4m = prob_select_4m.shape[0]
+            order_4m = np.random.choice(np.arange(size_4m), size=size_4m,
+                                        replace=False, p=prob_select_4m)
+            #order_4m = score_4m.argsort()
 
-    cost_8m_order = cost_8m_possible[order_8m]
-    query_ids_8m_possible = query_ids[possible_8m][order_8m]
+        cost_4m_order = cost_4m_possible[order_4m]
+        query_ids_4m_possible = query_ids[possible_4m][order_4m]
 
-    acquistions_8m = []
-    total_cost_8m = 0.
-    for q_id, c_8m in zip(query_ids_8m_possible, cost_8m_order):
-        if (total_cost_8m + c_8m) < budget_8m and (q_id not in acquistions):
-            acquistions_8m.append(q_id)
-            total_cost_8m += c_8m
+        # Record acquistions as IDs
+        acquistions_4m = []
+        total_cost_4m = 0.
 
-    acquistions += acquistions_8m
+        for q_id, c_4m in zip(query_ids_4m_possible, cost_4m_order):
+            if (total_cost_4m + c_4m) < budget_4m:
+                acquistions_4m.append(q_id)
+                total_cost_4m += c_4m
 
-    if total_cost_4m > budget_4m:
-        raise RuntimeError("4m Budget exceeded")
-    if total_cost_8m > budget_8m:
-        raise RuntimeError("8m Budget exceeded")
-    if len(acquistions) != len(set(acquistions)):
-        raise RuntimeError("Some acquistions were repeated")
-    if len(set(acquistions_4m) & set(acquistions_8m)) != 0:
-        raise RuntimeError("Object acquired by both telescopes")
+        acquistions =  acquistions_4m.copy()
 
-    acquistion_index = []
-    for q_id in acquistions:
-        acquistion_index.append(ids_to_index[q_id])
+        # cost_8m_possible = cost_8m[possible_8m]
+        # score_8m = score[possible_8m]
+        # RANDOMLY GENREATE ORDERS BASED ON THE SCORE
+        if reversed:
+            # select objects with highest score
+            prob_select_8m = softmax(score_8m/temperature)
+            size_8m = prob_select_8m.shape[0]
+            order_8m = np.random.choice(np.arange(size_8m), size=size_8m,
+                                        replace=False, p=prob_select_8m)
+            #order_8m = score_8m.argsort()[::-1]
+        else:
+            # select objects with lowest score
+            prob_select_8m = softmax(-1*score_8m/temperature)
+            size_8m = prob_select_8m.shape[0]
+            order_8m = np.random.choice(np.arange(size_8m), size=size_8m,
+                                        replace=False, p=prob_select_8m)
+            #order_8m = score_8m.argsort()
 
-    return acquistion_index
+        cost_8m_order = cost_8m_possible[order_8m]
+        query_ids_8m_possible = query_ids[possible_8m][order_8m]
 
+        acquistions_8m = []
+        total_cost_8m = 0.
+        for q_id, c_8m in zip(query_ids_8m_possible, cost_8m_order):
+            if (total_cost_8m + c_8m) < budget_8m and (q_id not in acquistions):
+                acquistions_8m.append(q_id)
+                total_cost_8m += c_8m
+
+        acquistions += acquistions_8m
+
+        if total_cost_4m > budget_4m:
+            raise RuntimeError("4m Budget exceeded")
+        if total_cost_8m > budget_8m:
+            raise RuntimeError("8m Budget exceeded")
+        if len(acquistions) != len(set(acquistions)):
+            raise RuntimeError("Some acquistions were repeated")
+        if len(set(acquistions_4m) & set(acquistions_8m)) != 0:
+            raise RuntimeError("Object acquired by both telescopes")
+
+        acquistion_index = []
+        for q_id in acquistions:
+            acquistion_index.append(ids_to_index[q_id])
+
+        acquistion_dict[batch_num] = acquistion_index
+        # reset acquistions probably not necessary
+        acquistions = []
+    # END FOR LOOP
+
+    return acquistion_dict # acquistion_dict
+
+# Change to return multiple batches
 def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
-                             pool_metadata, budgets, criteria="MI" ):
+                             pool_metadata, budgets, criteria="MI", num_batches=1):
     """Select batch of queries based on acquistion criteria. Jointly models the
     elements of the batch.
 
@@ -141,11 +188,13 @@ def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
     criteria: str
         Acqution strategy to use can be 'uncertainty', 'entropy', 'margin',
         'least_confident' and 'random'.
+    num_batches: int
+        The number of batches to generate.
 
     Returns
     -------
-    acquistion_index: list
-            List of indexes identifying the objects from the pool sampled to be
+    acquistion_index: dict
+            Dictionary of lists of indexes identifying the objects from the pool sampled to be
             queried. Guranteed to be within budget.
     """
     pool_ids = pool_metadata[id_name].values
