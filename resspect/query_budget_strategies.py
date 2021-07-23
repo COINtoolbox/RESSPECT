@@ -205,7 +205,7 @@ def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
                                                                      pool_metadata=pool_metadata,
                                                                      budgets=budgets,
                                                                      criteria=criteria,
-                                                                     num_batches=num_batches)
+                                                                     temperature=temperature)
     return acquistion_dict
 
 
