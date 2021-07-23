@@ -164,9 +164,8 @@ def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
 
     return acquistion_dict # acquistion_dict
 
-# Change to return multiple batches
 def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
-                             pool_metadata, budgets, criteria="MI", num_batches=1):
+                             pool_metadata, budgets, criteria="MI", num_batches=1, temperature=1.):
     """Select batch of queries based on acquistion criteria. Jointly models the
     elements of the batch.
 
@@ -190,11 +189,57 @@ def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
         'least_confident' and 'random'.
     num_batches: int
         The number of batches to generate.
-
+    temperature: int
+        Temperature to use for softmax function over scores.
     Returns
     -------
     acquistion_index: dict
             Dictionary of lists of indexes identifying the objects from the pool sampled to be
+            queried. Guranteed to be within budget.
+    """
+    acquistion_dict = dict()
+    for batch_num in range(num_batches):
+        acquistion_dict[batch_num] = batch_queries_mi_entropy_single(probs_B_K_C=probs_B_K_C,
+                                                                     id_name=id_name,
+                                                                     queryable_ids=queryable_ids,
+                                                                     pool_metadata=pool_metadata,
+                                                                     budgets=budgets,
+                                                                     criteria=criteria,
+                                                                     num_batches=num_batches)
+    return acquistion_dict
+
+
+
+# Change to return multiple batches
+def batch_queries_mi_entropy_single(probs_B_K_C, id_name, queryable_ids,
+                                    pool_metadata, budgets, criteria="MI", temperature=1.):
+    """Select batch of queries based on acquistion criteria. Jointly models the
+    elements of the batch.
+
+    Parameters
+    ----------
+    probs_B_K_C: np.array
+        Classification probabilitity distributions for each datapoint for each
+        model in the committee (or sample from model posterior). B is the number
+        of data points, K is the committee size and C is the number of classes.
+    id_name: str
+        key to index ids from pool_metadata
+    queryable_ids: np.array
+        Set of ids for objects available for querying.
+    pool_metadata: pandas Dataframe
+        Contains infromation relevant to the poolset such as costs and ids.
+    budgets: tuple of ints
+        budgets for each of the telescopes assumes 0th index is for 4m and
+        1th index is for 8m.
+    criteria: str
+        Acqution strategy to use can be 'uncertainty', 'entropy', 'margin',
+        'least_confident' and 'random'.
+    temperature: int
+        Temperature to use for softmax function over scores.
+    Returns
+    -------
+    acquistion_index: list
+            Lists of indexes identifying the objects from the pool sampled to be
             queried. Guranteed to be within budget.
     """
     pool_ids = pool_metadata[id_name].values
@@ -269,10 +314,22 @@ def batch_queries_mi_entropy(probs_B_K_C, id_name, queryable_ids,
         possible_8m = (cost_8m + total_cost_8m) <= budget_8m
         possible_8m[~np.isfinite(scores_8m)] = False
 
-        sorted_4m_idx = scores_4m.argsort()[::-1]
+        # ADD RANDOM ORDER HERE
+        prob_select_4m = softmax(scores_4m/temperature)
+        prob_select_8m = softmax(scores_8m/temperature)
+
+        size_4m = prob_select_4m.shape[0] - np.isclose(prob_select_4m, 0.).sum()
+        size_8m = prob_select_8m.shape[0] - np.isclose(prob_select_8m, 0.).sum()
+
+        sorted_4m_idx = np.random.choice(np.arange(size_4m), size=size_4m,
+                                    replace=False, p=prob_select_4m)
+        sorted_8m_idx = np.random.choice(np.arange(size_8m), size=size_8m,
+                                    replace=False, p=prob_select_8m)
+
+        # sorted_4m_idx = scores_4m.argsort()[::-1]
         possible_4m_order = np.where(possible_4m[sorted_4m_idx])[0]
 
-        sorted_8m_idx = scores_8m.argsort()[::-1]
+        # sorted_8m_idx = scores_8m.argsort()[::-1]
         possible_8m_order = np.where(possible_8m[sorted_8m_idx])[0]
 
         if np.any(possible_4m) and np.any(possible_8m):
