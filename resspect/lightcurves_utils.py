@@ -3,6 +3,7 @@
 """
 
 import io
+import os
 import tarfile
 from typing import AnyStr
 from typing import Tuple
@@ -342,3 +343,15 @@ def get_resspect_header_data(
         raise ValueError(
             f"Unknown RESSPECT header data file: {path_header_file}")
     return meta_header
+
+
+def maybe_create_directory(directory_path: str):
+    """
+    Creates diretory if it doesnt exist
+    Parameters
+    ----------
+    directory_path
+        directory path to create
+    """
+    if not os.path.isdir(directory_path):
+        os.makedirs(directory_path)
