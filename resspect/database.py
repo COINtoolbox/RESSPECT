@@ -1135,7 +1135,8 @@ class DataBase:
 
 
     def make_query_budget(self, budgets, strategy='UncSampling', screen=False,
-                          num_batches=5) -> list:
+                          num_batches=1, save_batches=False, batch_outfile=None,
+                          loop=None) -> list:
         """Identify new object to be added to the training sample.
 
         Parameters
@@ -1148,12 +1149,21 @@ class DataBase:
             'RandomSampling', 'UncSamplingEntropy',
             'UncSamplingLeastConfident', 'UncSamplingMargin',
             'QBDMI', 'QBDEntropy', . Default is `UncSampling`.
+        batch_outfile: str (optional)
+            Complete filename to save batches. 
+            Only used it save_batches == True.
+        loop: int (optional)
+            Loop identification only used to store query in file.
+            Only use if save_batches == True.
+        save_batches: bool (optional)
+             If True, save batches to file. Default is False. 
         screen: bool (optional)
             If true, display on screen information about the
             displacement in order and classificaion probability due to
             constraints on queryable sample. Default is False.
         num_batches: int (optional)
             The number of batches to be considered by the cosmo metric.
+            Default is 1.
         Returns
         -------
         query_indx: dict
@@ -1239,6 +1249,15 @@ class DataBase:
 
         #TODO RUN THE COSMO metric HERE
         batch_selection = 0
+        
+        if save_batches:
+            for j in range(num_batches):
+                batch_list = query_indx[j]
+                op = open(batch_outfile, 'w')
+                op.write('loop,batch,batch_item\n')
+                for item in batch_list:
+                    op.write(str(loop) + ',' + str(j) + ',' + str(item) + '\n')
+                op.close()
 
         for n in query_indx[batch_selection]:
             if self.pool_metadata[id_name].values[n] not in self.queryable_ids:

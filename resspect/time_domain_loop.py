@@ -23,7 +23,8 @@ from resspect import DataBase
 
 def load_dataset(fname: str, survey='DES',
                          screen=False, initial_training='original',
-                         ia_frac=0.5, queryable=False, sep_files=False):
+                         ia_frac=0.5, queryable=False, sep_files=False,
+                         save_samples=False):
     """Read a data sample from file.
 
     Parameters
@@ -44,6 +45,9 @@ def load_dataset(fname: str, survey='DES',
     queryable: bool (optional)
         If True, allow queries only on objects flagged as queryable.
         Default is True.
+    save_samples: bool (optional)
+        If True, save training and test samples to file.
+        Default is False.
     sep_files: bool (optional)
             If True, consider samples separately read
             from independent files. Default is False.
@@ -69,7 +73,7 @@ def load_dataset(fname: str, survey='DES',
 
     data.build_samples(initial_training=initial_training, nclass=2,
                        screen=screen, Ia_frac=ia_frac,
-                       queryable=queryable, save_samples=False,
+                       queryable=queryable, save_samples=save_samples,
                        sep_files=sep_files, survey=survey)
 
     return data
@@ -86,8 +90,8 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                      path_to_queried="", queryable=True,
                      query_thre=1.0, save_samples=False, sep_files=False,
                      screen=True, survey='LSST', initial_training='original',
-                     save_full_query=False,
-                    **kwargs):
+                     save_full_query=False, save_batches=False, 
+                     batch_outfile=None, num_batches=1, **kwargs):
     """Perform the active learning loop. All results are saved to file.
 
     Parameters
@@ -119,6 +123,8 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         At least "train" is mandatory.
     batch: int (optional)
         Size of batch to be queried in each loop. Default is 1.
+    batch_outfile: str (optional)
+        Name of file to save batches. Only used it save_batches == True.
     canonical: bool (optional)
         If True, restrict the search to the canonical sample.
     classifier: str (optional)
@@ -135,6 +141,12 @@ def time_domain_loop(days: list,  output_metrics_file: str,
     ia_frac: float in [0,1] (optional)
         Fraction of Ia required in initial training sample.
         Default is 0.5.
+    loop: int (optional)
+        Loop identification only used to store query in file.
+        Only use if save_batches == True.
+    num_batches: int (optional)
+        Number of batches to considered. Default is 1.
+        Only use if budgets are considered.
     path_to_canonical: str (optional)
         Path to canonical sample features files.
         It is only used if "strategy==canonical".
@@ -143,6 +155,8 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         Default is True.
     query_thre: float (optional)
         Percentile threshold for query. Default is 1.
+    save_batches: bool (optional)
+        If True, save batches to file. Default is False. 
     save_samples: bool (optional)
         If True, save training and test samples to file.
         Default is False.
@@ -188,7 +202,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                  sample='pool')
         first_loop.build_samples(initial_training='original', nclass=2,
                                  screen=screen, queryable=queryable,
-                                 save_samples=False, sep_files=sep_files,
+                                 save_samples=save_samples, sep_files=sep_files,
                                  survey=survey)
         
     if sep_files:
@@ -295,7 +309,9 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                 # get index of object to be queried
                 if budgets:
                     indx = data.make_query_budget(budgets=budgets, strategy=strategy,
-                                                  screen=False)
+                                                  screen=False, num_batches=num_batches,
+                                                  save_batches=save_batches, 
+                                                  batch_outfile=batch_outfile, loop=night)
                 else:
                     indx = data.make_query(strategy=strategy, batch=batch,
                                            queryable=queryable,
@@ -341,7 +357,7 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                             survey=survey, sample='pool')
                 data_tomorrow.build_samples(initial_training='original',
                                             screen=screen, queryable=queryable,
-                                            save_samples=False,
+                                            save_samples=save_samples,
                                             sep_files=sep_files, survey=survey)
 
             else:
