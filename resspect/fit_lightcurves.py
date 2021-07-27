@@ -162,6 +162,7 @@ class LightCurve:
     """
 
     def __init__(self):
+        self.queryable = None
         self.bazin_features = []
         self.bazin_features_names = ['a', 'b', 't0', 'tfall', 'trsise']
         self.dataset_name = ' '
@@ -331,7 +332,7 @@ class LightCurve:
         criteria: int [1, 2 or 3] (optional)
             Criteria to determine if an obj is queryable.
             1 -> Cut on last measured photometric point.
-            2 -> if last obs was further than days_since_last_obs, 
+            2 -> if last obs was further than days_since_last_obs,
                  use Bazin estimate for today. Otherwise, use
                  the last observed point.
             Default is 1.
