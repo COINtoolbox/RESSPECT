@@ -23,8 +23,7 @@ from resspect import DataBase
 
 def load_dataset(fname: str, survey='DES',
                          screen=False, initial_training='original',
-                         ia_frac=0.5, queryable=False, sep_files=False,
-                         save_samples=False):
+                         ia_frac=0.5, queryable=False, sep_files=False):
     """Read a data sample from file.
 
     Parameters
@@ -45,9 +44,6 @@ def load_dataset(fname: str, survey='DES',
     queryable: bool (optional)
         If True, allow queries only on objects flagged as queryable.
         Default is True.
-    save_samples: bool (optional)
-        If True, save training and test samples to file.
-        Default is False.
     sep_files: bool (optional)
             If True, consider samples separately read
             from independent files. Default is False.
@@ -73,7 +69,7 @@ def load_dataset(fname: str, survey='DES',
 
     data.build_samples(initial_training=initial_training, nclass=2,
                        screen=screen, Ia_frac=ia_frac,
-                       queryable=queryable, save_samples=save_samples,
+                       queryable=queryable, 
                        sep_files=sep_files, survey=survey)
 
     return data
@@ -85,9 +81,9 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                      fname_pattern: list, path_to_ini_files: dict,
                      batch=1, canonical = False,  classifier='RandomForest',
                      clf_bootstrap=False, budgets=None ,cont=False,
-                     first_loop=20, nclass=2, ia_frac=0.5, output_fname="",
-                     path_to_canonical="", path_to_train="",
-                     path_to_queried="", queryable=True,
+                     first_loop=20, nclass=2, ia_frac=0.5, output_fname_root=None,
+                     path_to_canonical=None, path_to_train=None,
+                     path_to_queried=None, queryable=True,
                      query_thre=1.0, save_samples=False, sep_files=False,
                      screen=True, survey='LSST', initial_training='original',
                      save_full_query=False, save_batches=False, 
@@ -178,9 +174,9 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         If int: choose the required number of samples at random,
         ensuring that at least half are SN Ia
         Default is 'original'.
-    output_fname: str (optional)
-        Complete path to output file where initial training will be stored.
-        Only used if save_samples == True.
+    output_fname_root: str (optional)
+        Root of path to output file where initial training will be stored.
+        Do not include extension. Only used if save_samples == True.
     """
 
     # load features for the first obs day
@@ -202,8 +198,9 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                  sample='pool')
         first_loop.build_samples(initial_training='original', nclass=2,
                                  screen=screen, queryable=queryable,
-                                 save_samples=save_samples, sep_files=sep_files,
+                                 sep_files=sep_files,
                                  survey=survey)
+        
         
     if sep_files:
         # initiate object
@@ -299,7 +296,8 @@ def time_domain_loop(days: list,  output_metrics_file: str,
             if clf_bootstrap:
                 data.classify_bootstrap(method=classifier, screen=screen, **kwargs)
             else:
-                data.classify(method=classifier, screen=screen, **kwargs)
+                data.classify(method=classifier, screen=screen, save_samples=save_samples,
+                              output_fname_root=output_fname_root, loop=night, **kwargs)
 
             # calculate metrics
             data.evaluate_classification(screen=screen)
@@ -357,7 +355,6 @@ def time_domain_loop(days: list,  output_metrics_file: str,
                                             survey=survey, sample='pool')
                 data_tomorrow.build_samples(initial_training='original',
                                             screen=screen, queryable=queryable,
-                                            save_samples=save_samples,
                                             sep_files=sep_files, survey=survey)
 
             else:

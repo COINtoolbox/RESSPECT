@@ -767,7 +767,7 @@ class DataBase:
     def build_samples(self, initial_training='original', nclass=2,
                       screen=False, Ia_frac=0.5,
                       queryable=False, save_samples=False, sep_files=False,
-                      survey='DES', output_fname=' '):
+                      survey='DES', output_fname=None):
         """Separate train, test and validation samples.
 
         Populate properties: train_features, train_header, test_features,
@@ -828,24 +828,25 @@ class DataBase:
                 print('   From which queryable: ',
                       self.queryable_ids.shape[0], '\n')
 
-        if save_samples:
+        #if save_samples:
 
-            full_header = self.metadata_names + self.features_names
-            wsample = open(output_fname, 'w')
-            for item in full_header:
-                wsample.write(item + ' ')
-            wsample.write('\n')
+        #    full_header = self.metadata_names + self.features_names
+        #    wsample = open(output_fname, 'w')
+        #    for item in full_header:
+        #        wsample.write(item + ' ')
+        #    wsample.write('\n')
 
-            for j in range(self.train_metadata.shape[0]):
-                for name in self.metadata_names:
-                    wsample.write(str(self.train_metadata[name].iloc[j]) + ' ')
-                for k in range(self.train_features.shape[1] - 1):
-                    wsample.write(str(self.train_features[j][k]) + ' ')
-                wsample.write(str(self.train_features[j][-1]) + '\n')
-            wsample.close()
+        #    for j in range(self.train_metadata.shape[0]):
+        #        for name in self.metadata_names:
+        #            wsample.write(str(self.train_metadata[name].iloc[j]) + ' ')
+        #        for k in range(self.train_features.shape[1] - 1):
+        #            wsample.write(str(self.train_features[j][k]) + ' ')
+        #        wsample.write(str(self.train_features[j][-1]) + '\n')
+        #    wsample.close()
 
     def classify(self, method: str, save_predictions=False, pred_dir=None,
-                 loop=None, screen=False, **kwargs):
+                 loop=None, screen=False, save_samples=False,
+                 output_fname_root=None, **kwargs):
         """Apply a machine learning classifier.
 
         Populate properties: predicted_class and class_prob
@@ -858,7 +859,13 @@ class DataBase:
             'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
         loop: int (boolean)
             Iteration loop. Only used if save+predictions==True.
-            Default is None
+            Default is None.
+         output_fname: str (optional)
+            Complete path to output file where initial training will be stored.
+            Only used if save_samples == True.
+        save_samples_root: bool (optional)
+            If True, save training and test samples to file.
+            Default is False.
         screen: bool (optional)
             If True, print debug statements to screen.
             Default is False.
@@ -876,6 +883,21 @@ class DataBase:
             print('   ... train_features: ', self.train_features.shape)
             print('   ... train_labels: ', self.train_labels.shape)
             print('   ... pool_features: ', self.pool_features.shape)
+        
+        if save_samples:
+            full_header = self.metadata_names + self.features_names
+            wsample = open(output_fname_root + '_loop' + str(loop) + '.dat', 'w')
+            for item in full_header:
+                wsample.write(item + ' ')
+            wsample.write('\n')
+
+            for j in range(self.train_metadata.shape[0]):
+                for name in self.metadata_names:
+                    wsample.write(str(self.train_metadata[name].iloc[j]) + ' ')
+                for k in range(self.train_features.shape[1] - 1):
+                    wsample.write(str(self.train_features[j][k]) + ' ')
+                wsample.write(str(self.train_features[j][-1]) + '\n')
+            wsample.close()
 
         if method == 'RandomForest':
             self.predicted_class,  self.classprob, self.classifier = \
