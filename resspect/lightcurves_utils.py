@@ -11,8 +11,28 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-
 from resspect.snana_fits_to_pd import read_fits
+
+
+BAZIN_HEADERS = {
+    'plasticc_header': [
+        'id', 'redshift', 'type', 'code', 'sample', 'queryable', 'last_rmag',
+        'uA', 'uB', 'ut0', 'utfall', 'utrise', 'gA', 'gB', 'gt0', 'gtfall',
+        'gtrise', 'rA', 'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0',
+        'itfall', 'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztriseYA', 'YB',
+        'Yt0', 'Ytfall', 'Ytrise'],
+    'snpcc_header': [
+        'id', 'redshift', 'type', 'code', 'orig_sample', 'queryable',
+        'last_rmag', 'gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA', 'rB',
+        'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0', 'itfall', 'itrise',
+        'zA', 'zB', 'zt0', 'ztfall', 'ztrise'],
+    'header_with_cost': [
+        'id', 'redshift', 'type', 'code', 'orig_sample', 'queryable',
+        'last_rmag', 'cost_4m', 'cost_8m', 'gA', 'gB', 'gt0', 'gtfall',
+        'gtrise', 'rA', 'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0',
+        'itfall', 'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztrise']
+}
+
 
 SNPCC_LC_MAPPINGS = {
     "snii": {2, 3, 4, 12, 15, 17, 19, 20, 21, 24, 25,
@@ -31,7 +51,7 @@ SNPCC_FEATURES_HEADER = [
 
 PLASTICC_RESSPECT_FEATURES_HEADER = [
     'id', 'redshift', 'type', 'code', 'orig_sample', 'uA', 'uB', 'ut0',
-    'utfall', 'utrise', 'gA', 'gB', 'gt0', 'gtfall' ,'gtrise', 'rA', 'rB',
+    'utfall', 'utrise', 'gA', 'gB', 'gt0', 'gtfall','gtrise', 'rA', 'rB',
     'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0', 'itfall', 'itrise', 'zA',
     'zB', 'zt0', 'ztfall', 'ztrise', 'YA', 'YB', 'Yt0', 'Ytfall', 'Ytrise'
 ]
@@ -355,3 +375,27 @@ def maybe_create_directory(directory_path: str):
     """
     if not os.path.isdir(directory_path):
         os.makedirs(directory_path)
+
+
+def get_query_flags(light_curve_data, telescope_names: list,
+                    query_flags_threshold: int = 7200) -> list:
+    """
+    Checks if query is possible
+    Parameters
+    ----------
+    light_curve_data
+        An instance of LightCurve class
+    telescope_names
+        Names of the telescopes under consideration for spectroscopy.
+        Only used if "get_cost == True".
+        Default is ["4m", "8m"].
+    query_flags_threshold
+        Threshold for exposure time data
+    """
+    query_flags = []
+    for each_name in telescope_names:
+        if light_curve_data.exp_time[each_name] < query_flags_threshold:
+            query_flags.append(True)
+        else:
+            query_flags.append(False)
+    return query_flags
