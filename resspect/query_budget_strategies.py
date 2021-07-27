@@ -128,10 +128,10 @@ def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
         # OR COULD DO AN EPSILON GREED STRATEGY
         # cost_4m_possible = cost_4m[possible_4m]
         # score_4m = score[possible_4m]
-        print("IN: batch_queries_uncertainty")
-        print(type(score_4m), type(score_8m))
-        print(score_4m, score_8m)
-        print(score_4m.shape, score_8m.shape)
+        #print("IN: batch_queries_uncertainty")
+        #print(type(score_4m), type(score_8m))
+        #print(score_4m, score_8m)
+        #print(score_4m.shape, score_8m.shape)
         if reversed:
             # select objects with highest score
             # prob_select_4m = softmax(score_4m/temperature)
