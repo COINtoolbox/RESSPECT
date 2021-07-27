@@ -20,6 +20,31 @@ import numpy as np
 from resspect.batch_functions import *
 from scipy.special import softmax
 
+
+def create_probablistic_order_from_score(scores):
+    """Order indices in a score array probablisticaly weighting indices with
+       higher scores.
+
+    Parameters
+    ----------
+    scores: np.array
+        Scores for index ordering.
+
+    Returns
+    -------
+    order: np.array
+            Final order of indices.
+    """
+    if scores.shape[0] == 0:
+        order = np.array([], dtype=np.int64)
+    else:
+        prob_select = softmax(scores)
+        size = prob_select.shape[0] - np.isclose(prob_select, 0.).sum()
+        order = np.random.choice(np.arange(size), size=size,
+                                    replace=False, p=prob_select)
+    return order
+
+
 # Change to return multiple batches
 def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
                               pool_metadata, budgets, criteria, num_batches, temperature=1.):
@@ -103,20 +128,26 @@ def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
         # OR COULD DO AN EPSILON GREED STRATEGY
         # cost_4m_possible = cost_4m[possible_4m]
         # score_4m = score[possible_4m]
+        print("IN: batch_queries_uncertainty")
+        print(type(score_4m), type(score_8m))
+        print(score_4m, score_8m)
+        print(score_4m.shape, score_8m.shape)
         if reversed:
             # select objects with highest score
-            prob_select_4m = softmax(score_4m/temperature)
-            size_4m = prob_select_4m.shape[0]
-            order_4m = np.random.choice(np.arange(size_4m), size=size_4m,
-                                        replace=False, p=prob_select_4m)
+            # prob_select_4m = softmax(score_4m/temperature)
+            # size_4m = prob_select_4m.shape[0]
+            # order_4m = np.random.choice(np.arange(size_4m), size=size_4m,
+            #                             replace=False, p=prob_select_4m)
             #order_4m = score_4m.argsort()[::-1]
+            order_4m = create_probablistic_order_from_score(score_4m/temperature)
         else:
             # select objects with lowest score
-            prob_select_4m = softmax(-1*score_4m/temperature)
-            size_4m = prob_select_4m.shape[0]
-            order_4m = np.random.choice(np.arange(size_4m), size=size_4m,
-                                        replace=False, p=prob_select_4m)
+            # prob_select_4m = softmax(-1*score_4m/temperature)
+            # size_4m = prob_select_4m.shape[0]
+            # order_4m = np.random.choice(np.arange(size_4m), size=size_4m,
+            #                             replace=False, p=prob_select_4m)
             #order_4m = score_4m.argsort()
+            order_4m = create_probablistic_order_from_score(-1*score_4m/temperature)
 
         cost_4m_order = cost_4m_possible[order_4m]
         query_ids_4m_possible = query_ids[possible_4m][order_4m]
@@ -137,18 +168,20 @@ def batch_queries_uncertainty(class_probs, id_name, queryable_ids,
         # RANDOMLY GENREATE ORDERS BASED ON THE SCORE
         if reversed:
             # select objects with highest score
-            prob_select_8m = softmax(score_8m/temperature)
-            size_8m = prob_select_8m.shape[0]
-            order_8m = np.random.choice(np.arange(size_8m), size=size_8m,
-                                        replace=False, p=prob_select_8m)
+            # prob_select_8m = softmax(score_8m/temperature)
+            # size_8m = prob_select_8m.shape[0]
+            # order_8m = np.random.choice(np.arange(size_8m), size=size_8m,
+            #                             replace=False, p=prob_select_8m)
             #order_8m = score_8m.argsort()[::-1]
+            order_8m = create_probablistic_order_from_score(score_8m/temperature)
         else:
             # select objects with lowest score
-            prob_select_8m = softmax(-1*score_8m/temperature)
-            size_8m = prob_select_8m.shape[0]
-            order_8m = np.random.choice(np.arange(size_8m), size=size_8m,
-                                        replace=False, p=prob_select_8m)
+            # prob_select_8m = softmax(-1*score_8m/temperature)
+            # size_8m = prob_select_8m.shape[0]
+            # order_8m = np.random.choice(np.arange(size_8m), size=size_8m,
+            #                             replace=False, p=prob_select_8m)
             #order_8m = score_8m.argsort()
+            order_8m = create_probablistic_order_from_score(-1*score_8m/temperature)
 
         cost_8m_order = cost_8m_possible[order_8m]
         query_ids_8m_possible = query_ids[possible_8m][order_8m]
@@ -333,16 +366,8 @@ def batch_queries_mi_entropy_single(probs_B_K_C, id_name, queryable_ids,
         possible_8m[~np.isfinite(scores_8m)] = False
 
         # ADD RANDOM ORDER HERE
-        prob_select_4m = softmax(scores_4m/temperature)
-        prob_select_8m = softmax(scores_8m/temperature)
-
-        size_4m = prob_select_4m.shape[0] - np.isclose(prob_select_4m, 0.).sum()
-        size_8m = prob_select_8m.shape[0] - np.isclose(prob_select_8m, 0.).sum()
-
-        sorted_4m_idx = np.random.choice(np.arange(size_4m), size=size_4m,
-                                    replace=False, p=prob_select_4m)
-        sorted_8m_idx = np.random.choice(np.arange(size_8m), size=size_8m,
-                                    replace=False, p=prob_select_8m)
+        sorted_4m_idx = create_probablistic_order_from_score(scores_4m/temperature)
+        sorted_8m_idx = create_probablistic_order_from_score(scores_8m/temperature)
 
         # sorted_4m_idx = scores_4m.argsort()[::-1]
         possible_4m_order = np.where(possible_4m[sorted_4m_idx])[0]
