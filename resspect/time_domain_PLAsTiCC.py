@@ -474,5 +474,7 @@ class PLAsTiCCPhotometry:
                     output_dir, 'day_' + str(day_of_survey) + '.dat')
                 with open(features_file_name, 'w') as plasticc_features_file:
                     plasticc_features_file.write(
+                        ' '.join(self._bazin_header) + '\n')
+                    plasticc_features_file.write(
                         ' '.join(str(each_feature) for each_feature
                                  in features_to_write) + '\n')

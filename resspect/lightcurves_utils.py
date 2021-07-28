@@ -19,7 +19,7 @@ BAZIN_HEADERS = {
         'id', 'redshift', 'type', 'code', 'sample', 'queryable', 'last_rmag',
         'uA', 'uB', 'ut0', 'utfall', 'utrise', 'gA', 'gB', 'gt0', 'gtfall',
         'gtrise', 'rA', 'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0',
-        'itfall', 'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztriseYA', 'YB',
+        'itfall', 'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztrise', 'YA', 'YB',
         'Yt0', 'Ytfall', 'Ytrise'],
     'snpcc_header': [
         'id', 'redshift', 'type', 'code', 'orig_sample', 'queryable',
