@@ -77,7 +77,7 @@ def load_features(database_class: DataBase,
             else:
                 logging.warning(f'Path to {sample_name} not given.'
                                 f' Proceeding without this sample')
-        separate_files = True
+                
     database_class.build_samples(
         initial_training=training_method, nclass=number_of_classes,
         queryable=is_queryable, sep_files=separate_files)
