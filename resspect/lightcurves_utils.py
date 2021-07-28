@@ -21,12 +21,18 @@ BAZIN_HEADERS = {
         'gtrise', 'rA', 'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0',
         'itfall', 'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztrise', 'YA', 'YB',
         'Yt0', 'Ytfall', 'Ytrise'],
+    'plasticc_header_with_cost': [
+        'id', 'redshift', 'type', 'code', 'sample', 'queryable', 'last_rmag',
+        'cost_4m', 'cost_8m', 'uA', 'uB', 'ut0', 'utfall', 'utrise', 'gA', 'gB',
+        'gt0', 'gtfall', 'gtrise', 'rA', 'rB', 'rt0', 'rtfall', 'rtrise', 'iA',
+        'iB', 'it0', 'itfall', 'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztrise',
+        'YA', 'YB', 'Yt0', 'Ytfall', 'Ytrise'],
     'snpcc_header': [
         'id', 'redshift', 'type', 'code', 'orig_sample', 'queryable',
         'last_rmag', 'gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA', 'rB',
         'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0', 'itfall', 'itrise',
         'zA', 'zB', 'zt0', 'ztfall', 'ztrise'],
-    'header_with_cost': [
+    'snpcc_header_with_cost': [
         'id', 'redshift', 'type', 'code', 'orig_sample', 'queryable',
         'last_rmag', 'cost_4m', 'cost_8m', 'gA', 'gB', 'gt0', 'gtfall',
         'gtrise', 'rA', 'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0',

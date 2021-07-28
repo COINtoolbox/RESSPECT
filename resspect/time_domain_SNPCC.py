@@ -131,7 +131,7 @@ class SNPCCPhotometry:
             if header == 'Bazin':
                 self._bazin_header = BAZIN_HEADERS['snpcc_header']
                 if get_cost:
-                    self._bazin_header = BAZIN_HEADERS['header_with_cost']
+                    self._bazin_header = BAZIN_HEADERS['snpcc_header_with_cost']
             else:
                 raise ValueError('Only Bazin headers are supported')
             features_file.write(' '.join(self._bazin_header) + '\n')
