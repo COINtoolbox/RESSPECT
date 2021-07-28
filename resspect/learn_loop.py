@@ -28,7 +28,8 @@ from resspect import DataBase
 def load_features(database_class: DataBase,
                   path_to_features: Union[str, dict],
                   survey: str, features_method: str, number_of_classes: int,
-                  training_method: str, is_queryable: bool) -> DataBase:
+                  training_method: str, is_queryable: bool,
+                  separate_files: bool) -> DataBase:
     """
     Load features according to feature extraction method
 
@@ -58,8 +59,10 @@ def load_features(database_class: DataBase,
     is_queryable
        If True, check if randomly chosen object is queryable.
        Default is False.
+    separate_files: bool (optional)
+        If True, consider train and test samples separately read
+        from independent files. Default is False.
     """
-    separate_files = False
     if isinstance(path_to_features, str):
         database_class.load_features(
             path_to_file=path_to_features, method=features_method,
@@ -309,10 +312,11 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                training: str = 'original', batch: int =1, survey: str = 'DES',
                nclass: int = 2, photo_class_thr: float = 0.5,
                photo_ids_to_file: bool = False, photo_ids_froot: str =' ',
-               classifier_bootstrap: bool = False, save_predictions: bool = False,
-               pred_dir: str = None, queryable: bool = False,
-               metric_label: str = 'snpcc', save_alt_class: bool = False,
-               SNANA_types: bool = False, metadata_fname: str = None, **kwargs):
+               classifier_bootstrap: bool = False, save_predictions:
+               bool = False, sep_files=False, pred_dir: str = None,
+               queryable: bool = False, metric_label: str = 'snpcc',
+               save_alt_class: bool = False, SNANA_types: bool = False,
+               metadata_fname: str = None, **kwargs):
     """
     Perform the active learning loop. All results are saved to file.
 
@@ -340,6 +344,9 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
        Currently implemented options are 'RandomForest', 'GradientBoostedTrees',
        'K-NNclassifier','MLPclassifier','SVMclassifier' and 'NBclassifier'.
        Default is 'RandomForest'.
+   sep_files: bool (optional)
+       If True, consider train and test samples separately read
+       from independent files. Default is False.
    batch: int (optional)
        Size of batch to be queried in each loop. Default is 1.
    classifier_bootstrap: bool (optional)
@@ -399,7 +406,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     database_class = DataBase()
     logging.info('Loading features')
     database_class = load_features(database_class, path_to_features, survey,
-                                   features_method, nclass, training, queryable)
+                                   features_method, nclass, training, queryable,
+                                   sep_files)
     logging.info('Running active learning loop')
     for iteration_step in progressbar.progressbar(range(nloops)):
         database_class = run_classification(
