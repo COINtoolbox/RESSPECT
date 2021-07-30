@@ -129,6 +129,13 @@ def fit_scipy(time, flux, fluxerr):
     imax = flux.argmax()
     flux_max = flux[imax]
     
+    # Parameter bounds
+    a_bounds = [1.e-3, np.inf]
+    b_bounds = [-np.inf, np.inf]
+    t0_bounds = [-0.5*time.max(), 1.5*time.max()]
+    tfall_bounds = [1.e-3, np.inf]
+    r_bounds = [1, np.inf]
+
     # Parameter guess
     a_guess = 2*flux_max
     b_guess = 0
@@ -144,15 +151,17 @@ def fit_scipy(time, flux, fluxerr):
 
     r_guess = 2
 
+    # Clip guesses to stay in bound
+    a_guess = np.clip(a=a_guess,a_min=a_bounds[0],a_max=a_bounds[1])
+    b_guess = np.clip(a=b_guess,a_min=b_bounds[0],a_max=b_bounds[1])
+    t0_guess = np.clip(a=t0_guess,a_min=t0_bounds[0],a_max=t0_bounds[1])
+    tfall_guess = np.clip(a=tfall_guess,a_min=tfall_bounds[0],a_max=tfall_bounds[1])
+    r_guess = np.clip(a=r_guess,a_min=r_bounds[0],a_max=r_bounds[1])
+
+
     guess = [a_guess,b_guess,t0_guess,tfall_guess,r_guess]
 
-    # Parameter bounds
-    a_bounds = [1.e-3, np.inf]
-    b_bounds = [-np.inf, np.inf]
-    t0_bounds = [-0.5*time.max(), 1.5*time.max()]
-    tfall_bounds = [1.e-3, np.inf]
-    r_bounds = [1, np.inf]
-    
+
     bounds = [[a_bounds[0], b_bounds[0], t0_bounds[0], tfall_bounds[0], r_bounds[0]],
               [a_bounds[1], b_bounds[1], t0_bounds[1], tfall_bounds[1], r_bounds[1]]]
     
