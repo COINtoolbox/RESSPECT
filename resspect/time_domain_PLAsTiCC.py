@@ -169,6 +169,7 @@ class PLAsTiCCPhotometry:
                 filter_mask = np.logical_and(ddf_mask, classes_mask)
             else:
                 filter_mask = np.logical_and(~ddf_mask, classes_mask)
+                print(sum(filter_mask))
             self.metadata = meta_data_raw[filter_mask]
         else:
             self.metadata = meta_data_raw[classes_mask]
@@ -231,10 +232,11 @@ class PLAsTiCCPhotometry:
             An instance of LightCurve class
         """
         if day is None:
-            min_mjd = min(light_curve_data.photometry['mjd'].values)
-            max_mjd = max(light_curve_data.photometry['mjd'].values)
-            return list(range(int(min_mjd - self.min_epoch),
-                              int(max_mjd - self.min_epoch) + 1))
+            if not light_curve_data.photometry.empty:
+                min_mjd = min(light_curve_data.photometry['mjd'].values)
+                max_mjd = max(light_curve_data.photometry['mjd'].values)
+                return list(range(int(min_mjd - self.min_epoch),
+                                  int(max_mjd - self.min_epoch) + 1))
         return [day]
 
     @staticmethod
@@ -343,7 +345,7 @@ class PLAsTiCCPhotometry:
         """
         photo_flag = (
                 light_curve_data_day.photometry['mjd'].values <= self._today)
-        if sum(photo_flag) > min_available_points:
+        if np.sum(photo_flag) > min_available_points:
             light_curve_data_day.photometry = light_curve_data_day.photometry[
                 photo_flag]
             light_curve_data_day.fit_bazin_all()
@@ -362,7 +364,7 @@ class PLAsTiCCPhotometry:
         return None
 
     def _get_features_to_write(
-            self, light_curve_data_day: LightCurve, snid: int,
+            self, light_curve_data_day: LightCurve,
             get_cost: bool, telescope_names: list) -> list:
         """
         Returns features list to write
@@ -378,14 +380,8 @@ class PLAsTiCCPhotometry:
             Only used if "get_cost == True".
             Default is ["4m", "8m"].
         """
-        snid_mask = self.metadata['object_id'].values == snid
-        light_curve_data_day.redshift = self.metadata['true_z'].values[
-            snid_mask][0]
-        light_curve_data_day.sncode = self.metadata['true_target'].values[
-            snid_mask][0]
         light_curve_data_day.sntype = PLASTICC_TARGET_TYPES[
             light_curve_data_day.sncode]
-        light_curve_data_day.id = snid
         light_curve_data_day.sample = 'pool'
         features_list = [
             light_curve_data_day.id, light_curve_data_day.redshift,
@@ -398,6 +394,19 @@ class PLAsTiCCPhotometry:
                     light_curve_data_day.exp_time[telescope_names[index]]))
         features_list.extend(light_curve_data_day.bazin_features)
         return features_list
+
+    def _update_light_curve_meta_data(self, light_curve_data_day: LightCurve,
+                                      snid: int) -> Union[LightCurve, None]:
+        if light_curve_data_day is not None:
+            snid_mask = self.metadata['object_id'].values == snid
+            if np.sum(snid_mask) > 0:
+                light_curve_data_day.redshift = self.metadata['true_z'].values[
+                    snid_mask][0]
+                light_curve_data_day.sncode = (
+                    self.metadata['true_target'].values[snid_mask][0])
+                light_curve_data_day.id = snid
+                return light_curve_data_day
+        return None
 
     # TODO: Too many arguments. Refactor and update docs
     def fit_one_lc(self, raw_data_dir: str, snid: int, output_dir: str,
@@ -468,9 +477,11 @@ class PLAsTiCCPhotometry:
             light_curve_data_day = self._process_current_day(
                 light_curve_data_day, queryable_criteria, days_since_last_obs,
                 tel_names, tel_sizes, spec_SNR, kwargs)
+            light_curve_data_day = self._update_light_curve_meta_data(
+                light_curve_data_day, snid)
             if light_curve_data_day is not None:
                 features_to_write = self._get_features_to_write(
-                    light_curve_data_day, snid, get_cost, tel_names)
+                    light_curve_data_day, get_cost, tel_names)
                 features_file_name = os.path.join(
                     output_dir, 'day_' + str(day_of_survey) + '.dat')
                 with open(features_file_name, 'w') as plasticc_features_file:
