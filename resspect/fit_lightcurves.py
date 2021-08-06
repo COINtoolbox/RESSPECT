@@ -24,6 +24,7 @@ import matplotlib.pylab as plt
 import numpy as np
 import pandas as pd
 import progressbar
+import warnings
 
 from resspect.bazin import bazin, fit_scipy
 from resspect.exposure_time_calculator import ExpTimeCalc
@@ -41,6 +42,8 @@ from resspect.lightcurves_utils import SNPCC_FEATURES_HEADER
 from resspect.lightcurves_utils import find_available_key_name_in_header
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
+
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 __all__ = ['LightCurve', 'fit_snpcc_bazin', 'fit_resspect_bazin',
            'fit_plasticc_bazin']
@@ -561,7 +564,7 @@ class LightCurve:
         plt.figure(figsize=fsize)
 
         for i in range(len(self.filters)):
-            plt.subplot(2, ncols, i + 1)
+            plt.subplot(2, int(ncols), i + 1)
             plt.title('Filter: ' + self.filters[i])
 
             # filter flag
