@@ -21,23 +21,11 @@ from typing import Union
 
 import progressbar
 from resspect import LightCurve
+from resspect.lightcurves_utils import BAZIN_HEADERS
+from resspect.lightcurves_utils import get_query_flags
 from resspect.lightcurves_utils import maybe_create_directory
 
 __all__ = ['SNPCCPhotometry']
-
-
-BAZIN_HEADERS = {
-    'header': [
-        'id', 'redshift', 'type', 'code', 'orig_sample', 'queryable',
-        'last_rmag', 'gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA', 'rB',
-        'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0', 'itfall', 'itrise',
-        'zA', 'zB', 'zt0', 'ztfall', 'ztrise'],
-    'header_with_cost': [
-        'id', 'redshift', 'type', 'code', 'orig_sample', 'queryable',
-        'last_rmag', 'cost_4m', 'cost_8m', 'gA', 'gB', 'gt0', 'gtfall',
-        'gtrise', 'rA', 'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0',
-        'itfall', 'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztrise']
-}
 
 
 class SNPCCPhotometry:
@@ -141,9 +129,9 @@ class SNPCCPhotometry:
         logging.info('Creating features file')
         with open(self._features_file_name, 'w') as features_file:
             if header == 'Bazin':
-                self._bazin_header = BAZIN_HEADERS['header']
+                self._bazin_header = BAZIN_HEADERS['snpcc_header']
                 if get_cost:
-                    self._bazin_header = BAZIN_HEADERS['header_with_cost']
+                    self._bazin_header = BAZIN_HEADERS['snpcc_header_with_cost']
             else:
                 raise ValueError('Only Bazin headers are supported')
             features_file.write(' '.join(self._bazin_header) + '\n')
@@ -306,7 +294,7 @@ class SNPCCPhotometry:
                 light_curve_data = self._update_queryable_if_get_cost(
                     light_curve_data, telescope_names, telescope_sizes,
                     spectroscopic_snr, kwargs)
-                light_curve_data.queryable = bool(sum(_get_query_flags(
+                light_curve_data.queryable = bool(sum(get_query_flags(
                     light_curve_data, telescope_names
                 )))
                 return light_curve_data
@@ -406,8 +394,8 @@ class SNPCCPhotometry:
                 light_curve_data.load_snpcc_lc(
                     os.path.join(raw_data_dir, each_file))
                 light_curve_data = self._process_each_light_curve(
-                    light_curve_data, queryable_criteria, days_since_obs, tel_names,
-                    tel_sizes, spec_SNR, kwargs)
+                    light_curve_data, queryable_criteria, days_since_obs,
+                    tel_names, tel_sizes, spec_SNR, kwargs)
                 if light_curve_data is not None:
                     features_to_write = self._get_features_to_write(
                         light_curve_data, get_cost, tel_names)
@@ -431,30 +419,6 @@ def _get_files_list(path_to_data_dir: str,
     files_list = [each_file for each_file in files_list
                   if each_file.startswith(file_prefix)]
     return files_list
-
-
-def _get_query_flags(light_curve_data: LightCurve, telescope_names: list,
-                     query_flags_threshold: int = 7200) -> list:
-    """
-    Checks if query is possible
-    Parameters
-    ----------
-    light_curve_data
-        An instance of LightCurve class
-    telescope_names
-        Names of the telescopes under consideration for spectroscopy.
-        Only used if "get_cost == True".
-        Default is ["4m", "8m"].
-    query_flags_threshold
-        Threshold for exposure time data
-    """
-    query_flags = []
-    for each_name in telescope_names:
-        if light_curve_data.exp_time[each_name] < query_flags_threshold:
-            query_flags.append(True)
-        else:
-            query_flags.append(False)
-    return query_flags
 
 
 def main():
