@@ -130,11 +130,11 @@ def fit_scipy(time, flux, fluxerr):
     flux_max = flux[imax]
     
     # Parameter bounds
-    a_bounds = [1.e-3, np.inf]
-    b_bounds = [-np.inf, np.inf]
+    a_bounds = [1.e-3, 10e10]
+    b_bounds = [-10e10, 10e10]
     t0_bounds = [-0.5*time.max(), 1.5*time.max()]
-    tfall_bounds = [1.e-3, np.inf]
-    r_bounds = [1, np.inf]
+    tfall_bounds = [1.e-3, 10e10]
+    r_bounds = [1, 10e10]
 
     # Parameter guess
     a_guess = 2*flux_max
