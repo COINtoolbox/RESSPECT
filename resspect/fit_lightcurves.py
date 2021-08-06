@@ -317,6 +317,9 @@ class LightCurve:
             Magnitude values. If flux < 1e-5 returns 9999.
         """
 
+        if not isinstance(flux[0], float):
+            flux = np.array([item[0] for item in flux])
+
         mag = [zpt - 2.5 * np.log10(f) if f > 1e-5 else 9999 for f in flux]
 
         return np.array(mag)
