@@ -208,7 +208,7 @@ class PLAsTiCCPhotometry:
         """
         light_curve_data = LightCurve()
         if volume is None:
-            volume = 0
+            volume = 1
             while volume < self._last_file_index:
                 volume += 1
                 file_name = os.path.join(
