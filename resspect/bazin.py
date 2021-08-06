@@ -49,22 +49,52 @@ def bazin(time, a, b, t0, tfall, trise):
 
     """
     with np.errstate(over='ignore', invalid='ignore'):
-        X = np.exp(-(time - t0) / tfall) / (1 + np.exp((time - t0) / trise))
+        X = np.exp(-(time - t0) / tfall) / (1 + np.exp(-(time - t0) / trise))
         return a * X + b
 
+def bazinr(time, a, b, t0, tfall, r):
+    """
+    A wrapper function for bazin() which replaces trise by r = tfall/trise.
 
-def errfunc(params, time, flux):
+    Parameters
+    ----------
+    time : np.array
+        exploratory variable (time of observation)
+    a: float
+        Normalization parameter
+    b: float
+        Shift parameter
+    t0: float
+        Time of maximum
+    tfall: float
+        Characteristic decline time
+    r: float
+        Ratio of tfall to trise. This ratio is enforced to be >1.
+
+    Returns
+    -------
+    array_like
+        response variable (flux)
+
+    """
+
+    trise = tfall/r
+    return bazin(time, a, b, t0, tfall, trise)
+
+def errfunc(params, time, flux, fluxerr):
     """
     Absolute difference between theoretical and measured flux.
 
     Parameters
     ----------
     params : list of float
-        light curve parameters: (a, b, t0, tfall, trise)
+        light curve parameters: (a, b, t0, tfall, r)
     time : array_like
         exploratory variable (time of observation)
     flux : array_like
         response variable (measured flux)
+    fluxerr : array_like
+        error in response variable (flux)
 
     Returns
     -------
@@ -73,10 +103,10 @@ def errfunc(params, time, flux):
 
     """
 
-    return abs(flux - bazin(time, *params))
+    return abs(flux - bazinr(time, *params)) / fluxerr
 
 
-def fit_scipy(time, flux):
+def fit_scipy(time, flux, fluxerr):
     """
     Find best-fit parameters using scipy.least_squares.
 
@@ -86,6 +116,8 @@ def fit_scipy(time, flux):
         exploratory variable (time of observation)
     flux : array_like
         response variable (measured flux)
+    fluxerr : array_like
+        error in response variable (flux)
 
     Returns
     -------
@@ -94,12 +126,52 @@ def fit_scipy(time, flux):
 
     """
     flux = np.asarray(flux)
-    t0 = time[flux.argmax()] - time[0]
-    guess = [0, 0, t0, 40, -5]
+    imax = flux.argmax()
+    flux_max = flux[imax]
+    
+    # Parameter bounds
+    a_bounds = [1.e-3, np.inf]
+    b_bounds = [-np.inf, np.inf]
+    t0_bounds = [-0.5*time.max(), 1.5*time.max()]
+    tfall_bounds = [1.e-3, np.inf]
+    r_bounds = [1, np.inf]
 
-    result = least_squares(errfunc, guess, args=(time, flux), method='lm')
+    # Parameter guess
+    a_guess = 2*flux_max
+    b_guess = 0
+    t0_guess = time[imax]
+    
+    tfall_guess = time[imax-2:imax+2].std()/2
+    if np.isnan(tfall_guess):
+        tfall_guess = time[imax-1:imax+1].std()/2
+        if np.isnan(tfall_guess):
+            tfall_guess=50
+    if tfall_guess<1:
+        tfall_guess=50
 
-    return result.x
+    r_guess = 2
+
+    # Clip guesses to stay in bound
+    a_guess = np.clip(a=a_guess,a_min=a_bounds[0],a_max=a_bounds[1])
+    b_guess = np.clip(a=b_guess,a_min=b_bounds[0],a_max=b_bounds[1])
+    t0_guess = np.clip(a=t0_guess,a_min=t0_bounds[0],a_max=t0_bounds[1])
+    tfall_guess = np.clip(a=tfall_guess,a_min=tfall_bounds[0],a_max=tfall_bounds[1])
+    r_guess = np.clip(a=r_guess,a_min=r_bounds[0],a_max=r_bounds[1])
+
+
+    guess = [a_guess,b_guess,t0_guess,tfall_guess,r_guess]
+
+
+    bounds = [[a_bounds[0], b_bounds[0], t0_bounds[0], tfall_bounds[0], r_bounds[0]],
+              [a_bounds[1], b_bounds[1], t0_bounds[1], tfall_bounds[1], r_bounds[1]]]
+    
+    result = least_squares(errfunc, guess, args=(time, flux, fluxerr), method='trf', loss='linear',bounds=bounds)
+    
+    a_fit,b_fit,t0_fit,tfall_fit,r_fit = result.x
+    trise_fit = tfall_fit/r_fit
+    final_result = np.array([a_fit,b_fit,t0_fit,tfall_fit,trise_fit])
+    
+    return final_result
 
 def main():
     return None

@@ -51,10 +51,13 @@ def test_errfunc():
     # add noise
     flux = [np.random.normal(loc=item, scale=0.01) for item in flux_fid]
     
+    # find error
+    fluxerr = (flux - flux_fid)**2
+
     # construct parameters vector
     params = [a, b, t0, tfall, trise]
 
-    res = errfunc(params, time, flux)
+    res = errfunc(params, time, flux, fluxerr)
     
     assert not np.isnan(res).any()
     assert np.all(res > 0)
@@ -71,8 +74,9 @@ def test_fit_scipy():
     
     time = data['mjd'].values
     flux = data['flux'].values
+    fluxerr = 1
     
-    res = fit_scipy(time, flux)
+    res = fit_scipy(time, flux,fluxerr)
     
     assert not np.isnan(res).any()
 

@@ -50,27 +50,27 @@ You will need to install the `Python` package ``virtualenv``. In MacOS or Linux,
 
 Navigate to a ``env_directory`` where you will store the new virtual environment and create it  
 
-    >> python3 -m venv RESSPECT  
+    >> python3 -m venv RESSPECT
 
 > Make sure you deactivate any ``conda`` environment you might have running before moving forward.   
 
 Once the environment is set up you can activate it,
 
-    >> source <env_directory>/bin/activate  
+    >> source <env_directory>/bin/activate
 
 You should see a ``(RESSPECT)`` flag in the extreme left of terminal command line.   
 
 Next, clone this repository in another chosen location:  
 
-    (RESSPECT) >> git clone https://github.com/COINtoolbox/RESSPECT.git  
+    (RESSPECT) >> git clone https://github.com/COINtoolbox/RESSPECT.git
 
 Navigate to the repository folder and do  
 
-    (RESSPECT) >> pip install -r requirements.txt  
+    (RESSPECT) >> pip install -r requirements.txt
 
 
 You can now install this package with:  
 
-    (RESSPECT) >>> python setup.py install  
+    (RESSPECT) >>> python setup.py install
 
 > You may choose to create your virtual environment within the folder of the repository. If you choose to do this, you must remember to exclude the virtual environment directory from version control using e.g., ``.gitignore``.   
