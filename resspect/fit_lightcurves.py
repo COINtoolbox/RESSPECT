@@ -600,7 +600,7 @@ class LightCurve:
                     raise ValueError('Unit can only be "flux" or "mag".')
 
                 if extrapolate:
-                    xaxis_extrap = list(xaxis) + list(time_flux_pred)
+                    xaxis_extrap = list(xaxis.flatten()) + list(time_flux_pred)
                     xaxis_extrap = np.sort(np.array(xaxis_extrap))
                     ext_flux = self.evaluate_bazin(xaxis_extrap)
                     if unit == 'flux':
