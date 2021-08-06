@@ -78,8 +78,13 @@ def bazinr(time, a, b, t0, tfall, r):
 
     """
 
-    trise = tfall/r
-    return bazin(time, a, b, t0, tfall, trise)
+    trise = tfall/r    
+    res = bazin(time, a, b, t0, tfall, trise)
+    
+    if max(res) < 10e10:
+        return res
+    else:
+        return np.array([item if item < 10e10 else 10e10 for item in res])
 
 def errfunc(params, time, flux, fluxerr):
     """
