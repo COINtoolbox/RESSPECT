@@ -120,7 +120,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     if 'QBD' in strategy and not classifier_bootstrap:
         raise ValueError('Bootstrap must be true when using ' + \
                          'disagreement strategy.')
-
+    
     # initiate object
     data = DataBase()
 

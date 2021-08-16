@@ -1275,11 +1275,9 @@ class DataBase:
         if save_batches:
             for j in range(num_batches):
                 batch_list = query_indx[j]
-                op = open(batch_outfile, 'w')
-                op.write('loop,batch,batch_item\n')
-                for item in batch_list:
-                    op.write(str(loop) + ',' + str(j) + ',' + str(item) + '\n')
-                op.close()
+                with open(batch_outfile, 'a') as op:
+                    for item in batch_list:
+                        op.write(str(loop) + ',' + str(j) + ',' + str(item) + '\n')
 
         for n in query_indx[batch_selection]:
             if self.pool_metadata[id_name].values[n] not in self.queryable_ids:

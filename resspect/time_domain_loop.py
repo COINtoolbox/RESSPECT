@@ -179,6 +179,13 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         Do not include extension. Only used if save_samples == True.
     """
 
+    # prepare to save batches
+    if save_batches:
+        op1 = open(batch_outfile, 'w')
+        op1.write('loop,batch,batch_item\n')
+        op1.close()
+    
+    
     # load features for the first obs day
     path_to_first_loop = path_to_features_dir + fname_pattern[0] + \
                                      str(days[0]) + fname_pattern[1]
