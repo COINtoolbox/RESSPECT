@@ -49,9 +49,12 @@ You can perform the entire analysis for one day of the survey using the `SNPCCPh
    >>> get_cost = True
 
    >>> data = SNPCCPhotometry()
-   >>> data.create_daily_file(output_dir=output_dir, day=day, get_cost=get_cost)
-   >>> data.build_one_epoch(raw_data_dir=path_to_data, day_of_survey=day,
-   >>>                      time_domain_dir=output_dir, queryable_criteria=queryable_criteria, get_cost=get_cost)
+   >>> data.create_daily_file(output_dir=output_dir, day=day,
+   >>>                        get_cost=get_cost)
+   >>> data.build_one_epoch(raw_data_dir=path_to_data, 
+   >>>                      day_of_survey=day, time_domain_dir=output_dir, 
+   >>>                      queryable_criteria=queryable_criteria, 
+   >>>                      get_cost=get_cost)
 
 
 Alternatively you can use the command line to prepare a sequence of days in one batch:
