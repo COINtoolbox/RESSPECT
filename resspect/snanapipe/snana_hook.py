@@ -7,10 +7,11 @@ import configparser
 
 class SNANAHook():
     def __init__(self,data_folder=None,phot_version=None,snid_file=None,salt2mu_prefix=None,
-                 fitres_prefix=None,
+                 fitres_prefix=None, results_dir=None,
                  stages=['lcfit'],glue=False,**kwargs):
         self.gen_input(data_folder=data_folder,phot_version=phot_version,snid_file=snid_file,
-                       salt2mu_prefix=salt2mu_prefix,fitres_prefix=fitres_prefix,**kwargs)
+                       salt2mu_prefix=salt2mu_prefix,fitres_prefix=fitres_prefix,
+                       results_dir=results_dir, **kwargs)
         self.stages = stages
         self.glue = glue
 

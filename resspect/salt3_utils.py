@@ -181,7 +181,7 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
     hook = SNANAHook(salt2mu_prefix=salt2mu_prefix_str,
                      combined_fitres=combined_fitres_name_str,
                      stages=['getmu','cosmofit'], glue=False,
-                     outfile=salt3_outfile,
+                     outfile=salt3_outfile,result_dir=outputdir,
                      tempfile=salt3_tempfile,**kwargs)
     try:
         hook.run()
