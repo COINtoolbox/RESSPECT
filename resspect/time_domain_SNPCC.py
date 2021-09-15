@@ -92,6 +92,7 @@ class SNPCCPhotometry:
         # store MJDs
         min_day = []
         max_day = []
+        
         for each_file in progressbar.progressbar(files_list):
             light_curve_data = LightCurve()
             light_curve_data.load_snpcc_lc(os.path.join(raw_data_dir, each_file))
@@ -99,6 +100,7 @@ class SNPCCPhotometry:
             max_day.append(max(light_curve_data.photometry['mjd'].values))
             self.min_epoch = min(min_day)
             self.max_epoch = max(max_day)
+            
         return [min(min_day), max(max_day)]
 
     def create_daily_file(self, output_dir: str,
@@ -138,17 +140,20 @@ class SNPCCPhotometry:
 
     def _verify_telescope_names(self, telescope_names: list, get_cost: bool):
         """
-        Verifies telescope names
+        Verifies telescope names.
+        
         Parameters
         ----------
-        telescope_names
-            list with telescope names
-        get_cost
+        telescope_names: list
+            list with telescope names.
+        get_cost: bool
            if cost of taking a spectra is computed
         """
+        
         if (('cost_' + telescope_names[0] not in self._bazin_header or
             'cost_' + telescope_names[1] not in self._bazin_header)
                 and get_cost):
+            
             raise ValueError('Unknown or not supported telescope names')
 
     def _maybe_create_features_file(self, output_dir: str, day_of_survey: int,
@@ -158,14 +163,14 @@ class SNPCCPhotometry:
 
         Parameters
         ----------
-        output_dir
+        output_dir: str
             output directory path to save features file
-        day_of_survey
+        day_of_survey: int
             Day since the beginning of survey.
-        feature_method
+        feature_method: str
             Feature extraction method, only possibility is 'Bazin'.
-        get_cost
-           if cost of taking a spectra is computed
+        get_cost: bool
+           if True, cost of taking a spectra is computed.
         """
         if not os.path.isfile(self._features_file_name):
             logging.info('Features file doesnt exist')
@@ -179,9 +184,9 @@ class SNPCCPhotometry:
         Verifies if valid dataset name and features method is passed
         Parameters
         ----------
-        dataset_name
+        dataset_name: str
             name of the dataset used
-        feature_method
+        feature_method: str
             Feature extraction method, only possibility is 'Bazin'.
         """
         if dataset_name != 'SNPCC':
@@ -197,7 +202,7 @@ class SNPCCPhotometry:
 
         Parameters
         ----------
-        light_curve_data
+        light_curve_data: resspect.LightCurve
             An instance of LightCurve class
         queryable_criteria: [1 or 2]
             Criteria to determine if an obj is queryable.
@@ -206,7 +211,7 @@ class SNPCCPhotometry:
                  use Bazin estimate of flux today. Otherwise, use
                  the last observed point.
             Default is 1.
-        days_since_last_observation
+        days_since_last_observation: int
             Day since last observation to consider for spectroscopic
             follow-up without the need to extrapolate light curve.
         """
@@ -252,40 +257,42 @@ class SNPCCPhotometry:
             self, light_curve_data: LightCurve, queryable_criteria: int,
             days_since_last_observation: int, telescope_names: list,
             telescope_sizes: list, spectroscopic_snr: int, kwargs: dict,
-            min_available_points: int = 4) -> Union[LightCurve, None]:
+            min_available_points: int = 5) -> Union[LightCurve, None]:
         """
-        Processes each light curve files
+        Processes each light curve files.
+        
         Parameters
         ----------
-        light_curve_data
+        light_curve_data: resspect.LightCurve
             An instance of LightCurve class
-        queryable_criteria
+        queryable_criteria: int
             Criteria to determine if an obj is queryable.
             1 -> r-band cut on last measured photometric point.
             2 -> last obs was further than a given limit,
                  use Bazin estimate of flux today. Otherwise, use
                  the last observed point.
-        days_since_last_observation
+        days_since_last_observation: int
             Day since last observation to consider for spectroscopic
             follow-up without the need to extrapolate light curve.
-        telescope_names
+        telescope_names: list
             Names of the telescopes under consideration for spectroscopy.
             Only used if "get_cost == True".
-        telescope_sizes
+        telescope_sizes: list
             Primary mirrors diameters of potential spectroscopic telescopes.
             Only used if "get_cost == True".
-        spectroscopic_snr
+        spectroscopic_snr: int
             SNR required for spectroscopic follow-up.
-        kwargs
+        kwargs: dict (optional)
             Any input required by ExpTimeCalc.findexptime function.
-        min_available_points
-            minimum number of survived points
+        min_available_points: int (optional)
+            minimum number of survived points. Default is 5.
         """
         photo_flag = light_curve_data.photometry['mjd'].values <= self._today
-        if sum(photo_flag) > min_available_points:
+        if sum(photo_flag) >= min_available_points:
             light_curve_data.photometry = light_curve_data.photometry[
                 photo_flag]
             light_curve_data.fit_bazin_all()
+            
             if (len(light_curve_data.bazin_features) > 0 and
                     'None' not in light_curve_data.bazin_features):
                 light_curve_data.queryable = self._check_queryable(
@@ -303,15 +310,15 @@ class SNPCCPhotometry:
     def _get_features_to_write(self, light_curve_data: LightCurve,
                                get_cost: bool, telescope_names: list) -> list:
         """
-        Returns features list to write
+        Returns features list to write.
 
         Parameters
         ----------
-        light_curve_data
+        light_curve_data: resspect.LightCurve
             fitted light curve data
-        get_cost
+        get_cost: bool
            if cost of taking a spectra is computed
-        telescope_names
+        telescope_names: list
             Names of the telescopes under consideration for spectroscopy.
             Only used if "get_cost == True".
             Default is ["4m", "8m"].
@@ -325,6 +332,7 @@ class SNPCCPhotometry:
                 features_list.append(str(
                     light_curve_data.exp_time[telescope_names[index]]))
         features_list.extend(light_curve_data.bazin_features)
+        
         return features_list
 
     # TODO: Too many arguments. Refactor and update docs

@@ -473,6 +473,7 @@ class LightCurve:
 
         # fit Bazin function
         bazin_param = fit_scipy(time - time[0], flux, fluxerr)
+        
         return bazin_param
 
     def evaluate_bazin(self, time: np.array):
@@ -514,14 +515,21 @@ class LightCurve:
         Perform Bazin fit for all filters independently and concatenate results.
         Populates the attributes: bazin_features.
         """
-        self.bazin_features = []
         default_bazin_features = ['None'] * len(self.bazin_features_names)
-        for each_band in self.filters:
-            best_fit = self.fit_bazin(each_band)
-            if (best_fit.size > 0) and (not np.isnan(np.sum(best_fit))):
-                self.bazin_features.extend(best_fit.tolist())
-            else:
-                self.bazin_features.extend(default_bazin_features)
+        
+        if self.photometry.shape[0] < 1:
+            raise ValueError('No observed points to fit!')
+            
+        elif 'None' not in self.bazin_features:
+            self.bazin_features = []
+            for each_band in self.filters:
+                best_fit = self.fit_bazin(band=each_band)
+                if (best_fit.size > 0) and (not np.isnan(np.sum(best_fit))):
+                    self.bazin_features.extend(best_fit.tolist())
+                else:
+                    self.bazin_features.extend(default_bazin_features)
+        else:
+            self.bazin_features.extend(default_bazin_features)
 
     def clear_data(self):
         """ Reset to default values """

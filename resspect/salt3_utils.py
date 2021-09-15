@@ -138,7 +138,7 @@ def get_distances(snid_file,data_folder: str, data_prefix: str,
                          phot_version=phot_version, fitres_prefix=prefix,
                          salt2mu_prefix = salt2mu_prefix,
                          stages=['lcfit'], glue=False,tempfile=salt3_tempfile,
-                         outfile=salt3_outfile,**kwargs)
+                         outfile=salt3_outfile, result_dir=outputdir, **kwargs)
         hook.run() 
         fitres_list.append(fitres_file)
     

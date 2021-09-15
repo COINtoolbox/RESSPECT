@@ -140,10 +140,11 @@ class PLAsTiCCPhotometry:
 
     def read_metadata(self, path_to_data_dir: str, classes: list,
                       field: str = 'DDF', meta_data_file_name:
-                      str = 'plasticc_test_metadata.csv.gz'):
+                      str = 'plasticc_test_metadata.csv'):
         """
         Read metadata and filter only required classes.
         Populates the metadata attribute.
+        
         Parameters
         ----------
         path_to_data_dir: str
@@ -153,9 +154,10 @@ class PLAsTiCCPhotometry:
         field: str (optional)
             Telescope cadence.
             'DDF', 'WFD' or 'DDF+WFD'. Default is 'DDF'.
-        meta_data_file_name
-            meta data file name
+        meta_data_file_name: str (optional)
+            Meta data file name. Default is 'plasticc_test_metadata.csv'.
         """
+        
         meta_data_file_name = os.path.join(
             path_to_data_dir, meta_data_file_name)
         meta_data_raw = read_plasticc_full_photometry_data(meta_data_file_name)
