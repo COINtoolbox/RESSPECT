@@ -117,7 +117,7 @@ For SNPCC:
 
 The raw data looks like this:
 
-.. literalinclude:: images/DES_SN848233.DAT
+.. literalinclude:: images/DES_SN729076.DAT
  :lines: 1-61
 
 You can load this data using:
@@ -127,7 +127,7 @@ You can load this data using:
 
    >>> from resspect.fit_lightcurves import LightCurve
 
-   >>> path_to_lc = 'data/SIMGEN_PUBLIC_DES/DES_SN848233.DAT'
+   >>> path_to_lc = 'data/SIMGEN_PUBLIC_DES/DES_SN729076.DAT'
 
    >>> lc = LightCurve()                        # create light curve instance
    >>> lc.load_snpcc_lc(path_to_lc)             # read data
@@ -144,11 +144,11 @@ Once the data is properly loaded, the photometry can be recovered by:
 
    >>> lc.photometry                            # check structure of photometry
              mjd band     flux  fluxerr   SNR
-    0    56194.145    g   7.600    4.680   1.62
-    1    56194.156    r   3.875    2.752   1.41
-    ...        ...  ...      ...      ...   ...
-    106  56348.008    z  70.690    6.706  10.54
-    107  56348.996    g  26.000    5.581   4.66
+    0	56194.012	g	13.090	6.204	2.11	99.000	5.000
+    1	56194.016	r	-4.680	3.585	-1.31	99.000	5.000
+    ...	...	...	...	...	...	...	...
+    75	56317.051	i	173.200	7.661	22.60	21.904	0.049
+    76	56318.035	z	141.000	13.720	10.28	22.127	0.111
 
 
 You can now fit each individual filter to the parametric function proposed by
