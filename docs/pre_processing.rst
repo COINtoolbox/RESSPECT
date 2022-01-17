@@ -159,7 +159,7 @@ You can now fit each individual filter to the parametric function proposed by
 
    >>> rband_features = lc.fit_bazin('r')
    >>> print(rband_features)
-   [159.25796385, -13.39398527,  55.16210333, 111.81204143, -20.13492354]
+  [514.92432962  -5.99556655  40.59581991  40.03343317   3.74307339]
 
 The designation for each parameter are stored in:
 
@@ -176,15 +176,15 @@ It is possible to perform the fit in all filters at once and visualize the resul
 
    >>> lc.fit_bazin_all()                            # perform Bazin fit in all filters
    >>> lc.plot_bazin_fit(save=True, show=True,
-   >>>                   output_file='plots/SN' + str(lc.id) + '.png')   # save to file
+   >>>                   output_file='plots/SN' + str(lc.id) + '_flux.png')   # save to file
 
-.. figure:: images/SN7948.png
+.. figure:: images/SN729076_flux.png
    :align: center
    :height: 480 px
    :width: 640 px
-   :alt: Bazing fit to light curve. This is an example from RESSPECT perfect simulations.
+   :alt: Bazing fit to light curve. This is an example from SNPCC simulations.
 
-   Example of light curve from RESSPECT perfect simulations.
+   Example of light curve from SNPCC simulations.
 
 
 This can be done in flux as well as in magnitude:
@@ -194,7 +194,7 @@ This can be done in flux as well as in magnitude:
 
     >>> lc.plot_bazin_fit(save=False, show=True, unit='mag')
 
-.. figure:: images/SN834603.png
+.. figure:: images/SN729076_mag.png
    :align: center
    :height: 480 px
    :width: 640 px
@@ -217,7 +217,7 @@ Before deploying  large batches for pre-processing, you might want to visualize 
                           time_flux_pred=[max_mjd+3, max_mjd+5, max_mjd+10])
 
 
-.. figure:: images/SN469949_extrap.png
+.. figure:: images/SN729076_flux_extrap.png
    :align: center
    :height: 480 px
    :width: 640 px
