@@ -518,7 +518,7 @@ class LightCurve:
         default_bazin_features = ['None'] * len(self.bazin_features_names)
         
         if self.photometry.shape[0] < 1:
-            raise ValueError('No observed points to fit!')
+            self.bazin_features = ['None'] * len(self.bazin_features_names) * len(self.filters)
             
         elif 'None' not in self.bazin_features:
             self.bazin_features = []
