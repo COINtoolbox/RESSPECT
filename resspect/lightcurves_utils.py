@@ -169,6 +169,7 @@ def get_photometry_with_id_name_and_snid(
         if snid_column_name in full_photometry.keys():
             snid_indices = full_photometry[snid_column_name] == snid
             return full_photometry[snid_indices], snid_column_name
+        
     return pd.DataFrame(), None
 
 
@@ -254,11 +255,13 @@ def read_plasticc_full_photometry_data(file_path: str) -> pd.DataFrame:
     if file_path.endswith('.tar.gz'):
         tar_content = read_tar_file(file_path)
         return pd.read_csv(io.BytesIO(tar_content))
+    
     if file_path.endswith(('.csv', '.csv.gz')):
         full_photometry = pd.read_csv(file_path, index_col=False)
         if ' ' in full_photometry.keys()[0]:
             full_photometry = pd.read_csv(file_path, sep=' ', index_col=False)
         return full_photometry
+    
     raise ValueError(f"Unknown PLAsTiCC photometry data file: {file_path}")
 
 

@@ -89,6 +89,9 @@ class LightCurve:
         Number identifying the SN model used in the simulation.
     sntype: str
         General classification, possibilities are: Ia, II or Ibc.
+    unique_ids: str or array
+        List of unique ids available in the photometry file. 
+        Only used for PLAsTiCC data.
 
     Methods
     -------
@@ -182,6 +185,7 @@ class LightCurve:
         self.sim_pkmjd = None
         self.sncode = 0
         self.sntype = ' '
+
 
     def _get_snpcc_photometry_raw_and_header(
             self, lc_data: np.ndarray,
@@ -289,10 +293,13 @@ class LightCurve:
         if self.full_photometry.empty:
             self.full_photometry = read_plasticc_full_photometry_data(
                 photo_file)
+            
         id_names_list = ['object_id', 'SNID', 'snid']
+        
         filtered_photometry, self.id_name = (
             get_photometry_with_id_name_and_snid(
                 self.full_photometry, id_names_list, snid))
+
         filter_mapping_dict = {
             0: 'u', 1: 'g', 2: 'r', 3: 'i', 4: 'z', 5: 'Y'
         }
@@ -771,7 +778,7 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file: str,
 
 
 def fit_plasticc_bazin(path_photo_file: str, path_header_file: str,
-                       output_file: str, sample=None):
+                       output_file: str, sample='train'):
     """Perform Bazin fit to all objects in a given PLAsTiCC data file.
     Parameters
     ----------
@@ -782,14 +789,22 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file: str,
     output_file: str
         Output file where the features will be stored.
     sample: str
-        'train' or 'test'. Default is None.
+        'train' or 'test'. Default is 'train'.
     """
+    
+    name_list =  ['SNID', 'snid', 'objid', 'object_id']
     meta_header = read_plasticc_full_photometry_data(path_header_file)
     meta_header_keys = meta_header.keys().tolist()
     id_name = find_available_key_name_in_header(
-        meta_header_keys, ['SNID', 'snid', 'objid', 'object_id'])
+        meta_header_keys, name_list)
     light_curve_data = LightCurve()
-    snid_values = meta_header[id_name]
+    
+    if sample == 'train':
+        snid_values = meta_header[id_name]
+    elif sample == 'test':
+        light_curve_data.full_photometry = read_plasticc_full_photometry_data(path_photo_file)
+        snid_values = pd.DataFrame(np.unique(light_curve_data.full_photometry[id_name].values), 
+                                   columns=[id_name])[id_name]
 
     with open(output_file, 'w') as plasticc_features_file:
         plasticc_features_file.write(
