@@ -40,7 +40,7 @@ You can perform the entire analysis for one day of the survey using the `SNPCCPh
 .. code-block:: python
    :linenos:
 
-   >>> from resspect.time_domain_SNPCC import SNPCCPhotometry
+   >>> from resspect.time_domain_snpcc import SNPCCPhotometry
 
    >>> path_to_data = 'data/SIMGEN_PUBLIC_DES/'
    >>> output_dir = 'results/time_domain/'
@@ -61,6 +61,6 @@ Alternatively you can use the command line to prepare a sequence of days in one 
 
 .. code-block:: bash
 
-   >>> build_time_domain_SNPCC.py -d 20 21 22 23 -p <path to raw data dir> 
+   >>> build_time_domain_snpcc.py -d 20 21 22 23 -p <path to raw data dir> 
    >>>        -o <path to output time domain dir> -q 2 -c True
 

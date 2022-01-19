@@ -409,9 +409,11 @@ def get_query_flags(light_curve_data, telescope_names: list,
         Threshold for exposure time data
     """
     query_flags = []
+    
     for each_name in telescope_names:
         if light_curve_data.exp_time[each_name] < query_flags_threshold:
             query_flags.append(True)
         else:
             query_flags.append(False)
+            
     return query_flags

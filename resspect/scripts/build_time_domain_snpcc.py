@@ -17,7 +17,7 @@
 
 import argparse
 
-from resspect.time_domain_SNPCC import SNPCCPhotometry
+from resspect.time_domain_snpcc import SNPCCPhotometry
 
 __all__ = ['main']
 

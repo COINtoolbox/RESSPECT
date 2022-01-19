@@ -370,7 +370,7 @@ class LightCurve:
         rband_flag = self.photometry['band'].values == filter_cut
         surv_flag = np.logical_and(photo_flag, rband_flag)
 
-        if criteria == 1:
+        if criteria == 1 and sum(surv_flag):
             if 'MAG' in self.photometry.keys():
                 # check surviving photometry
                 self.last_mag = self.photometry['MAG'].values[surv_flag][-1]
@@ -379,7 +379,7 @@ class LightCurve:
                 surv_flux = self.photometry['flux'].values[surv_flag]
                 self.last_mag = self.conv_flux_mag([surv_flux[-1]])[0]
 
-        elif criteria == 2:
+        elif criteria == 2 and sum(surv_flag):
             # check if there is an observation recently
             surv_mjd = self.photometry['mjd'].values[surv_flag]
             gap = mjd - surv_mjd[-1]
@@ -405,9 +405,11 @@ class LightCurve:
             else:
                 raise ValueError('Only "Bazin" features are implemented!')
 
-        else:
+        elif sum(surv_flag):
             raise ValueError('Criteria needs to be "1" or "2". \n ' + \
                              'See docstring for further info.')
+        elif not sum(surv_flag):
+            return False
 
         if self.last_mag <= filter_lim:
             return True
