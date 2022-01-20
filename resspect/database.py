@@ -1072,8 +1072,9 @@ class DataBase:
         del self.photo_Ia_metadata
         self.photo_Ia_metadata = data
 
-    def output_photo_Ia(self, threshold: float, metadata_fname: str,
-                        to_file=True, filename=' ', SNANA_types=False):
+    def output_photo_Ia(self, threshold: float, filename: str, 
+                        metadata_fname: str,
+                        to_file=True, SNANA_types=False):
         """Returns the metadata for  photometrically classified SN Ia.
 
         Parameters

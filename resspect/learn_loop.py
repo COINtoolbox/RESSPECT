@@ -147,7 +147,7 @@ def run_evaluation(database_class: DataBase, metric_label: str):
 def save_photo_ids(database_class: DataBase, is_save_photoids_to_file: bool,
                    is_save_snana_types: bool, metadata_fname: str,
                    photo_class_threshold: float, iteration_step: int,
-                   file_name_suffix: str = None, file_name_prefix: str = None):
+                   file_name_prefix: str = None, file_name_suffix: str = None):
     """
     Function to save photo IDs to a file
 
