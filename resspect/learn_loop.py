@@ -17,7 +17,7 @@
 
 __all__ = ['learn_loop', 'load_features', 'run_classification', 
           'run_evaluation', 'save_photo_ids', 'run_make_query',
-          'update_alternative_label', '']
+          'update_alternative_label']
 
 import copy
 import logging
@@ -322,7 +322,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                bool = False, sep_files=False, pred_dir: str = None,
                queryable: bool = False, metric_label: str = 'snpcc',
                save_alt_class: bool = False, SNANA_types: bool = False,
-               metadata_fname: str = None, **kwargs):
+               metadata_fname: str = None, bar: bool = True, **kwargs):
     """
     Perform the active learning loop. All results are saved to file.
 
@@ -401,7 +401,9 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         If int: choose the required number of samples at random,
         ensuring that at least half are SN Ia
         Default is 'original'.
-     kwargs: extra parameters
+    bar: bool (optional)
+        If True, display progress bar.     
+    kwargs: extra parameters
         All keywords required by the classifier function.
     """
     if 'QBD' in strategy and not classifier_bootstrap:
@@ -417,7 +419,12 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     
     logging.info('Running active learning loop')
     
-    for iteration_step in progressbar.progressbar(range(nloops)):
+    if bar:
+        ensemble = progressbar.progressbar(range(nloops))
+    else:
+        ensemble = range(nloops)
+    
+    for iteration_step in ensemble:
         database_class = run_classification(
             database_class, classifier, classifier_bootstrap, pred_dir,
             save_predictions, iteration_step, **kwargs)
