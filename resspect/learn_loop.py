@@ -15,7 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ['learn_loop']
+__all__ = ['learn_loop', 'load_features', 'run_classification', 
+          'run_evaluation', 'save_photo_ids', 'run_make_query',
+          'update_alternative_label', '']
 
 import copy
 import logging
@@ -295,13 +297,17 @@ def update_alternative_label(database_class_alternative: DataBase,
     database_class_alternative.update_samples(
         indices_to_query, epoch=iteration_step,
         alternative_label=True)
+    
     database_class_alternative = run_classification(
         database_class_alternative, classifier, False, pred_dir,
         is_save_prediction, iteration_step, **kwargs)
+    
     run_evaluation(database_class_alternative, metric_label)
+    
     save_photo_ids(database_class_alternative, is_save_photoids_to_file,
                    is_save_snana_types, meta_data_fname, photo_class_threshold,
                    iteration_step, photo_ids_froot,'_alt_label.dat')
+    
     return database_class_alternative
 
 
@@ -320,95 +326,97 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     """
     Perform the active learning loop. All results are saved to file.
 
-   Parameters
-   ----------
-   nloops: int
-       Number of active learning loops to run.
-   strategy: str
-       Query strategy. Options are 'UncSampling', 'RandomSampling',
-       'UncSamplingEntropy', 'UncSamplingLeastConfident', 'UncSamplingMargin',
+    Parameters
+    ----------
+    nloops: int
+        Number of active learning loops to run.
+    strategy: str
+        Query strategy. Options are 'UncSampling', 'RandomSampling',
+        'UncSamplingEntropy', 'UncSamplingLeastConfident', 'UncSamplingMargin',
         'QBDMI' and 'QBDEntropy'.
-   path_to_features: str or dict
-       Complete path to input features file.
-       if dict, keywords should be 'train' and 'test',
-       and values must contain the path for separate train
-       and test sample files.
-   output_metrics_file: str
-       Full path to output file to store metric values of each loop.
-   output_queried_file: str
-       Full path to output file to store the queried sample.
-   features_method: str (optional)
-       Feature extraction method. Currently only 'Bazin' is implemented.
-   classifier: str (optional)
-       Machine Learning algorithm.
-       Currently implemented options are 'RandomForest', 'GradientBoostedTrees',
-       'K-NNclassifier','MLPclassifier','SVMclassifier' and 'NBclassifier'.
-       Default is 'RandomForest'.
-   sep_files: bool (optional)
-       If True, consider train and test samples separately read
-       from independent files. Default is False.
-   batch: int (optional)
-       Size of batch to be queried in each loop. Default is 1.
-   classifier_bootstrap: bool (optional)
-       Flag for bootstrapping on the classifier
-       Must be true if using disagreement based strategy.
-   metadata_fname: str (optional)
-       Complete path to PLAsTiCC zenodo test metadata. Only used it
-       SNANA_types == True. Default is None.
-   metric_label: str (optional)
-       Choice of metric.
-       Currently only "snpcc", "cosmo" or "snpcc_cosmo" are accepted.
-       Default is "snpcc".
-   nclass: int (optional)
-       Number of classes to consider in the classification
-       Currently only nclass == 2 is implemented.
-   photo_class_thr: float (optional)
-       Threshold for photometric classification. Default is 0.5.
-       Only used if photo_ids is True.
-
-   photo_ids_to_file: bool (optional)
-       If True, save photometric ids to file. Default is False.
-   photo_ids_froot: str (optional)
-       Output root of file name to store photo ids.
-       Only used if photo_ids is True.
-   pred_dir: str (optional)
-       Output diretory to store prediction file for each loop.
-       Only used if `save_predictions==True`.
-   queryable: bool (optional)
-       If True, check if randomly chosen object is queryable.
-       Default is False.
-   save_alt_class: bool (optional)
-       If True, train the model and save classifications for alternative
-       query label (this is necessary to calculate impact on cosmology).
-       Default is False.
-   save_predictions: bool (optional)
-       If True, save classification predictions to file in each loop.
-       Default is False.
-   SNANA_types: bool (optional)
-       If True, translate zenodo types to SNANA codes.
-       Default is False.
-   survey: str (optional)
-       'DES' or 'LSST'. Default is 'DES'.
-       Name of the survey which characterizes filter set.
-   training: str or int (optional)
-       Choice of initial training sample.
-       If 'original': begin from the train sample flagged in the file
-       If int: choose the required number of samples at random,
-       ensuring that at least half are SN Ia
-       Default is 'original'.
-    kwargs: extra parameters
-       All keywords required by the classifier function.
+    path_to_features: str or dict
+        Complete path to input features file.
+        if dict, keywords should be 'train' and 'test',
+        and values must contain the path for separate train
+        and test sample files.
+    output_metrics_file: str
+        Full path to output file to store metric values of each loop.
+    output_queried_file: str
+        Full path to output file to store the queried sample.
+    features_method: str (optional)
+        Feature extraction method. Currently only 'Bazin' is implemented.
+    classifier: str (optional)
+        Machine Learning algorithm.
+        Currently implemented options are 'RandomForest', 'GradientBoostedTrees',
+        'K-NNclassifier','MLPclassifier','SVMclassifier' and 'NBclassifier'.
+        Default is 'RandomForest'.
+    sep_files: bool (optional)
+        If True, consider train and test samples separately read
+        from independent files. Default is False.
+    batch: int (optional)
+        Size of batch to be queried in each loop. Default is 1.
+    classifier_bootstrap: bool (optional)
+        Flag for bootstrapping on the classifier
+        Must be true if using disagreement based strategy.
+    metadata_fname: str (optional)
+        Complete path to PLAsTiCC zenodo test metadata. Only used it
+        SNANA_types == True. Default is None.
+    metric_label: str (optional)
+        Choice of metric.
+        Currently only "snpcc", "cosmo" or "snpcc_cosmo" are accepted.
+        Default is "snpcc".
+    nclass: int (optional)
+        Number of classes to consider in the classification
+        Currently only nclass == 2 is implemented.
+    photo_class_thr: float (optional)
+        Threshold for photometric classification. Default is 0.5.
+        Only used if photo_ids is True.
+    photo_ids_to_file: bool (optional)
+        If True, save photometric ids to file. Default is False.
+    photo_ids_froot: str (optional)
+        Output root of file name to store photo ids.
+        Only used if photo_ids is True.
+    pred_dir: str (optional)
+        Output diretory to store prediction file for each loop.
+        Only used if `save_predictions==True`.
+    queryable: bool (optional)
+        If True, check if randomly chosen object is queryable.
+        Default is False.
+    save_alt_class: bool (optional)
+        If True, train the model and save classifications for alternative
+        query label (this is necessary to calculate impact on cosmology).
+        Default is False.
+    save_predictions: bool (optional)
+        If True, save classification predictions to file in each loop.
+        Default is False.
+    SNANA_types: bool (optional)
+        If True, translate zenodo types to SNANA codes.
+        Default is False.
+    survey: str (optional)
+        'DES' or 'LSST'. Default is 'DES'.
+        Name of the survey which characterizes filter set.
+    training: str or int (optional)
+        Choice of initial training sample.
+        If 'original': begin from the train sample flagged in the file
+        If int: choose the required number of samples at random,
+        ensuring that at least half are SN Ia
+        Default is 'original'.
+     kwargs: extra parameters
+        All keywords required by the classifier function.
     """
     if 'QBD' in strategy and not classifier_bootstrap:
         raise ValueError(
             'Bootstrap must be true when using disagreement strategy')
+        
     # initiate object
     database_class = DataBase()
     logging.info('Loading features')
     database_class = load_features(database_class, path_to_features, survey,
                                    features_method, nclass, training, queryable,
                                    sep_files)
+    
     logging.info('Running active learning loop')
+    
     for iteration_step in progressbar.progressbar(range(nloops)):
         database_class = run_classification(
             database_class, classifier, classifier_bootstrap, pred_dir,
@@ -430,6 +438,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                 database_class_alternative, output_metrics_file,
                 output_queried_file, iteration_step, batch, False,
                 '_alt_label.dat')
+            
         elif save_alt_class and batch > 1:
             raise ValueError('Alternative label only works with batch=1!')
 
