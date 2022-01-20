@@ -425,6 +425,9 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         ensemble = range(nloops)
     
     for iteration_step in ensemble:
+        if not bar:
+            print(iteration_step)
+            
         database_class = run_classification(
             database_class, classifier, classifier_bootstrap, pred_dir,
             save_predictions, iteration_step, **kwargs)
