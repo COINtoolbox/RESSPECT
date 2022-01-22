@@ -15,18 +15,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import multiprocessing
+import logging
 import os
+from copy import copy
+from itertools import repeat
 from typing import IO
 from typing import Tuple
-
+from typing import Union
+import warnings
 
 import matplotlib.pylab as plt
 import numpy as np
 import pandas as pd
-import progressbar
-import warnings
 
-from resspect.bazin import bazin, fit_scipy
+from resspect.bazin import bazin
+from resspect.bazin import fit_scipy
 from resspect.exposure_time_calculator import ExpTimeCalc
 from resspect.lightcurves_utils import read_file
 from resspect.lightcurves_utils import get_resspect_header_data
@@ -44,6 +48,7 @@ from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
+logging.basicConfig(level=logging.INFO)
 
 __all__ = ['LightCurve', 'fit_snpcc_bazin', 'fit_resspect_bazin',
            'fit_plasticc_bazin']
@@ -90,7 +95,7 @@ class LightCurve:
     sntype: str
         General classification, possibilities are: Ia, II or Ibc.
     unique_ids: str or array
-        List of unique ids available in the photometry file. 
+        List of unique ids available in the photometry file.
         Only used for PLAsTiCC data.
 
     Methods
@@ -293,9 +298,9 @@ class LightCurve:
         if self.full_photometry.empty:
             self.full_photometry = read_plasticc_full_photometry_data(
                 photo_file)
-            
+
         id_names_list = ['object_id', 'SNID', 'snid']
-        
+
         filtered_photometry, self.id_name = (
             get_photometry_with_id_name_and_snid(
                 self.full_photometry, id_names_list, snid))
@@ -482,7 +487,7 @@ class LightCurve:
 
         # fit Bazin function
         bazin_param = fit_scipy(time - time[0], flux, fluxerr)
-        
+
         return bazin_param
 
     def evaluate_bazin(self, time: np.array):
@@ -525,10 +530,10 @@ class LightCurve:
         Populates the attributes: bazin_features.
         """
         default_bazin_features = ['None'] * len(self.bazin_features_names)
-        
+
         if self.photometry.shape[0] < 1:
             self.bazin_features = ['None'] * len(self.bazin_features_names) * len(self.filters)
-            
+
         elif 'None' not in self.bazin_features:
             self.bazin_features = []
             for each_band in self.filters:
@@ -703,10 +708,31 @@ def write_features_to_output_file(
                  in current_features) + '\n')
 
 
+def _snpcc_sample_fit_bazin(
+        file_name: str, path_to_data_dir: str) -> LightCurve:
+    """
+    Reads SNPCC file and performs bazin fit
+    Parameters
+    ----------
+    file_name
+        SNPCC file name
+    path_to_data_dir
+         Path to directory containing the set of individual files,
+         one for each light curve.
+
+    """
+    light_curve_data = LightCurve()
+    light_curve_data.load_snpcc_lc(
+        os.path.join(path_to_data_dir, file_name))
+    light_curve_data.fit_bazin_all()
+    return light_curve_data
+
+
 def fit_snpcc_bazin(
         path_to_data_dir: str, features_file: str,
-        file_prefix: str = "DES_SN"):
-    """Perform Bazin fit to all objects in the SNPCC data.
+        file_prefix: str = "DES_SN", number_of_processors: int = None):
+    """
+    Perform Bazin fit to all objects in the SNPCC data.
 
      Parameters
      ----------
@@ -717,24 +743,68 @@ def fit_snpcc_bazin(
          Path to output file where results should be stored.
      file_prefix: str
         File names prefix
-     """
+     number_of_processors: int, default all
+        Number of cpu processes to use
+    """
     files_list = os.listdir(path_to_data_dir)
     files_list = [each_file for each_file in files_list
                   if each_file.startswith(file_prefix)]
+    multi_process = multiprocessing.Pool(number_of_processors)
+    logging.info("Starting SNPCC bazin fit...")
     with open(features_file, 'w') as snpcc_features_file:
         snpcc_features_file.write(' '.join(SNPCC_FEATURES_HEADER) + '\n')
-        for each_file in progressbar.progressbar(files_list):
-            light_curve_data = LightCurve()
-            light_curve_data.load_snpcc_lc(
-                os.path.join(path_to_data_dir, each_file))
-            light_curve_data.fit_bazin_all()
+        for light_curve_data in multi_process.starmap(
+                _snpcc_sample_fit_bazin, zip(
+                    files_list, repeat(path_to_data_dir))):
             if 'None' not in light_curve_data.bazin_features:
                 write_features_to_output_file(
                     light_curve_data, snpcc_features_file)
+    logging.info("Features have been saved to: %s", features_file)
+
+
+def _resspect_sample_fit_bazin(
+        index: int, snid: int, path_photo_file: str,
+        sample: str, light_curve_data: LightCurve, meta_header: pd.DataFrame,
+        redshift_name: Union[str, None], sncode_name: Union[str, None],
+        sntype_name: Union[str, None]) -> LightCurve:
+    """
+    Performs bazin fit for PLAsTiCC dataset with snid
+
+    Parameters
+    ----------
+    index
+        index of snid
+    snid
+        Identification number for the desired light curve.
+    path_photo_file: str
+        Complete path to light curve file.
+    sample: str
+        'train' or 'test'. Default is None.
+    light_curve_data
+        light curve class
+    meta_header
+        photometry meta header data
+    redshift_name
+        redshift meta header column name
+    sncode_name
+        sncode meta header column name
+    sntype_name
+        sntype meta header column name
+    """
+    light_curve_data.load_resspect_lc(path_photo_file, snid)
+    light_curve_data.fit_bazin_all()
+    light_curve_data.redshift = meta_header[redshift_name][index]
+    light_curve_data.sncode = meta_header[sncode_name][index]
+    light_curve_data.sntype = meta_header[sntype_name][index]
+    light_curve_data.sample = sample
+    light_curve_data_copy = copy(light_curve_data)
+    light_curve_data.clear_data()
+    return light_curve_data_copy
 
 
 def fit_resspect_bazin(path_photo_file: str, path_header_file: str,
-                       output_file: str, sample=None):
+                       output_file: str, sample=None,
+                       number_of_processors: int = None):
     """Perform Bazin fit to all objects in a given RESSPECT data file.
 
     Parameters
@@ -747,6 +817,8 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file: str,
         Output file where the features will be stored.
     sample: str
         'train' or 'test'. Default is None.
+    number_of_processors: int, default all
+        Number of cpu processes to use
     """
     meta_header = get_resspect_header_data(path_header_file, path_photo_file)
 
@@ -762,26 +834,65 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file: str,
 
     light_curve_data = LightCurve()
     snid_values = meta_header[id_name]
-
+    snid_values = np.array(list(snid_values.items()))
+    multi_process = multiprocessing.Pool(number_of_processors)
+    logging.info("Starting RESSPECT bazin fit...")
     with open(output_file, 'w') as ressepect_features_file:
         ressepect_features_file.write(
             ' '.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
-        for index, each_snid in progressbar.progressbar(snid_values.items()):
-            light_curve_data.load_resspect_lc(path_photo_file, each_snid)
-            light_curve_data.fit_bazin_all()
-            light_curve_data.redshift = meta_header[z_name][index]
-            light_curve_data.sncode = meta_header[subtype_name][index]
-            light_curve_data.sntype = meta_header[type_name][index]
-            light_curve_data.sample = sample
+        iterator_list = zip(
+            snid_values[:, 0].tolist(), snid_values[:, 1].tolist(),
+            repeat(path_photo_file), repeat(sample), repeat(light_curve_data),
+            repeat(meta_header), repeat(z_name), repeat(subtype_name),
+            repeat(type_name))
+        for light_curve_data in multi_process.starmap(
+                _resspect_sample_fit_bazin, iterator_list):
             if 'None' not in light_curve_data.bazin_features:
                 write_features_to_output_file(
                     light_curve_data, ressepect_features_file)
             light_curve_data.clear_data()
+    logging.info("Features have been saved to: %s", output_file)
+
+
+def _plasticc_sample_fit_bazin(
+        index: int, snid: int, path_photo_file: str,
+        sample: str, light_curve_data: LightCurve,
+        meta_header: pd.DataFrame) -> LightCurve:
+    """
+    Performs bazin fit for PLAsTiCC dataset with snid
+
+    Parameters
+    ----------
+    index
+        index of snid
+    snid
+        Identification number for the desired light curve.
+    path_photo_file: str
+        Complete path to light curve file.
+    sample: str
+        'train' or 'test'. Default is None.
+    light_curve_data
+        light curve class
+    meta_header
+        photometry meta header data
+    """
+    light_curve_data.load_plasticc_lc(path_photo_file, snid)
+    light_curve_data.fit_bazin_all()
+    light_curve_data.redshift = meta_header['true_z'][index]
+    light_curve_data.sncode = meta_header['true_target'][index]
+    light_curve_data.sntype = PLASTICC_TARGET_TYPES[
+        light_curve_data.sncode]
+    light_curve_data.sample = sample
+    light_curve_data_copy = copy(light_curve_data)
+    light_curve_data.clear_data()
+    return light_curve_data_copy
 
 
 def fit_plasticc_bazin(path_photo_file: str, path_header_file: str,
-                       output_file: str, sample='train'):
-    """Perform Bazin fit to all objects in a given PLAsTiCC data file.
+                       output_file: str, sample='train',
+                       number_of_processors: int = None):
+    """
+    Perform Bazin fit to all objects in a given PLAsTiCC data file.
     Parameters
     ----------
     path_photo_file: str
@@ -792,37 +903,40 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file: str,
         Output file where the features will be stored.
     sample: str
         'train' or 'test'. Default is 'train'.
+    number_of_processors: int, default all
+        Number of cpu processes to use
     """
-    
-    name_list =  ['SNID', 'snid', 'objid', 'object_id']
+
+    name_list = ['SNID', 'snid', 'objid', 'object_id']
     meta_header = read_plasticc_full_photometry_data(path_header_file)
     meta_header_keys = meta_header.keys().tolist()
     id_name = find_available_key_name_in_header(
         meta_header_keys, name_list)
     light_curve_data = LightCurve()
-    
+
     if sample == 'train':
         snid_values = meta_header[id_name]
     elif sample == 'test':
-        light_curve_data.full_photometry = read_plasticc_full_photometry_data(path_photo_file)
-        snid_values = pd.DataFrame(np.unique(light_curve_data.full_photometry[id_name].values), 
-                                   columns=[id_name])[id_name]
-
+        light_curve_data.full_photometry = read_plasticc_full_photometry_data(
+            path_photo_file)
+        snid_values = pd.DataFrame(np.unique(
+            light_curve_data.full_photometry[id_name].values),
+            columns=[id_name])[id_name]
+    snid_values = np.array(list(snid_values.items()))
+    multi_process = multiprocessing.Pool(number_of_processors)
+    logging.info("Starting PLAsTiCC bazin fit...")
     with open(output_file, 'w') as plasticc_features_file:
         plasticc_features_file.write(
             ' '.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
-        for index, each_snid in progressbar.progressbar(snid_values.items()):
-            light_curve_data.load_plasticc_lc(path_photo_file, each_snid)
-            light_curve_data.fit_bazin_all()
-            light_curve_data.redshift = meta_header['true_z'][index]
-            light_curve_data.sncode = meta_header['true_target'][index]
-            light_curve_data.sntype = PLASTICC_TARGET_TYPES[
-                light_curve_data.sncode]
-            light_curve_data.sample = sample
+        iterator_list = zip(
+            snid_values[:, 0].tolist(), snid_values[:, 1].tolist(), repeat(path_photo_file),
+            repeat(sample), repeat(light_curve_data), repeat(meta_header))
+        for light_curve_data in multi_process.starmap(
+                _plasticc_sample_fit_bazin, iterator_list):
             if 'None' not in light_curve_data.bazin_features:
                 write_features_to_output_file(
                     light_curve_data, plasticc_features_file)
-            light_curve_data.clear_data()
+    logging.info("Features have been saved to: %s", output_file)
 
 
 def main():
@@ -831,4 +945,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
