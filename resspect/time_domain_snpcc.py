@@ -16,7 +16,9 @@
 # limitations under the License.
 
 import logging
+import multiprocessing
 import os
+from itertools import repeat
 from typing import Union
 
 import progressbar
@@ -24,6 +26,8 @@ from resspect import LightCurve
 from resspect.lightcurves_utils import BAZIN_HEADERS
 from resspect.lightcurves_utils import get_query_flags
 from resspect.lightcurves_utils import maybe_create_directory
+
+logging.basicConfig(level=logging.INFO)
 
 __all__ = ['SNPCCPhotometry']
 
@@ -70,6 +74,7 @@ class SNPCCPhotometry:
         self._features_file_name = None  # type: str
         self._today = None  # type: int
         self._number_of_telescopes = None  # type: int
+        self._kwargs = None  # type: dict
 
     def get_lim_mjds(self, raw_data_dir: str) -> list:
         """
@@ -92,7 +97,7 @@ class SNPCCPhotometry:
         # store MJDs
         min_day = []
         max_day = []
-        
+
         for each_file in progressbar.progressbar(files_list):
             light_curve_data = LightCurve()
             light_curve_data.load_snpcc_lc(os.path.join(raw_data_dir, each_file))
@@ -100,7 +105,7 @@ class SNPCCPhotometry:
             max_day.append(max(light_curve_data.photometry['mjd'].values))
             self.min_epoch = min(min_day)
             self.max_epoch = max(max_day)
-            
+
         return [min(min_day), max(max_day)]
 
     def create_daily_file(self, output_dir: str,
@@ -141,7 +146,7 @@ class SNPCCPhotometry:
     def _verify_telescope_names(self, telescope_names: list, get_cost: bool):
         """
         Verifies telescope names.
-        
+
         Parameters
         ----------
         telescope_names: list
@@ -149,11 +154,11 @@ class SNPCCPhotometry:
         get_cost: bool
            if cost of taking a spectra is computed
         """
-        
+
         if (('cost_' + telescope_names[0] not in self._bazin_header or
             'cost_' + telescope_names[1] not in self._bazin_header)
                 and get_cost):
-            
+
             raise ValueError('Unknown or not supported telescope names')
 
     def _maybe_create_features_file(self, output_dir: str, day_of_survey: int,
@@ -260,7 +265,7 @@ class SNPCCPhotometry:
             min_available_points: int = 5) -> Union[LightCurve, None]:
         """
         Processes each light curve files.
-        
+
         Parameters
         ----------
         light_curve_data: resspect.LightCurve
@@ -292,7 +297,7 @@ class SNPCCPhotometry:
             light_curve_data.photometry = light_curve_data.photometry[
                 photo_flag]
             light_curve_data.fit_bazin_all()
-            
+
             if (len(light_curve_data.bazin_features) > 0 and
                     'None' not in light_curve_data.bazin_features):
                 light_curve_data.queryable = self._check_queryable(
@@ -332,16 +337,59 @@ class SNPCCPhotometry:
                 features_list.append(str(
                     light_curve_data.exp_time[telescope_names[index]]))
         features_list.extend(light_curve_data.bazin_features)
-        
         return features_list
+
+    def _get_current_sample_features(
+            self, file_name: str, raw_data_dir: str, queryable_criteria: int,
+            days_since_observation: int, telescope_names: list,
+            telescope_sizes: list, spec_SNR: int) -> LightCurve:
+        """
+        Reads a SNPCC file and updates time domain features
+
+        Parameters
+        ----------
+        file_name
+            SNPCC file name
+        raw_data_dir: str
+            Complete path to raw data directory
+        queryable_criteria: int [1 or 2] (optional)
+            Criteria to determine if an obj is queryable.
+            1 -> r-band cut on last measured photometric point.
+            2 -> last obs was further than a given limit,
+                 use Bazin estimate of flux today. Otherwise, use
+                 the last observed point.
+            Default is 1.
+        days_since_observation: int (optional)
+            Day since last observation to consider for spectroscopic
+            follow-up without the need to extrapolate light curve.
+            Only used if "queryable_criteria == 2". Default is 2.
+        telescope_names: list (optional)
+            Names of the telescopes under consideration for spectroscopy.
+            Only used if "get_cost == True".
+            Default is ["4m", "8m"].
+        telescope_sizes: list (optional)
+            Primary mirrors diameters of potential spectroscopic telescopes.
+            Only used if "get_cost == True".
+            Default is [4, 8].
+        spec_SNR: float (optional)
+            SNR required for spectroscopic follow-up. Default is 10.
+        """
+        light_curve_data = LightCurve()
+        light_curve_data.load_snpcc_lc(
+            os.path.join(raw_data_dir, file_name))
+        light_curve_data = self._process_each_light_curve(
+            light_curve_data, queryable_criteria, days_since_observation,
+            telescope_names, telescope_sizes, spec_SNR, self._kwargs)
+        return light_curve_data
 
     # TODO: Too many arguments. Refactor and update docs
     def build_one_epoch(self, raw_data_dir: str, day_of_survey: int,
                         time_domain_dir: str, feature_method: str = 'Bazin',
                         dataset: str = 'SNPCC', days_since_obs: int = 2,
                         queryable_criteria: int = 1, get_cost: bool = False,
-                        tel_sizes: list = [4, 8], tel_names: list = ['4m', '8m'],
-                        spec_SNR: int = 10, **kwargs):
+                        tel_sizes: list = [4, 8],
+                        tel_names: list = ['4m', '8m'], spec_SNR: int = 10,
+                        number_of_processors: int = None, **kwargs):
         """
         Fit bazin for all objects with enough points in a given day.
 
@@ -386,9 +434,12 @@ class SNPCCPhotometry:
             Primary mirrors diameters of potential spectroscopic telescopes.
             Only used if "get_cost == True".
             Default is [4, 8].
+        number_of_processors: int, default all
+            Number of cpu processes to use
         kwargs: extra parameters
             Any input required by ExpTimeCalc.findexptime function.
         """
+        self._kwargs = kwargs
         self._verify_dataset_and_features_method(dataset, feature_method)
         self._verify_telescope_names(tel_names, get_cost)
         self._maybe_create_features_file(
@@ -396,20 +447,23 @@ class SNPCCPhotometry:
         files_list = _get_files_list(raw_data_dir, 'DES_SN')
         self._today = day_of_survey + self.min_epoch
         self._number_of_telescopes = len(tel_names)
+
+        multi_process = multiprocessing.Pool(number_of_processors)
+        logging.info("Starting SNPCC time domian features extraction...")
         with open(self._features_file_name, 'a') as snpcc_features_file:
-            for each_file in progressbar.progressbar(files_list):
-                light_curve_data = LightCurve()
-                light_curve_data.load_snpcc_lc(
-                    os.path.join(raw_data_dir, each_file))
-                light_curve_data = self._process_each_light_curve(
-                    light_curve_data, queryable_criteria, days_since_obs,
-                    tel_names, tel_sizes, spec_SNR, kwargs)
+            iterator_list = zip(
+                files_list, repeat(raw_data_dir), repeat(queryable_criteria),
+                repeat(days_since_obs), repeat(tel_names), repeat(tel_sizes),
+                repeat(spec_SNR))
+            for light_curve_data in multi_process.starmap(
+                    self._get_current_sample_features, iterator_list):
                 if light_curve_data is not None:
                     features_to_write = self._get_features_to_write(
                         light_curve_data, get_cost, tel_names)
                     snpcc_features_file.write(
                         ' '.join(str(each_feature) for each_feature
                                  in features_to_write) + '\n')
+        logging.info("Features have been saved to: %s", self._features_file_name)
 
 
 def _get_files_list(path_to_data_dir: str,
