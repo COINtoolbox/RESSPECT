@@ -233,8 +233,10 @@ def time_domain_loop(days: list,  output_metrics_file: str,
 
     if sep_files:
         data.build_samples(nclass=2, screen=screen,
-                                queryable=queryable,
-                                sep_files=True, 
+                           queryable=queryable,
+                           sep_files=True, 
+                           save_samples=save_samples,
+                           output_fname=output_fname,
                            initial_training=initial_training)
     else:
         data.test_features = first_loop.pool_features
