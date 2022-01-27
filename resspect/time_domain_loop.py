@@ -26,7 +26,7 @@ import progressbar
 from resspect import DataBase
 
 
-def load_dataset(file_name: str, survey_name: str = 'DES',
+def load_dataset(file_names_dict: dict, survey_name: str = 'DES',
                  initial_training: Union[str, int] = 'original',
                  ia_training_fraction: float = 0.5, is_queryable: bool = False,
                  is_separate_files: bool = False, samples_list: list = [None],
@@ -39,10 +39,10 @@ def load_dataset(file_name: str, survey_name: str = 'DES',
 
     Parameters
     ----------
-    file_name: str #or dict
+    file_names_dict:  dict
         Path to light curve features file.
         #if "sep_files == True", dictionary keywords must contain identify
-        #different samples: ['train', 'test','validation', 'pool']
+        #different samples: ['train', 'test','validation', 'pool',  None]
     ia_training_fraction: float in [0,1] (optional)
         Fraction of Ia required in initial training sample.
         Only used if "initial_training" is a number. Default is 0.5.
@@ -83,7 +83,7 @@ def load_dataset(file_name: str, survey_name: str = 'DES',
     database_class = DataBase()
     for sample in samples_list:
         database_class.load_features(
-            file_name, survey=survey_name, sample=sample,
+            file_names_dict[sample], survey=survey_name, sample=sample,
             method=feature_extraction_method)
     if is_load_build_samples:
         database_class.build_samples(
@@ -146,27 +146,30 @@ def _load_first_loop_and_full_data(
         Default is False.
     """
     if not is_separate_files:
+        first_loop_file_name = {None: first_loop_file_name}
         first_loop_data = load_dataset(
-            file_name=first_loop_file_name,
+            file_names_dict=first_loop_file_name,
             survey_name=survey_name, is_separate_files=is_separate_files,
             initial_training=0, ia_training_fraction=ia_training_fraction,
             is_queryable=is_queryable)
+        light_curve_file_name = {None: initial_light_curve_file_name['train']}
         light_curve_data = load_dataset(
-            file_name=initial_light_curve_file_name['train'],
+            file_names_dict=light_curve_file_name,
             survey_name=survey_name, is_separate_files=is_separate_files,
             initial_training=initial_training,
             ia_training_fraction=ia_training_fraction,
             is_queryable=is_queryable)
     else:
+        first_loop_file_name = {'pool': first_loop_file_name}
         first_loop_data = load_dataset(
-            file_name=first_loop_file_name,
+            file_names_dict=first_loop_file_name,
             survey_name=survey_name, samples_list=['pool'],
             number_of_classes=number_of_classes,
             feature_extraction_method=feature_extraction_method,
             is_save_samples=is_save_samples, is_queryable=is_queryable,
             is_separate_files=is_separate_files)
         light_curve_data = load_dataset(
-            file_name=initial_light_curve_file_name['train'],
+            file_names_dict=initial_light_curve_file_name,
             samples_list=['train', 'test', 'validation'],
             feature_extraction_method=feature_extraction_method,
             survey_name=survey_name, is_load_build_samples=False)
@@ -480,12 +483,14 @@ def _load_next_day_data(
         Default is False.
     """
     if is_separate_files:
+        next_day_features_file_name = {'pool': next_day_features_file_name}
         next_day_data = load_dataset(
             next_day_features_file_name, survey_name, samples_list=['pool'],
             is_separate_files=is_separate_files, is_queryable=is_queryable,
             is_save_samples=is_save_samples
         )
     else:
+        next_day_features_file_name = {None: next_day_features_file_name}
         next_day_data = load_dataset(
             next_day_features_file_name, survey_name, is_queryable=is_queryable,
             initial_training=0, ia_training_fraction=ia_training_fraction)
@@ -875,7 +880,7 @@ def run_time_domain_active_learning_loop(
                 light_curve_data, object_indices, is_queryable, epoch)
             _save_metrics_and_queried_sample(
                 light_curve_data, epoch - learning_days[0],
-                output_metric_file_name, output_queried_file_name, batch, epoch,
+                output_metric_file_name, output_queried_file_name, len(object_indices), epoch,
                 is_save_full_query)
         next_day_features_file_name = (
                 path_to_features_directory + fname_pattern[0] + str(epoch + 1)
