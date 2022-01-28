@@ -115,7 +115,7 @@ def main(user_choice):
     photom.read_metadata(path_to_data_dir=raw_data_dir, 
                          classes=PLASTICC_TARGET_TYPES.keys(),
                          field=field, 
-                         meta_data_file_name= 'plasticc_' + sample + '_metadata.csv')
+                         meta_data_file_name= 'plasticc_' + sample + '_metadata.csv.gz')
     
     ids = photom.metadata['object_id'].values
     
