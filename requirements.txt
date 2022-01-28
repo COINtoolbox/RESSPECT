@@ -82,7 +82,7 @@ sklearn==0.0
 sniffio==1.2.0
 stack-data==0.1.4
 statsmodels==0.13.1
-terminado==0.13.0
+terminado==0.13.1
 testpath==0.5.0
 threadpoolctl==3.0.0
 tomli==1.2.3
