@@ -142,7 +142,7 @@ class PLAsTiCCPhotometry:
 
     def read_metadata(self, path_to_data_dir: str, classes: list,
                       field: str = 'DDF', meta_data_file_name:
-                      str = 'plasticc_test_metadata.csv'):
+                      str = 'plasticc_test_metadata.csv.gz'):
         """
         Read metadata and filter only required classes.
         Populates the metadata attribute.

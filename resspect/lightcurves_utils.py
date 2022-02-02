@@ -85,6 +85,11 @@ def read_file(file_path: str) -> list:
      ----------
      file_path
          input file path
+
+     Returns
+     -------
+     file content
+        file contents are returned as list
      """
     with open(file_path, "r") as input_file:
         lines = [line.split() for line in input_file.readlines()]
@@ -99,6 +104,11 @@ def get_snpcc_sntype(value: int) -> str:
      ----------
      value
          sncode value
+
+     Returns
+     -------
+     snpcc class
+        SNPCC supernova class
      """
     if value in SNPCC_LC_MAPPINGS["snibc"]:
         return 'Ibc'
@@ -117,6 +127,11 @@ def read_tar_file(file_path: str) -> AnyStr:
      ----------
      file_path
          tarfile path
+
+     Returns
+     -------
+     tar_content
+        content of extracted tar file
      """
     with tarfile.open(file_path, 'r:gz') as tar:
         tar_members = tar.getmembers()[0]
@@ -132,6 +147,13 @@ def read_resspect_full_photometry_data(file_path: str) -> Tuple[
      ----------
      file_path
          RESSPECT data file path, one of (tar.gz, FITS, csv, csv.gz)
+
+     Returns
+     -------
+     header
+         RESSPECT photometry header data
+     full_photometry
+         RESSPECT full photometry data
      """
     header = pd.DataFrame([])
     if file_path.endswith('.tar.gz'):
@@ -164,12 +186,19 @@ def get_photometry_with_id_name_and_snid(
         list of available SNID column names
     snid
         SNID
+
+    Returns
+    -------
+    full_photometry
+        full photometry data
+    snid_column_name
+        SNID column name
     """
     for snid_column_name in id_names_list:
         if snid_column_name in full_photometry.keys():
             snid_indices = full_photometry[snid_column_name] == snid
             return full_photometry[snid_indices], snid_column_name
-        
+
     return pd.DataFrame(), None
 
 
@@ -185,7 +214,12 @@ def _update_resspect_filter_values(
         array with binary string filter values
      filters
         available filter values
-     """
+
+     Returns
+     -------
+     updated_band
+        updated RESSPECT filter values
+    """
     updated_band = np.zeros_like(filters_array)
     for each_filter in filters:
         first_case = "b'" + each_filter + " '"
@@ -209,7 +243,12 @@ def insert_band_column_to_resspect_df(
          RESSPECT photometry dataframes
      filters
         Available filter values
-     """
+
+     Returns
+     -------
+     photometry_df
+        RESSPECT photometry dataframe with 'band' column
+    """
     if 'b' in str(photometry_df['FLT'].values[0]):
         updated_band = _update_resspect_filter_values(
             photometry_df['FLT'].values, filters)
@@ -228,6 +267,11 @@ def load_resspect_photometry_df(photometry_df: pd.DataFrame) -> pd.DataFrame:
     ----------
     photometry_df
         RESSPECT photometry dataframe
+
+    Returns
+    -------
+    photometry_df
+        RESSPECT photometry dataframe after dropping unnecessary columns
     """
     photometry_dict = {
         'mjd': photometry_df['MJD'].values,
@@ -251,17 +295,22 @@ def read_plasticc_full_photometry_data(file_path: str) -> pd.DataFrame:
      ----------
      file_path
          PLAsTiCC data file path, one of (tar.gz, csv, csv.gz)
+
+     Returns
+     -------
+     full_photometry
+        PLAsTiCC full photometry dataframe
      """
     if file_path.endswith('.tar.gz'):
         tar_content = read_tar_file(file_path)
         return pd.read_csv(io.BytesIO(tar_content))
-    
+
     if file_path.endswith(('.csv', '.csv.gz')):
         full_photometry = pd.read_csv(file_path, index_col=False)
         if ' ' in full_photometry.keys()[0]:
             full_photometry = pd.read_csv(file_path, sep=' ', index_col=False)
         return full_photometry
-    
+
     raise ValueError(f"Unknown PLAsTiCC photometry data file: {file_path}")
 
 
@@ -277,6 +326,11 @@ def _update_plasticc_filter_values(
     mapping_dict
         filter id to name mapping dict
         ex: { 0: 'u', 1: 'g', ..}
+
+    Returns
+    -------
+    updated_filters_array
+        updated PLAsTiCC filters id array
     """
     updated_filters_array = np.zeros_like(filters_array, dtype=object)
     for key, value in mapping_dict.items():
@@ -297,6 +351,11 @@ def load_plasticc_photometry_df(
     filter_mapping_dict
         filter id to name mapping dict
         ex: { 0: 'u', 1: 'g', ..}
+
+    Returns
+    -------
+    photometry_df
+       PLAsTiCC photometry dataframe
     """
     photometry_dict = {
         'mjd': photometry_df['mjd'].values,
@@ -319,6 +378,11 @@ def load_snpcc_photometry_df(
         SNPCC photometry raw array
     header
         SNPCC header column names list
+
+    Returns
+    -------
+    photometry_raw
+       SNPCC photometry dataframe
     """
     photometry_dict = {
         'mjd': np.array(
@@ -351,6 +415,11 @@ def find_available_key_name_in_header(
         available header keys
     keys_to_find
         interesting keys list to search
+
+    Returns
+    -------
+    key_name
+       available key name in header_keys
     """
     for each_key in keys_to_find:
         if each_key in header_keys:
@@ -370,6 +439,11 @@ def get_resspect_header_data(
         RESSPECT header file path
     path_photo_file
         RESSPECT photometry file path
+
+    Returns
+    -------
+    meta_header
+       RESSPECT meta header dataframe
     """
     if path_header_file.endswith(('tar.gz', '.csv', 'csv.gz')):
         _, meta_header = read_resspect_full_photometry_data(path_header_file)
@@ -383,7 +457,7 @@ def get_resspect_header_data(
 
 def maybe_create_directory(directory_path: str):
     """
-    Creates diretory if it doesnt exist
+    Creates diretory if it doesn't exist
     Parameters
     ----------
     directory_path
@@ -407,13 +481,17 @@ def get_query_flags(light_curve_data, telescope_names: list,
         Default is ["4m", "8m"].
     query_flags_threshold
         Threshold for exposure time data
+
+    Returns
+    -------
+    query_flags
+       query flags list with boolean values
     """
     query_flags = []
-    
+
     for each_name in telescope_names:
         if light_curve_data.exp_time[each_name] < query_flags_threshold:
             query_flags.append(True)
         else:
             query_flags.append(False)
-            
     return query_flags

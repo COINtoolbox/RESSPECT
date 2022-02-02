@@ -1014,7 +1014,6 @@ def time_domain_loop(days: list, output_metrics_file: str,
         light_curve_train_ids, canonical_data, sep_files, path_to_features_dir,
         fname_pattern, survey, ia_frac, save_samples, **kwargs)
 
-
 def main():
     return None
 
