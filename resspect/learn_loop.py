@@ -31,7 +31,8 @@ def load_features(database_class: DataBase,
                   path_to_features: Union[str, dict],
                   survey: str, features_method: str, number_of_classes: int,
                   training_method: str, is_queryable: bool,
-                  separate_files: bool) -> DataBase:
+                  separate_files: bool = False, 
+                  save_samples: bool = False) -> DataBase:
     """
     Load features according to feature extraction method
 
@@ -64,6 +65,9 @@ def load_features(database_class: DataBase,
     separate_files: bool (optional)
         If True, consider train and test samples separately read
         from independent files. Default is False.
+    save_samples: bool (optional)
+        If True, save training and test samples to file.
+        Default is False.
     """
     if isinstance(path_to_features, str):
         database_class.load_features(
@@ -82,7 +86,9 @@ def load_features(database_class: DataBase,
                 
     database_class.build_samples(
         initial_training=training_method, nclass=number_of_classes,
-        queryable=is_queryable, sep_files=separate_files)
+        queryable=is_queryable, sep_files=separate_files, 
+        save_samples=save_samples)
+    
     return database_class
 
 
