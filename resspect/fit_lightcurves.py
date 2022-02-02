@@ -730,7 +730,7 @@ def _snpcc_sample_fit_bazin(
 
 def fit_snpcc_bazin(
         path_to_data_dir: str, features_file: str,
-        file_prefix: str = "DES_SN", number_of_processors: int = None):
+        file_prefix: str = "DES_SN", number_of_processors: int = 1):
     """
     Perform Bazin fit to all objects in the SNPCC data.
 
@@ -743,8 +743,8 @@ def fit_snpcc_bazin(
          Path to output file where results should be stored.
      file_prefix: str
         File names prefix
-     number_of_processors: int, default all
-        Number of cpu processes to use
+     number_of_processors: int, default 1
+        Number of cpu processes to use.
     """
     files_list = os.listdir(path_to_data_dir)
     files_list = [each_file for each_file in files_list
@@ -804,7 +804,7 @@ def _resspect_sample_fit_bazin(
 
 def fit_resspect_bazin(path_photo_file: str, path_header_file: str,
                        output_file: str, sample=None,
-                       number_of_processors: int = None):
+                       number_of_processors: int = 1):
     """Perform Bazin fit to all objects in a given RESSPECT data file.
 
     Parameters
@@ -817,7 +817,7 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file: str,
         Output file where the features will be stored.
     sample: str
         'train' or 'test'. Default is None.
-    number_of_processors: int, default all
+    number_of_processors: int, default 1.
         Number of cpu processes to use
     """
     meta_header = get_resspect_header_data(path_header_file, path_photo_file)
@@ -890,7 +890,7 @@ def _plasticc_sample_fit_bazin(
 
 def fit_plasticc_bazin(path_photo_file: str, path_header_file: str,
                        output_file: str, sample='train',
-                       number_of_processors: int = None):
+                       number_of_processors: int = 1):
     """
     Perform Bazin fit to all objects in a given PLAsTiCC data file.
     Parameters
@@ -903,8 +903,8 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file: str,
         Output file where the features will be stored.
     sample: str
         'train' or 'test'. Default is 'train'.
-    number_of_processors: int, default all
-        Number of cpu processes to use
+    number_of_processors: int, default 1
+        Number of cpu processes to use.
     """
 
     name_list = ['SNID', 'snid', 'objid', 'object_id']

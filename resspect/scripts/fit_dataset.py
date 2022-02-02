@@ -45,6 +45,9 @@ def main(user_choices):
     -sp: str or None (optional)
         Sample to be fitted. Options are 'train', 'test' or None.
         Default is None.
+    -n: int or None (optional)
+        Number of cores to be used. If None all cores are used. 
+        Default is 1.
 
     Examples
     --------
@@ -62,21 +65,25 @@ def main(user_choices):
     # raw data directory
     data_dir = user_choices.input
     features_file = user_choices.output
+    ncores = user_choices.ncores
 
     if user_choices.sim_name == 'SNPCC':
         # fit the entire sample
-        fit_snpcc_bazin(path_to_data_dir=data_dir, features_file=features_file)
+        fit_snpcc_bazin(path_to_data_dir=data_dir, features_file=features_file,
+                       number_of_processors=ncores)
     
     elif user_choices.sim_name == 'RESSPECT':
         fit_resspect_bazin(path_photo_file=user_choices.photo_file,
                            path_header_file=user_choices.header_file,
-                           output_file=features_file, sample=user_choices.sample)
+                           output_file=features_file, sample=user_choices.sample,
+                          number_of_processors=ncores)
 
     elif user_choices.sim_name == 'PLAsTiCC':
         fit_plasticc_bazin(path_photo_file=user_choices.photo_file, 
                            path_header_file=user_choices.header_file,
                            output_file=features_file,
-                           sample=user_choices.sample)
+                           sample=user_choices.sample,
+                           number_of_processors=ncores)
 
     return None
 
@@ -105,6 +112,9 @@ if __name__ == '__main__':
                         help='Sample to be fitted. Options are "train", ' + \
                              ' "test" or None.',
                         required=False, default=None)
+    parser.add_argument('-n', '--number-of-processors', dest='ncores', 
+                       help='Number of processors. Default is 1.',
+                       required=False, default=1)
 
     user_input = parser.parse_args()
 
