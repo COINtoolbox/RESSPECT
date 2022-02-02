@@ -18,7 +18,7 @@ decorator==5.1.1
 defusedxml==0.7.1
 entrypoints==0.3
 executing==0.8.2
-fonttools==4.29.0
+fonttools==4.29.1
 idna==3.3
 importlib-resources==5.4.0
 ipykernel==6.7.0
