@@ -16,23 +16,34 @@
 
 __all__ = ['time_domain_loop', 'load_dataset']
 
+import os
+from typing import Union, Tuple
+
 import numpy as np
 import pandas as pd
+import progressbar
 
 from resspect import DataBase
 
-def load_dataset(fname: str, survey='DES',
-                         screen=False, initial_training='original',
-                         ia_frac=0.5, queryable=False, sep_files=False):
-    """Read a data sample from file.
+
+def load_dataset(file_names_dict: dict, survey_name: str = 'DES',
+                 initial_training: Union[str, int] = 'original',
+                 ia_training_fraction: float = 0.5, is_queryable: bool = False,
+                 is_separate_files: bool = False, samples_list: list = [None],
+                 is_load_build_samples: bool = True,
+                 number_of_classes: int = 2,
+                 feature_extraction_method: str = 'Bazin',
+                 is_save_samples: bool = False) -> DataBase:
+    """
+    Reads a data sample from file.
 
     Parameters
     ----------
-    fname: str #or dict
+    file_names_dict:  dict
         Path to light curve features file.
         #if "sep_files == True", dictionary keywords must contain identify
-        #different samples: ['train', 'test','validation', 'pool']
-    ia_frac: float in [0,1] (optional)
+        #different samples: ['train', 'test','validation', 'pool',  None]
+    ia_training_fraction: float in [0,1] (optional)
         Fraction of Ia required in initial training sample.
         Only used if "initial_training" is a number. Default is 0.5.
     initial_training: str or int (optional)
@@ -41,54 +52,860 @@ def load_dataset(fname: str, survey='DES',
         elif int: choose the required number of samples at random,
         ensuring that at least "ia_frac" are SN Ia.
         Default is 'original'.
-    queryable: bool (optional)
+    is_queryable: bool (optional)
         If True, allow queries only on objects flagged as queryable.
         Default is True.
-    sep_files: bool (optional)
+    is_separate_files: bool (optional)
             If True, consider samples separately read
             from independent files. Default is False.
-    screen: bool (optional)
-        If True, print on screen number of light curves processed.
-    survey: str (optional)
+    survey_name: str (optional)
         Name of survey to be analyzed. Accepts 'DES' or 'LSST'.
         Default is DES.
-
-    Returns
-    -------
-    resspect.DataBase object
+    samples_list: list (optional)
+        If None, sample is given by a column within the given file.
+        else, read independent files for 'train' and 'test'.
+        Default is None.
+    number_of_classes
+        Number of classes to consider in the classification
+        Currently only nclass == 2 is implemented.
+    feature_extraction_method: str (optional)
+        Feature extraction method. The current implementation only
+        accepts method=='Bazin' or 'photometry'.
+        Default is 'Bazin'.
+    is_save_samples: bool (optional)
+        If True, save training and test samples to file.
+        Default is False.
+    is_load_build_samples
+        if database.build_samples method should be called
     """
 
     # initiate object
-    data = DataBase()
-
-    # constructs training, test, validation and pool samples
-    data.load_features(fname, screen=screen, survey=survey)
-
-     # get identification keyword
-    id_name = data.identify_keywords()
-
-    data.build_samples(initial_training=initial_training, nclass=2,
-                       screen=screen, Ia_frac=ia_frac,
-                       queryable=queryable, save_samples=False,
-                       sep_files=sep_files, survey=survey)
-
-    return data
+    database_class = DataBase()
+    for sample in samples_list:
+        database_class.load_features(
+            file_names_dict[sample], survey=survey_name, sample=sample,
+            method=feature_extraction_method)
+    if is_load_build_samples:
+        database_class.build_samples(
+            initial_training=initial_training, nclass=number_of_classes,
+            Ia_frac=ia_training_fraction, queryable=is_queryable,
+            save_samples=is_save_samples, sep_files=is_separate_files,
+            survey=survey_name)
+    return database_class
 
 
-def time_domain_loop(days: list,  output_metrics_file: str,
-                     output_queried_file: str,
-                     path_to_features_dir: str, strategy: str,
-                     fname_pattern: list, path_to_ini_files: dict,
-                     batch=1, canonical = False,  classifier='RandomForest',
-                     clf_bootstrap=False, budgets=None ,cont=False,
-                     first_loop=20, nclass=2, ia_frac=0.5, output_fname="",
-                     path_to_canonical="", path_to_train="",
-                     path_to_queried="", queryable=True,
-                     query_thre=1.0, save_samples=False, sep_files=False,
-                     screen=True, survey='LSST', initial_training='original',
-                     save_full_query=False,
-                    **kwargs):
-    """Perform the active learning loop. All results are saved to file.
+def _load_first_loop_and_full_data(
+        first_loop_file_name: str, initial_light_curve_file_name: dict,
+        survey_name: str = 'DES',
+        initial_training: Union[str, int] = 'original',
+        ia_training_fraction: float = 0.5, is_queryable: bool = False,
+        is_separate_files: bool = False, number_of_classes: int = 2,
+        feature_extraction_method: str = 'Bazin',
+        is_save_samples: bool = False) -> Tuple[DataBase, DataBase]:
+    """
+    Loads first loop and initial light curve training data
+
+    Parameters
+    ----------
+    first_loop_file_name
+        Path to light curve features file.
+        #if "sep_files == True", dictionary keywords must contain identify
+        #different samples: ['train', 'test','validation', 'pool']
+    initial_light_curve_file_name
+        Path to initial full light curve files.
+        Possible keywords are: "train", "test" and "validation".
+        At least "train" is mandatory.
+    survey_name
+        Name of survey to be analyzed. Accepts 'DES' or 'LSST'.
+        Default is LSST.
+    initial_training
+        Choice of initial training sample.
+        If 'original': begin from the train sample flagged in the file
+        eilf 'previous': read training and queried from previous run.
+        If int: choose the required number of samples at random,
+        ensuring that at least half are SN Ia
+        Default is 'original'.
+    ia_training_fraction
+        Fraction of Ia required in initial training sample.
+        Default is 0.5.
+    is_queryable
+        If True, allow queries only on objects flagged as queryable.
+        Default is True.
+    is_separate_files
+        If True, consider samples separately read
+        from independent files. Default is False.
+    number_of_classes
+        Number of classes to consider in the classification
+        Currently only number_of_classes == 2 is implemented.
+    feature_extraction_method
+        Chosen classifier.
+        The current implementation accepts `RandomForest`,
+        'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
+    is_save_samples
+        If True, save training and test samples to file.
+        Default is False.
+    """
+    if not is_separate_files:
+        first_loop_file_name = {None: first_loop_file_name}
+        first_loop_data = load_dataset(
+            file_names_dict=first_loop_file_name,
+            survey_name=survey_name, is_separate_files=is_separate_files,
+            initial_training=0, ia_training_fraction=ia_training_fraction,
+            is_queryable=is_queryable)
+        light_curve_file_name = {None: initial_light_curve_file_name['train']}
+        light_curve_data = load_dataset(
+            file_names_dict=light_curve_file_name,
+            survey_name=survey_name, is_separate_files=is_separate_files,
+            initial_training=initial_training,
+            ia_training_fraction=ia_training_fraction,
+            is_queryable=is_queryable)
+    else:
+        first_loop_file_name = {'pool': first_loop_file_name}
+        first_loop_data = load_dataset(
+            file_names_dict=first_loop_file_name,
+            survey_name=survey_name, samples_list=['pool'],
+            number_of_classes=number_of_classes,
+            feature_extraction_method=feature_extraction_method,
+            is_save_samples=is_save_samples, is_queryable=is_queryable,
+            is_separate_files=is_separate_files)
+        light_curve_data = load_dataset(
+            file_names_dict=initial_light_curve_file_name,
+            samples_list=['train', 'test', 'validation'],
+            feature_extraction_method=feature_extraction_method,
+            survey_name=survey_name, is_load_build_samples=False)
+    return first_loop_data, light_curve_data
+
+
+def _update_light_curve_data_val_and_test_data(
+        light_curve_data: DataBase, first_loop_data: DataBase,
+        is_separate_files: bool = False,
+        initial_training: Union[str, int] = 'original',
+        is_queryable: bool = False, number_of_classes: int = 2) -> DataBase:
+    """
+    Updates initial light curve validation and test data
+
+    Parameters
+    ----------
+    light_curve_data
+        initial light curve training data
+    first_loop_data
+        first loop light curve data
+    is_queryable
+        If True, allow queries only on objects flagged as queryable.
+        Default is True.
+    is_separate_files
+        If True, consider samples separately read
+        from independent files. Default is False.
+    initial_training
+        Choice of initial training sample.
+        If 'original': begin from the train sample flagged in the file
+        eilf 'previous': read training and queried from previous run.
+        If int: choose the required number of samples at random,
+        ensuring that at least half are SN Ia
+        Default is 'original'.
+    number_of_classes
+        Number of classes to consider in the classification
+        Currently only number_of_classes == 2 is implemented.
+    """
+    if is_separate_files:
+        light_curve_data.build_samples(
+            nclass=number_of_classes, queryable=is_queryable,
+            sep_files=is_separate_files, initial_training=initial_training)
+    else:
+        light_curve_data.test_features = first_loop_data.pool_features
+        light_curve_data.test_metadata = first_loop_data.pool_metadata
+        light_curve_data.test_labels = first_loop_data.pool_labels
+
+        light_curve_data.validation_features = first_loop_data.pool_features
+        light_curve_data.validation_metadata = first_loop_data.pool_metadata
+        light_curve_data.validation_labels = first_loop_data.pool_labels
+    return light_curve_data
+
+
+def _update_data_by_remove_repeated_ids(first_loop_data: DataBase,
+                                        light_curve_data: DataBase,
+                                        id_key_name: str,
+                                        pool_labels_class: str = 'Ia') -> Tuple[
+        DataBase, DataBase]:
+    """
+    Updates first loop and initial data by removing repetitive id indices
+
+    Parameters
+    ----------
+    first_loop_data
+        first loop light curve data
+    light_curve_data
+        initial light curve training data
+    id_key_name
+        object identification key name
+    pool_labels_class
+        pool labels class name
+    """
+    repeated_id_flags = np.in1d(
+        first_loop_data.pool_metadata[id_key_name].values,
+        light_curve_data.train_metadata[id_key_name].values)
+    first_loop_data.pool_metadata = first_loop_data.pool_metadata[
+        ~repeated_id_flags]
+    first_loop_data.pool_features = first_loop_data.pool_features[
+        ~repeated_id_flags]
+    pool_labels = (
+            first_loop_data.pool_metadata['type'].values == pool_labels_class)
+    first_loop_data.pool_labels = pool_labels.astype(int)
+    light_curve_data.pool_features = first_loop_data.pool_features
+    light_curve_data.pool_metadata = first_loop_data.pool_metadata
+    light_curve_data.pool_labels = first_loop_data.pool_labels
+    return first_loop_data, light_curve_data
+
+
+def _update_queryable_ids(light_curve_data: DataBase, id_key_name: str,
+                          is_queryable: bool) -> DataBase:
+    """
+    Updates queryable ids
+
+    Parameters
+    ----------
+    light_curve_data
+        initial light curve training data
+    id_key_name
+        object identification key name
+    is_queryable
+        If True, allow queries only on objects flagged as queryable.
+        Default is True.
+    """
+    if is_queryable:
+        queryable_flags = light_curve_data.pool_metadata['queryable'].values
+        light_curve_data.queryable_ids = light_curve_data.pool_metadata[
+            id_key_name].values[queryable_flags]
+    else:
+        light_curve_data.queryable_ids = light_curve_data.pool_metadata[
+            id_key_name].values
+    return light_curve_data
+
+
+def _update_canonical_ids(light_curve_data: DataBase,
+                          canonical_file_name: str,
+                          is_restrict_canonical: bool) -> Tuple[
+        DataBase, DataBase]:
+    """
+    Updates canonical ids
+
+    Parameters
+    ----------
+    light_curve_data
+        initial light curve training data
+    canonical_file_name
+        Path to canonical sample features files.
+        It is only used if "strategy==canonical".
+    is_restrict_canonical
+        If True, restrict the search to the canonical sample.
+    """
+    database_class = None
+    if is_restrict_canonical:
+        database_class = DataBase()
+        database_class.load_features(path_to_file=canonical_file_name)
+        light_curve_data.queryable_ids = database_class.queryable_ids
+    return light_curve_data, database_class
+
+
+def _update_initial_train_meta_data_header(
+        first_loop_data: DataBase, light_curve_data: DataBase) -> DataBase:
+    """
+    Updates if all headers in test not exist in train
+
+    Parameters
+    ----------
+    first_loop_data
+        first loop light curve data
+    light_curve_data
+        light curve learning data
+
+    """
+    for each_name in first_loop_data.metadata_names:
+        if each_name not in light_curve_data.metadata_names:
+            light_curve_data.metadata_names.append(each_name)
+            light_curve_data.metadata[each_name] = None
+            light_curve_data.train_metadata.insert(
+                len(light_curve_data.metadata_names) - 1, each_name, None, True)
+    return light_curve_data
+
+
+def _run_classification_and_evaluation(
+        database_class: DataBase, classifier: str,
+        is_classifier_bootstrap: bool, **kwargs: dict) -> DataBase:
+    """
+    Runs active learning classification and evaluation methods
+
+    Parameters
+    ----------
+    database_class
+        An instance of DataBase class
+    classifier
+        Machine Learning algorithm.
+        Currently 'RandomForest', 'GradientBoostedTrees',
+        'KNN', 'MLP', 'SVM' and 'NB' are implemented.
+        Default is 'RandomForest'.
+    is_classifier_bootstrap
+        if tp apply a machine learning classifier by bootstrapping
+    kwargs
+       All keywords required by the classifier function.
+    """
+    if is_classifier_bootstrap:
+        database_class.classify_bootstrap(method=classifier, **kwargs)
+    else:
+        database_class.classify(method=classifier, **kwargs)
+    database_class.evaluate_classification()
+    return database_class
+
+
+def _get_indices_of_objects_to_be_queried(
+        database_class: DataBase, strategy: str, budgets: tuple,
+        is_queryable: bool, query_threshold: float, batch: int) -> list:
+    """
+    Finds indices of objects to be queried
+
+    Parameters
+    ----------
+    database_class
+        An instance of DataBase class
+    strategy
+        Query strategy. Options are (all can be run with budget):
+        "UncSampling",
+        "UncSamplingEntropy",
+        "UncSamplingLeastConfident",
+        "UncSamplingMargin",
+        "QBDMI",
+        "QBDEntropy",
+        "RandomSampling",
+    budgets
+        Budgets for each of the telescopes
+    is_queryable
+        If True, allow queries only on objects flagged as queryable.
+        Default is True.
+    query_threshold
+        Percentile threshold for query. Default is 1.
+    batch
+        Size of batch to be queried in each loop. Default is 1.
+    """
+    if budgets:
+        object_indices = database_class.make_query_budget(
+            budgets=budgets, strategy=strategy)
+    else:
+        object_indices = database_class.make_query(
+            strategy=strategy, batch=batch, queryable=is_queryable,
+            query_thre=query_threshold)
+    return list(object_indices)
+
+
+def _update_samples_with_object_indices(
+        database_class: DataBase, object_indices: list,
+        is_queryable: bool, epoch: int) -> DataBase:
+    """
+    Runs database class update_samples methods with object indices
+
+    Parameters
+    ----------
+    database_class
+        An instance of DataBase class
+    object_indices
+        List of indexes identifying objects to be moved.
+    is_queryable
+        If True, consider queryable flag. Default is False.
+    epoch
+        Day since beginning of survey. Default is 20.
+    """
+    database_class.update_samples(
+        object_indices, queryable=is_queryable, epoch=epoch)
+    return database_class
+
+
+def _save_metrics_and_queried_sample(
+        database_class: DataBase,
+        current_loop: int, output_metric_file_name: str,
+        output_queried_file_name: str, batch: int, epoch: int,
+        is_save_full_query: bool):
+    """
+    Saves metrics and queried sample data
+
+    Parameters
+    ----------
+    database_class
+        An instance of DataBase class
+    current_loop
+        Number of learning loops finished at this stage.
+    output_metric_file_name
+        Full path to file to store metrics results.
+    output_queried_file_name
+    batch
+        Number of queries in each loop.
+    epoch
+        Days since the beginning of the survey.
+    is_save_full_query
+        If true, write down a complete queried sample stored in
+        property 'queried_sample'. Otherwise append 1 line per loop to
+        'queried_sample_file'. Default is False.
+    """
+    database_class.save_metrics(
+        loop=current_loop, output_metrics_file=output_metric_file_name,
+        batch=batch, epoch=epoch)
+    if is_save_full_query:
+        output_queried_file_name = (output_queried_file_name[:-4] +
+                                    '_' + str(current_loop) + '.dat')
+    database_class.save_queried_sample(
+        output_queried_file_name, loop=current_loop,
+        full_sample=is_save_full_query, epoch=epoch)
+
+
+def _load_next_day_data(
+        next_day_features_file_name: str, is_separate_files: bool,
+        is_queryable: bool, survey_name: str, ia_training_fraction: float,
+        is_save_samples: bool):
+    """
+    Loads features of next day
+
+    Parameters
+    ----------
+    next_day_features_file_name
+        next day features file name
+    is_separate_files
+       If True, consider samples separately read
+        from independent files. Default is False.
+    is_queryable
+        If True, allow queries only on objects flagged as queryable.
+        Default is True.
+    survey_name
+        Name of survey to be analyzed. Accepts 'DES' or 'LSST'.
+        Default is LSST.
+    ia_training_fraction
+        Fraction of Ia required in initial training sample.
+        Default is 0.5.
+    is_save_samples
+        If True, save training and test samples to file.
+        Default is False.
+    """
+    if is_separate_files:
+        next_day_features_file_name = {'pool': next_day_features_file_name}
+        next_day_data = load_dataset(
+            next_day_features_file_name, survey_name, samples_list=['pool'],
+            is_separate_files=is_separate_files, is_queryable=is_queryable,
+            is_save_samples=is_save_samples
+        )
+    else:
+        next_day_features_file_name = {None: next_day_features_file_name}
+        next_day_data = load_dataset(
+            next_day_features_file_name, survey_name, is_queryable=is_queryable,
+            initial_training=0, ia_training_fraction=ia_training_fraction)
+    return next_day_data
+
+
+def _remove_old_training_features(
+        light_curve_data: DataBase, light_curve_metadata: np.ndarray,
+        metadata_value: int):
+    """
+    Removes old training features
+
+    Parameters
+    ----------
+    light_curve_data
+        light curve training data
+    light_curve_metadata
+        light curve meta data
+    metadata_value
+        metadata object value
+    """
+    current_day_object_index = list(light_curve_metadata).index(
+        metadata_value)
+    light_curve_data.train_metadata = light_curve_data.train_metadata.drop(
+        light_curve_data.train_metadata.index[current_day_object_index])
+    light_curve_data.train_labels = np.delete(
+        light_curve_data.train_labels, current_day_object_index, axis=0)
+    light_curve_data.train_features = np.delete(
+        light_curve_data.train_features, current_day_object_index, axis=0)
+    return light_curve_data
+
+
+def _update_queried_sample(light_curve_data: DataBase, next_day_data: DataBase,
+                           id_key_name: str, metadata_value: int) -> DataBase:
+    """
+    Updates queried sample in light curve data
+
+    Parameters
+    ----------
+    light_curve_data
+        light curve data
+    next_day_data
+        next day light curve data
+    id_key_name
+        object identification key name
+    metadata_value
+        metadata object value
+    """
+    # build query data frame
+    full_header_name = (['epoch'] + light_curve_data.metadata_names
+                        + light_curve_data.features_names)
+    queried_sample = pd.DataFrame(light_curve_data.queried_sample,
+                                  columns=full_header_name)
+    # get object index in the queried sample
+    queried_index = list(
+        queried_sample[id_key_name].values).index(metadata_value)
+    # get flag to isolate object in question
+    queried_values_flag = queried_sample[id_key_name].values == metadata_value
+    # get object epoch in the queried sample
+    metadata_value_epoch = queried_sample['epoch'].values[queried_values_flag]
+    # remove old features from queried
+    queried_sample = queried_sample.drop(queried_sample.index[queried_index])
+    next_day_pool_data_flag = (
+            next_day_data.pool_metadata[id_key_name].values == metadata_value)
+    new_query_pool_metadata = list(next_day_data.pool_metadata[
+                                       next_day_pool_data_flag].values[0])
+    new_query_pool_features = list(next_day_data.pool_features[
+                                       next_day_pool_data_flag][0])
+    new_query = ([metadata_value_epoch[0]] + new_query_pool_metadata +
+                 new_query_pool_features)
+    new_query = pd.DataFrame([new_query], columns=full_header_name)
+    queried_sample = pd.concat([queried_sample, new_query], axis=0,
+                               ignore_index=True)
+    # update queried sample
+    light_curve_data.queried_sample = list(queried_sample.values)
+    return light_curve_data
+
+
+def _update_training_data_with_new_features(
+        light_curve_data: DataBase, next_day_data: DataBase, metadata_value: int,
+        id_key_name: str) -> DataBase:
+    """
+    Updates new features of the training with new metadata value
+
+    Parameters
+    ----------
+    light_curve_data
+        light curve data
+    next_day_data
+        next day light curve data
+    id_key_name
+        object identification key name
+    metadata_value
+        metadata object value
+    """
+    next_day_pool_data_flag = (
+            next_day_data.pool_metadata[id_key_name].values == metadata_value)
+    light_curve_data.train_metadata = pd.concat(
+        [light_curve_data.train_metadata,
+         next_day_data.pool_metadata[next_day_pool_data_flag]],
+        axis=0, ignore_index=True)
+    light_curve_data.train_features = np.append(
+        light_curve_data.train_features,
+        next_day_data.pool_features[next_day_pool_data_flag], axis=0)
+    light_curve_data.train_labels = np.append(
+        light_curve_data.train_labels,
+        next_day_data.pool_labels[next_day_pool_data_flag], axis=0)
+    return light_curve_data
+
+
+def _update_next_day_pool_data(next_day_data: DataBase,
+                               next_day_pool_metadata_indices) -> DataBase:
+    """
+    Removes metadata value data from next day pool sample
+
+    Parameters
+    ----------
+    next_day_data
+        next day light curve data
+    next_day_pool_metadata_indices
+        indices of metadata value in next day light curve data
+    """
+    # remove obj from pool sample
+    next_day_data.pool_metadata = next_day_data.pool_metadata.drop(
+        next_day_data.pool_metadata.index[next_day_pool_metadata_indices])
+    next_day_data.pool_labels = np.delete(
+        next_day_data.pool_labels, next_day_pool_metadata_indices, axis=0)
+    next_day_data.pool_features = np.delete(
+        next_day_data.pool_features, next_day_pool_metadata_indices, axis=0)
+    return next_day_data
+
+
+def _update_next_day_val_and_test_data(
+        next_day_data: DataBase, metadata_value: int,
+        id_key_name: str) -> DataBase:
+    """
+    Removes metadata value data from next day validation and test samples
+
+    Parameters
+    ----------
+    next_day_data
+        next day light curve data
+    metadata_value
+        metadata object value
+    id_key_name
+        object identification key name
+    """
+    if (len(next_day_data.validation_metadata) > 0 and metadata_value
+            in next_day_data.validation_metadata[id_key_name].values):
+        val_indices = list(next_day_data.validation_metadata[
+                               id_key_name].values).index(metadata_value)
+        next_day_data.validation_metadata = (
+            next_day_data.validation_metadata.drop(
+                next_day_data.validation_metadata.index[val_indices]))
+        next_day_data.validation_labels = np.delete(
+            next_day_data.validation_labels, val_indices, axis=0)
+        next_day_data.validation_features = np.delete(
+            next_day_data.validation_features, val_indices, axis=0)
+
+    if (len(next_day_data.test_metadata) > 0 and metadata_value
+            in next_day_data.test_metadata[id_key_name].values):
+        test_indices = list(next_day_data.test_metadata[
+                                id_key_name].values).index(metadata_value)
+
+        next_day_data.test_metadata = (
+            next_day_data.test_metadata.drop(
+                next_day_data.test_metadata.index[test_indices]))
+        next_day_data.test_labels = np.delete(
+            next_day_data.test_labels, test_indices, axis=0)
+        next_day_data.test_features = np.delete(
+            next_day_data.test_features, test_indices, axis=0)
+    return next_day_data
+
+
+def _update_light_curve_data_for_next_epoch(
+        light_curve_data: DataBase, next_day_data: DataBase,
+        canonical_data: DataBase, is_queryable: bool, strategy: str,
+        is_separate_files: bool) -> DataBase:
+    """
+    Updates samples for next epoch
+
+    Parameters
+    ----------
+    light_curve_data
+        light curve learning data
+    next_day_data
+        next day light curve data
+    canonical_data
+        canonical strategy light curve data
+    is_queryable
+        If True, allow queries only on objects flagged as queryable.
+        Default is True.
+    strategy
+        Query strategy. Options are (all can be run with budget):
+        "UncSampling", "UncSamplingEntropy", "UncSamplingLeastConfident",
+        "UncSamplingMargin", "QBDMI", "QBDEntropy", "RandomSampling",
+    is_separate_files
+        If True, consider samples separately read
+        from independent files. Default is False.
+    """
+    light_curve_data.pool_metadata = next_day_data.pool_metadata
+    light_curve_data.pool_features = next_day_data.pool_features
+    light_curve_data.pool_labels = next_day_data.pool_labels
+
+    if not is_separate_files:
+        light_curve_data.test_metadata = next_day_data.test_metadata
+        light_curve_data.test_features = next_day_data.test_features
+        light_curve_data.test_labels = next_day_data.test_labels
+
+        light_curve_data.validation_metadata = next_day_data.validation_metadata
+        light_curve_data.validation_features = next_day_data.validation_features
+        light_curve_data.validation_labels = next_day_data.validation_labels
+
+    if strategy == 'canonical':
+        light_curve_data.queryable_ids = canonical_data.queryable_ids
+
+    if is_queryable:
+        queryable_flag = light_curve_data.pool_metadata['queryable'].values
+        light_curve_data.queryable_ids = light_curve_data.pool_metadata[
+            'id'].values[queryable_flag]
+    else:
+        light_curve_data.queryable_ids = light_curve_data.pool_metadata[
+            'id'].values
+    return light_curve_data
+
+
+# TODO: Too many arguments. Refactor and update docs
+def process_next_day_loop(
+        light_curve_data: DataBase, next_day_features_file_name: str,
+        is_separate_files: bool, is_queryable: bool, survey_name: str,
+        ia_training_fraction: float, id_key_name: str,
+        light_curve_train_ids: np.ndarray, is_save_samples: bool,
+        canonical_data: DataBase, strategy: str) -> DataBase:
+    """
+    Runs next day active learning loop
+
+    Parameters
+    ----------
+    light_curve_data
+        next day light curve data
+    next_day_features_file_name
+        path to next day features file name
+    is_separate_files
+        If True, consider samples separately read
+        from independent files. Default is False.
+    is_queryable
+        If True, allow queries only on objects flagged as queryable.
+        Default is True.
+    survey_name
+        Name of survey to be analyzed. Accepts 'DES' or 'LSST'.
+        Default is LSST.
+    ia_training_fraction
+        Fraction of Ia required in initial training sample.
+        Default is 0.5.
+    id_key_name
+        object identification key name
+    light_curve_train_ids
+        light curve data metadata values
+    is_save_samples
+        If True, save training and test samples to file.
+        Default is False.
+    canonical_data
+        canonical strategy light curve data
+    strategy
+        Query strategy. Options are (all can be run with budget):
+        "UncSampling", "UncSamplingEntropy", "UncSamplingLeastConfident",
+        "UncSamplingMargin", "QBDMI", "QBDEntropy", "RandomSampling"
+    """
+    next_day_data = _load_next_day_data(
+        next_day_features_file_name, is_separate_files, is_queryable,
+        survey_name, ia_training_fraction, is_save_samples)
+    for metadata_value in light_curve_data.train_metadata[id_key_name].values:
+        next_day_pool_metadata = next_day_data.pool_metadata[id_key_name].values
+        if metadata_value in next_day_pool_metadata:
+            next_day_pool_metadata_indices = list(
+                next_day_pool_metadata).index(metadata_value)
+            if metadata_value not in light_curve_train_ids:
+                light_curve_train_metadata = light_curve_data.train_metadata[
+                    id_key_name].values
+                light_curve_data = _remove_old_training_features(
+                    light_curve_data, light_curve_train_metadata,
+                    metadata_value)
+                if light_curve_data.queryable_ids.shape[0] > 0:
+                    light_curve_data = _update_queried_sample(
+                        light_curve_data, next_day_data, id_key_name,
+                        metadata_value)
+                light_curve_data = _update_training_data_with_new_features(
+                    light_curve_data, next_day_data, metadata_value, id_key_name)
+            next_day_data = _update_next_day_pool_data(
+                next_day_data, next_day_pool_metadata_indices)
+        next_day_data = _update_next_day_val_and_test_data(
+            next_day_data, metadata_value, id_key_name)
+    light_curve_data = _update_light_curve_data_for_next_epoch(
+        light_curve_data, next_day_data, canonical_data, is_queryable, strategy,
+        is_separate_files)
+    return light_curve_data
+
+
+# TODO: Too many arguments. Refactor and update docs
+def run_time_domain_active_learning_loop(
+        light_curve_data: DataBase, learning_days: list,
+        classifier: str, is_classifier_bootstrap: bool, strategy: str,
+        budgets: tuple, is_queryable: bool, query_threshold: float, batch: int,
+        output_metric_file_name: str, output_queried_file_name: str,
+        is_save_full_query: bool, id_key_name: str,
+        light_curve_train_ids: np.ndarray, canonical_data: DataBase,
+        is_separate_files: bool, path_to_features_directory: str,
+        fname_pattern: list, survey_name: str,  ia_training_fraction: float,
+        is_save_samples: bool, **kwargs: dict):
+    """
+    Runs time domain active learning loop
+
+    Parameters
+    ----------
+    light_curve_data
+        light curve learning data
+    learning_days
+        List of 2 elements. First and last day of observations since the
+        beginning of the survey.
+    classifier
+        Machine Learning algorithm.
+        Currently 'RandomForest', 'GradientBoostedTrees',
+        'KNN', 'MLP', 'SVM' and 'NB' are implemented.
+        Default is 'RandomForest'.
+    is_classifier_bootstrap
+        If true build a boostrap ensemble of the classifier.
+    strategy
+        Query strategy. Options are (all can be run with budget):
+        "UncSampling", "UncSamplingEntropy", "UncSamplingLeastConfident",
+        "UncSamplingMargin", "QBDMI", "QBDEntropy", "RandomSampling"
+    budgets
+        Budgets for each of the telescopes
+    is_queryable
+        If True, allow queries only on objects flagged as queryable.
+        Default is True.
+    query_threshold
+        Percentile threshold for query. Default is 1.
+    batch
+        Size of batch to be queried in each loop. Default is 1.
+    output_metric_file_name
+        Full path to output file to store metrics for each loop.
+    output_queried_file_name
+        Full path to output file to store the queried sample.
+    is_save_full_query
+        If True, save complete queried sample to file.
+        Otherwise, save only first element. Default is False.
+    id_key_name
+        object identification key name
+    light_curve_train_ids
+        light curve data metadata values
+    canonical_data
+        canonical strategy light curve data
+    is_separate_files
+        If True, consider samples separately read
+        from independent files. Default is False.
+    path_to_features_directory
+        Complete path to directory holding features files for all days.
+    fname_pattern
+        List of strings. Set the pattern for filename, except day of
+        survey. If file name is 'day_1_vx.dat' -> ['day_', '_vx.dat']
+    survey_name
+        Name of survey to be analyzed. Accepts 'DES' or 'LSST'.
+        Default is LSST.
+    ia_training_fraction
+        Fraction of Ia required in initial training sample.
+        Default is 0.5.
+    is_save_samples
+       If True, save training and test samples to file.
+        Default is False.
+    kwargs
+       All keywords required by the classifier function.
+
+    Returns
+    -------
+
+    """
+    learning_days = [int(each_day) for each_day in learning_days]
+    for epoch in progressbar.progressbar(
+            range(learning_days[0], learning_days[-1] - 1)):
+        light_curve_data = _run_classification_and_evaluation(
+            light_curve_data, classifier, is_classifier_bootstrap, **kwargs)
+        if light_curve_data.queryable_ids.shape[0] > 0:
+            object_indices = _get_indices_of_objects_to_be_queried(
+                light_curve_data, strategy, budgets, is_queryable,
+                query_threshold, batch)
+            light_curve_data = _update_samples_with_object_indices(
+                light_curve_data, object_indices, is_queryable, epoch)
+            _save_metrics_and_queried_sample(
+                light_curve_data, epoch - learning_days[0],
+                output_metric_file_name, output_queried_file_name, len(object_indices), epoch,
+                is_save_full_query)
+        next_day_features_file_name = (
+                path_to_features_directory + fname_pattern[0] + str(epoch + 1)
+                + fname_pattern[1])
+        light_curve_data = process_next_day_loop(
+            light_curve_data, next_day_features_file_name, is_separate_files,
+            is_queryable, survey_name,  ia_training_fraction, id_key_name,
+            light_curve_train_ids, is_save_samples, canonical_data, strategy)
+
+
+# TODO: Too many arguments. Refactor and update docs
+def time_domain_loop(days: list, output_metrics_file: str,
+                     output_queried_file: str, path_to_features_dir: str,
+                     strategy: str, fname_pattern: list,
+                     path_to_ini_files: dict, batch: int = 1,
+                     canonical: bool = False, classifier: str = 'RandomForest',
+                     clf_bootstrap: bool = False, budgets: tuple = None,
+                     nclass: int = 2, ia_frac: float = 0.5,
+                     path_to_canonical: str = "", queryable: bool = True,
+                     query_thre: float = 1.0, save_samples: bool = False,
+                     sep_files: bool = False, survey: str = 'LSST',
+                     initial_training: str = 'original',
+                     save_full_query: bool = False, **kwargs):
+    """
+    Perform the active learning loop. All results are saved to file.
 
     Parameters
     ----------
@@ -130,11 +947,12 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         If true build a boostrap ensemble of the classifier.
     budgets: tuple of floats (default: None)
         Budgets for each of the telescopes
-    features_method: str (optional)
-        Feature extraction method. Currently only 'Bazin' is implemented.
     ia_frac: float in [0,1] (optional)
         Fraction of Ia required in initial training sample.
         Default is 0.5.
+    nclass
+        Number of classes to consider in the classification
+        Currently only nclass == 2 is implemented.
     path_to_canonical: str (optional)
         Path to canonical sample features files.
         It is only used if "strategy==canonical".
@@ -147,10 +965,8 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         If True, save training and test samples to file.
         Default is False.
     save_full_query: bool (optional)
-        If True, save complete queried sample to file. 
+        If True, save complete queried sample to file.
         Otherwise, save only first element. Default is False.
-    screen: bool (optional)
-        If True, print on screen number of light curves processed.
     sep_files: bool (optional)
         If True, consider samples separately read
         from independent files. Default is False.
@@ -164,332 +980,39 @@ def time_domain_loop(days: list,  output_metrics_file: str,
         If int: choose the required number of samples at random,
         ensuring that at least half are SN Ia
         Default is 'original'.
-    output_fname: str (optional)
-        Complete path to output file where initial training will be stored.
-        Only used if save_samples == True.
     """
 
     # load features for the first obs day
-    path_to_first_loop = path_to_features_dir + fname_pattern[0] + \
-                                     str(days[0]) + fname_pattern[1]
+    first_loop_file_name = os.path.join(
+        path_to_features_dir,
+        fname_pattern[0] + str(days[0]) + fname_pattern[1])
 
-    # read data from fist loop
-    if not sep_files:
-        first_loop = load_dataset(fname=path_to_first_loop,
-                                 survey=survey, sep_files=False,
-                                 screen=screen,
-                                 initial_training=0,
-                                 ia_frac=ia_frac, queryable=queryable)
-        
-    else:
-        first_loop = DataBase()
-        first_loop.load_features(path_to_file=path_to_first_loop,
-                                 survey=survey, screen=screen, method='Bazin',
-                                 sample='pool')
-        first_loop.build_samples(initial_training='original', nclass=2,
-                                 screen=screen, queryable=queryable,
-                                 save_samples=False, sep_files=sep_files,
-                                 survey=survey)
-        
-    if sep_files:
-        # initiate object
-        data = DataBase()
-
-        # constructs training, test, validation and pool samples
-        data.load_features(path_to_file=path_to_ini_files['train'],
-                           screen=screen, method='Bazin', survey=survey,
-                           sample='train')
-
-        for s in ['test', 'validation']:
-            data.load_features(path_to_file=path_to_ini_files[s],
-                               method='Bazin', screen=screen,
-                               survey=survey, sample=s)
-    else:
-        # read initial training
-        data = load_dataset(fname=path_to_ini_files['train'],
-                            survey=survey, sep_files=sep_files,
-                            screen=screen,
-                            initial_training=initial_training,
-                            ia_frac=ia_frac, queryable=queryable)
+    first_loop_data, light_curve_data = _load_first_loop_and_full_data(
+        first_loop_file_name, path_to_ini_files, survey, initial_training,
+        ia_frac, queryable, sep_files, nclass, is_save_samples=save_samples
+    )
 
     # get keyword for obj identification
-    id_name = data.identify_keywords()
+    id_key_name = light_curve_data.identify_keywords()
+    light_curve_train_ids = light_curve_data.train_metadata[id_key_name].values
 
-    # get ids from initial training
-    ini_train_ids = data.train_metadata[id_name].values
-
-    # remove repeated ids
-    rep_ids_flag = np.array([item in data.train_metadata[id_name].values
-                            for item in first_loop.pool_metadata[id_name].values])
-
-    first_loop.pool_metadata = first_loop.pool_metadata[~rep_ids_flag]
-    first_loop.pool_features = first_loop.pool_features[~rep_ids_flag]
-    pool_labels = first_loop.pool_metadata['type'].values == 'Ia'
-    first_loop.pool_labels = pool_labels.astype(int)
-
-    data.pool_features = first_loop.pool_features
-    data.pool_metadata = first_loop.pool_metadata
-    data.pool_labels = first_loop.pool_labels
-
-    if sep_files:
-        data.build_samples(nclass=2, screen=screen,
-                           queryable=queryable,
-                           sep_files=True, 
-                           save_samples=save_samples,
-                           output_fname=output_fname,
-                           initial_training=initial_training)
-    else:
-        data.test_features = first_loop.pool_features
-        data.test_metadata = first_loop.pool_metadata
-        data.test_labels = first_loop.pool_labels
-
-        data.validation_features = first_loop.pool_features
-        data.validation_metadata = first_loop.pool_metadata
-        data.validation_labels = first_loop.pool_labels
-
-
-    if queryable:
-        q_flag = data.pool_metadata['queryable'].values
-        data.queryable_ids = data.pool_metadata[id_name].values[q_flag]
-    else:
-        data.queryable_ids = data.pool_metadata[id_name].values
-
-    # get list of canonical ids
-    if canonical:
-        canonical = DataBase()
-        canonical.load_features(path_to_file=path_to_canonical)
-        data.queryable_ids = canonical.queryable_ids
-
-    # check if all headers in test exist in train
-    for name in first_loop.metadata_names:
-        if name not in data.metadata_names:
-            data.metadata_names.append(name)
-            data.metadata[name] = None
-            data.train_metadata.insert(len(data.metadata_names) - 1,
-                                       name, None, True)
-
-
-    # get validation ids
-    validation_ids = data.validation_metadata[id_name].values
-
-    for night in range(int(days[0]), int(days[-1]) - 1):
-
-        if screen:
-            print('\n ****************************')
-            print(' Processing night: ', night, '\n\n')
-            print(' Before update_samples:')
-            print('   ... train: ', data.train_metadata.shape[0])
-            print('   ... test: ', data.test_metadata.shape[0])
-            print('   ... validation: ', data.validation_metadata.shape[0])
-            print('   ... pool: ', data.pool_metadata.shape[0], '\n')
-
-            # classify
-            if clf_bootstrap:
-                data.classify_bootstrap(method=classifier, screen=screen, **kwargs)
-            else:
-                data.classify(method=classifier, screen=screen, **kwargs)
-
-            # calculate metrics
-            data.evaluate_classification(screen=screen)
-            
-            if data.queryable_ids.shape[0] > 0:
-
-                # get index of object to be queried
-                if budgets:
-                    indx = data.make_query_budget(budgets=budgets, strategy=strategy,
-                                                  screen=False)
-                else:
-                    indx = data.make_query(strategy=strategy, batch=batch,
-                                           queryable=queryable,
-                                           query_thre=query_thre, screen=screen)
-
-                if screen:
-                    print('\n queried obj index: ', indx)
-                    print('Prob [nIa, Ia]: ', data.classprob[indx[0]])
-                    print('size of pool: ', data.pool_metadata.shape[0], '\n')
-
-                # update training and test samples
-                data.update_samples(indx, queryable=queryable,
-                                    epoch=night)
-                
-                # save metrics for current state
-                data.save_metrics(loop=night - days[0], output_metrics_file=output_metrics_file,
-                                  batch=len(indx), epoch=night)
-
-                if screen:
-                    print('\n After update_samples:')
-                    print('   ... train: ', data.train_metadata.shape[0])
-                    print('   ... test: ', data.test_metadata.shape[0])
-                    print('   ... validation: ', data.validation_metadata.shape[0])
-                    print('   ... pool: ', data.pool_metadata.shape[0], '\n')
-
-                # save query sample to file
-                if save_full_query:
-                    query_fname = output_queried_file[:-4] + '_' + str(night - days[0]) + '.dat' 
-                else:
-                    query_fname = output_queried_file
-                
-                data.save_queried_sample(query_fname, loop=night - days[0],
-                                         full_sample=save_full_query, epoch=night)
-
-            # load features for next day
-            path_to_features2 = path_to_features_dir + fname_pattern[0] + \
-                                str(night + 1) + fname_pattern[1]
-
-            if sep_files:
-                data_tomorrow = DataBase()
-                data_tomorrow.load_features(path_to_file=path_to_features2,
-                                            screen=screen, method='Bazin',
-                                            survey=survey, sample='pool')
-                data_tomorrow.build_samples(initial_training='original',
-                                            screen=screen, queryable=queryable,
-                                            save_samples=False,
-                                            sep_files=sep_files, survey=survey)
-
-            else:
-                data_tomorrow = load_dataset(fname=path_to_features2,
-                              survey=survey,
-                              screen=screen,
-                              initial_training=0,
-                              ia_frac=ia_frac, queryable=queryable)
-
-            for obj in data.train_metadata[id_name].values:
-                if obj in data_tomorrow.pool_metadata[id_name].values:
-
-                    indx_tomorrow = list(data_tomorrow.pool_metadata[id_name].values).index(obj)
-
-                    if obj not in ini_train_ids:
-                        # remove old features from training
-                        indx_today = list(data.train_metadata[id_name].values).index(obj)
-
-                        flag1 = data.train_metadata[id_name].values == obj
-                        data.train_metadata = data.train_metadata.drop(data.train_metadata.index[indx_today])
-                        data.train_labels = np.delete(data.train_labels, indx_today, axis=0)
-                        data.train_features = np.delete(data.train_features, indx_today, axis=0)
-                        
-                        if data.queryable_ids.shape[0] > 0:
-                            # get number of queried objects
-                            n = np.array(data.queried_sample).shape[0] * np.array(data.queried_sample).shape[1]
-                            
-                            # build query data frame
-                            full_header = ['epoch'] + data.metadata_names + data.features_names
-                            queried_sample = pd.DataFrame(data.queried_sample,
-                                                          columns=full_header)
-                        
-                            # get object index in the queried sample
-                            indx_queried = list(queried_sample[id_name].values).index(obj)
-                        
-                            # get flag to isolate object in question
-                            flag2 = queried_sample[id_name].values == obj
-                        
-                            # get object epoch in the queried sample
-                            obj_epoch = queried_sample['epoch'].values[flag2]
-                        
-                            # remove old features from queried
-                            queried_sample = queried_sample.drop(queried_sample.index[indx_queried])
-                        
-                        # update new features of the training with new obs
-                        flag = data_tomorrow.pool_metadata[id_name].values == obj
-                        
-                        if data.queryable_ids.shape[0] > 0:
-                            
-                            # update new features in the queried sample
-                            l1 = [obj_epoch[0]] + list(data_tomorrow.pool_metadata[flag].values[0]) + \
-                                 list(data_tomorrow.pool_features[flag][0])
-                            new_query = pd.DataFrame([l1], columns=full_header)
-                            queried_sample = pd.concat([queried_sample, new_query], axis=0,
-                                                        ignore_index=True)
-                        
-                            # update queried sample
-                            data.queried_sample = list(queried_sample.values)
-
-                        data.train_metadata = pd.concat([data.train_metadata,
-                                                         data_tomorrow.pool_metadata[flag]],
-                                                         axis=0, ignore_index=True)
-                        data.train_features = np.append(data.train_features,
-                                                        data_tomorrow.pool_features[flag], axis=0)
-                        data.train_labels = np.append(data.train_labels,
-                                                      data_tomorrow.pool_labels[flag], axis=0)
-                        
-                    # remove obj from pool sample
-                    data_tomorrow.pool_metadata = data_tomorrow.pool_metadata.drop(\
-                                             data_tomorrow.pool_metadata.index[indx_tomorrow])
-                    data_tomorrow.pool_labels = np.delete(data_tomorrow.pool_labels, indx_tomorrow, axis=0)
-                    data_tomorrow.pool_features = np.delete(data_tomorrow.pool_features, indx_tomorrow, axis=0)
-
-                # remove object from other samples
-                if len(data_tomorrow.validation_metadata) > 0 and  obj in data_tomorrow.validation_metadata[id_name].values:
-                    indx_val =  list(data_tomorrow.validation_metadata[id_name].values).index(obj)
-
-                    data_tomorrow.validation_metadata = data_tomorrow.validation_metadata.drop(\
-                                             data_tomorrow.validation_metadata.index[indx_val])
-                    data_tomorrow.validation_labels = np.delete(data_tomorrow.validation_labels,
-                                                                indx_val, axis=0)
-                    data_tomorrow.validation_features = np.delete(data_tomorrow.validation_features,
-                                                                  indx_val, axis=0)
-
-                if len(data_tomorrow.test_metadata) > 0 and obj in data_tomorrow.test_metadata[id_name].values:
-                    indx_test = list(data_tomorrow.test_metadata[id_name].values).index(obj)
-
-                    data_tomorrow.test_metadata = data_tomorrow.test_metadata.drop(\
-                                             data_tomorrow.test_metadata.index[indx_test])
-                    data_tomorrow.test_labels = np.delete(data_tomorrow.test_labels,
-                                                                indx_test, axis=0)
-                    data_tomorrow.test_features = np.delete(data_tomorrow.test_features,
-                                                                  indx_test, axis=0)
-
-
-            # use new data
-            data.pool_metadata = data_tomorrow.pool_metadata
-            data.pool_features = data_tomorrow.pool_features
-            data.pool_labels = data_tomorrow.pool_labels
-
-            if not sep_files:
-                data.test_metadata = data_tomorrow.test_metadata
-                data.test_features = data_tomorrow.test_features
-                data.test_labels = data_tomorrow.test_labels
-
-                data.validation_metadata = data_tomorrow.validation_metadata
-                data.validation_features = data_tomorrow.validation_features
-                data.validation_labels = data_tomorrow.validation_labels
-
-            if strategy == 'canonical':
-                data.queryable_ids = canonical.queryable_ids
-
-            if  queryable:
-                queryable_flag = data.pool_metadata['queryable'].values
-                data.queryable_ids = data.pool_metadata['id'].values[queryable_flag]
-            else:
-                data.queryable_ids = data.pool_metadata['id'].values
-
-        if screen:
-            print('\n After reading tomorrow data:')
-            print('Training set size: ', data.train_metadata.shape[0])
-            print('Test set size: ', data.test_metadata.shape[0])
-            print('Validation set size: ', data.validation_metadata.shape[0])
-            print('Pool set size: ', data.pool_metadata.shape[0])
-            print('    From which queryable: ', len(data.queryable_ids))
-            print('**************************** \n')
-
-        # check if there are repeated ids
-        for name in data.train_metadata['id'].values:
-            if name in data.pool_metadata['id'].values:
-                raise ValueError('End of time_domain_loop: ' + \
-                                 'Object ', name, ' found in pool and training sample!')
-
-        # check if all queried samples are in the training sample
-        for i in range(len(data.queried_sample)):
-            if data.queried_sample[i][1] not in data.train_metadata['id'].values:
-                raise ValueError('End of time_domain_loop : Object '+ \
-                                 str(data.queried_sample[i][1]) + \
-                                 ' was queried but is missing from training!')
-
-        # check if validation sample continues the same
-        if sep_files:
-            for name in data.validation_metadata[id_name].values:
-                if name not in validation_ids:
-                    raise ValueError('There was a change in the validation sample!')
-
+    first_loop_data, light_curve_data = _update_data_by_remove_repeated_ids(
+        first_loop_data, light_curve_data, id_key_name)
+    light_curve_data = _update_light_curve_data_val_and_test_data(
+        light_curve_data, first_loop_data, sep_files, initial_training,
+        queryable)
+    light_curve_data = _update_queryable_ids(
+        light_curve_data, id_key_name, queryable)
+    light_curve_data, canonical_data = _update_canonical_ids(
+        light_curve_data, path_to_canonical, canonical)
+    light_curve_data = _update_initial_train_meta_data_header(
+        first_loop_data, light_curve_data)
+    run_time_domain_active_learning_loop(
+        light_curve_data, days, classifier, clf_bootstrap,
+        strategy, budgets, queryable, query_thre, batch, output_metrics_file,
+        output_queried_file, save_full_query, id_key_name,
+        light_curve_train_ids, canonical_data, sep_files, path_to_features_dir,
+        fname_pattern, survey, ia_frac, save_samples, **kwargs)
 
 def main():
     return None
