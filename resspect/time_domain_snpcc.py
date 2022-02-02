@@ -389,7 +389,7 @@ class SNPCCPhotometry:
                         queryable_criteria: int = 1, get_cost: bool = False,
                         tel_sizes: list = [4, 8],
                         tel_names: list = ['4m', '8m'], spec_SNR: int = 10,
-                        number_of_processors: int = None, **kwargs):
+                        number_of_processors: int = 1, **kwargs):
         """
         Fit bazin for all objects with enough points in a given day.
 
@@ -434,7 +434,7 @@ class SNPCCPhotometry:
             Primary mirrors diameters of potential spectroscopic telescopes.
             Only used if "get_cost == True".
             Default is [4, 8].
-        number_of_processors: int, default all
+        number_of_processors: int, default 1
             Number of cpu processes to use
         kwargs: extra parameters
             Any input required by ExpTimeCalc.findexptime function.
