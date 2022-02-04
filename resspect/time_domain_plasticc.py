@@ -159,7 +159,7 @@ class PLAsTiCCPhotometry:
         meta_data_file_name: str (optional)
             Meta data file name. Default is 'plasticc_test_metadata.csv'.
         """
-        
+
         meta_data_file_name = os.path.join(
             path_to_data_dir, meta_data_file_name)
         meta_data_raw = read_plasticc_full_photometry_data(meta_data_file_name)
@@ -173,7 +173,7 @@ class PLAsTiCCPhotometry:
                 filter_mask = np.logical_and(ddf_mask, classes_mask)
             else:
                 filter_mask = np.logical_and(~ddf_mask, classes_mask)
-              
+
             self.metadata = meta_data_raw[filter_mask]
         else:
             self.metadata = meta_data_raw[classes_mask]
@@ -198,7 +198,7 @@ class PLAsTiCCPhotometry:
                             snid: int, sample='test') -> LightCurve:
         """
         Loads PLAsTiCC dataset files to LightCurve class
-        
+
         Parameters
         ----------
         raw_data_dir
@@ -212,16 +212,16 @@ class PLAsTiCCPhotometry:
             Sample to load, 'train' or 'test'. Default is 'test'.
         """
         light_curve_data = LightCurve()
-        
+
         if sample == 'test':
             file_name = os.path.join(
                     raw_data_dir, self._file_list_dict['test'][volume - 1])
-            
+
         else:
             file_name = os.path.join(
                     raw_data_dir, self._file_list_dict['train'][0])
         light_curve_data.load_plasticc_lc(file_name, snid)
-            
+
         return light_curve_data
 
     def _get_fit_days(self, day: Union[int, None],
@@ -312,7 +312,7 @@ class PLAsTiCCPhotometry:
                 telescope_name=telescope_names[index],
                 SNR=spectroscopic_snr, **kwargs
             )
-            
+
         return light_curve_data
 
     def _process_current_day(
@@ -322,7 +322,7 @@ class PLAsTiCCPhotometry:
             min_available_points: int = 4, **kwargs):
         """
         Processes data for current day
-        
+
         Parameters
         ----------
         light_curve_data_day
@@ -351,15 +351,15 @@ class PLAsTiCCPhotometry:
         """
         photo_flag = (
                 light_curve_data_day.photometry['mjd'].values <= self._today)
-        
+
         if np.sum(photo_flag) > min_available_points:
             light_curve_data_day.photometry = light_curve_data_day.photometry[
                 photo_flag]
             light_curve_data_day.fit_bazin_all()
-            
+
             if (len(light_curve_data_day.bazin_features) > 0 and
                     'None' not in light_curve_data_day.bazin_features):
-                
+
                 light_curve_data_day.queryable = self._check_queryable(
                     light_curve_data_day, queryable_criteria,
                     days_since_last_observation)
@@ -369,9 +369,9 @@ class PLAsTiCCPhotometry:
                 light_curve_data_day.queryable = bool(sum(get_query_flags(
                     light_curve_data_day, telescope_names
                 )))
-                
+
                 return light_curve_data_day
-            
+
         return None
 
     def _get_features_to_write(
@@ -399,20 +399,32 @@ class PLAsTiCCPhotometry:
             light_curve_data_day.sntype, light_curve_data_day.sncode,
             light_curve_data_day.sample, light_curve_data_day.queryable,
             light_curve_data_day.last_mag]
-        
+
         if get_cost:
             for index in range(self._number_of_telescopes):
                 features_list.append(str(
                     light_curve_data_day.exp_time[telescope_names[index]]))
         features_list.extend(light_curve_data_day.bazin_features)
-        
+
         return features_list
 
     def _update_light_curve_meta_data(self, light_curve_data_day: LightCurve,
                                       snid: int) -> Union[LightCurve, None]:
-        """ Add docstring!!!
         """
-        
+        Loads light curve data of the given SNID
+
+        Parameters
+        ----------
+        light_curve_data_day
+            An instance of LightCurve class instance of the data
+        snid
+            Object id for the transient to be fitted.
+
+        Returns
+        -------
+        light_curve_data_day
+            LightCurve class data for the given SNID
+        """
         if light_curve_data_day is not None:
             snid_mask = self.metadata['object_id'].values == snid
             if np.sum(snid_mask) > 0:
@@ -421,9 +433,9 @@ class PLAsTiCCPhotometry:
                 light_curve_data_day.sncode = (
                     self.metadata['true_target'].values[snid_mask][0])
                 light_curve_data_day.id = snid
-                
+
                 return light_curve_data_day
-        
+
         return None
 
     # TODO: Too many arguments. Refactor and update docs
@@ -431,7 +443,7 @@ class PLAsTiCCPhotometry:
                    vol=None, day=None, queryable_criteria=1,
                    days_since_last_obs=2, get_cost=False, tel_sizes=[4, 8],
                    tel_names=['4m', '8m'], feature_method='Bazin', spec_SNR=10,
-                   time_window=[0, 1095], sample='test', bar=False, 
+                   time_window=[0, 1095], sample='test', bar=False,
                    **kwargs):
         """
         Fit one light curve throughout a portion of the survey. Save it to file.
@@ -483,7 +495,7 @@ class PLAsTiCCPhotometry:
         spec_SNR: float (optional)
             SNR required for spectroscopic follow-up. Default is 10.
         time_window: list or None (optional)
-            Days of the survey to process, in days since the start of the survey. 
+            Days of the survey to process, in days since the start of the survey.
             Default is the entire survey = [0, 1095].
         sample: str (optional)
             Sample to load, 'train' or 'test'. Default is 'test'.
@@ -495,40 +507,40 @@ class PLAsTiCCPhotometry:
         self._verify_telescope_names(tel_names, get_cost)
         self._verify_features_method(feature_method)
         self._number_of_telescopes = len(tel_names)
-        
-        light_curve_data = self._load_plasticc_data(raw_data_dir, vol, snid, sample) 
-        fit_days = np.arange(time_window[0], time_window[1])        
-        
+
+        light_curve_data = self._load_plasticc_data(raw_data_dir, vol, snid, sample)
+        fit_days = np.arange(time_window[0], time_window[1])
+
         if bar:
             group = progressbar.progressbar(fit_days)
         else:
             group = fit_days
-            
+
         for day_of_survey in fit_days:
-            
+
             light_curve_data_day = deepcopy(light_curve_data)
             self._today = day_of_survey + self.min_epoch
-            
+
             # check number of points to today
             photo_flag = (
                 light_curve_data_day.photometry['mjd'].values <= self._today)
             ndays_new = sum(photo_flag)
-    
+
             if day_of_survey == fit_days[0]:
                 ndays = sum(photo_flag)
-    
+
             # only calculate features if there is a new observed point
             if ndays_new > ndays or day_of_survey == fit_days[0]:
                 light_curve_data_day = self._process_current_day(
                     light_curve_data_day, queryable_criteria, days_since_last_obs,
                     tel_names, tel_sizes, spec_SNR, **kwargs)
-            
+
                 light_curve_data_day = self._update_light_curve_meta_data(
                         light_curve_data_day, snid)
-            
+
             else:
                 light_curve_data_day = lc_old
-            
+
             if light_curve_data_day is not None:
                 features_to_write = self._get_features_to_write(
                         light_curve_data_day, get_cost, tel_names)
@@ -538,11 +550,11 @@ class PLAsTiCCPhotometry:
                     plasticc_features_file.write(
                             ' '.join(str(each_feature) for each_feature
                                      in features_to_write) + '\n')
-                    
+
                     if not bar:
                         print('wrote epoch: ', day_of_survey, ' snid: ', snid)
 
                 # store this to compare to next day
                 ndays = light_curve_data_day.photometry.shape[0]
-            
-            lc_old = deepcopy(light_curve_data_day) 
+
+            lc_old = deepcopy(light_curve_data_day)
