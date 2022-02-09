@@ -29,7 +29,7 @@ In the current implementation of ``resspect`` there are 2 ways in which you can 
 
 For both options, you can also choose to calculate the necessary telescope time to obtain the required spectra, given characteristics of a telescope and observation conditions. This is done using the `ExpTimeCalc class <https://resspect.readthedocs.io/en/latest/api/resspect.ExpTimeCalc.html>`_. This class was heavily based in the public `HiTS exposure time calculator <https://github.com/fforster/HiTS-public>`_.
 
-In the most simple scenario, you can choose the diameter of the primary mirror for a given telescope, the magnitude of the object at the time of observation and the required SNR. All other default parameters are set to the DECam standards. Check the doc strings for more information on how to choose a different configuration.
+In the most simple scenario, you can choose the diameter of the primary mirror for a given telescope, the magnitude of the object at the time of observation and the required SNR. All other default parameters are set to the DECam standards. 
 
 
 For SNPCC
@@ -130,5 +130,7 @@ Alternatively you can use the command line to prepare a sequence of days in one 
    >>>      -snr 10 -tw 400 401
 
 
-| :warning:  | We show above a few of the parameters you can tune in this stage. Please see docstring for  `PLAsTiCCPhotometry class <https://resspect.readthedocs.io/en/latest/api/resspect.PLAsTiCCPhotometry.html>`_ for more options regarding the feature extraction procedure, and `exposure_time_calculator <https://resspect.readthedocs.io/en/latest/api/resspect.exposure_time_calculator.html>`_ to check what are the parameters used to estimate required exposure time in each telescope.|
+| :warning:  | We show above a few of the parameters you can tune in this stage. <br />
+               Please see docstring for  `PLAsTiCCPhotometry class <https://resspect.readthedocs.io/en/latest/api/resspect.PLAsTiCCPhotometry.html>`_ for more options regarding the feature extraction procedure, <br />
+               and `exposure_time_calculator <https://resspect.readthedocs.io/en/latest/api/resspect.exposure_time_calculator.html>`_ to check what are the parameters used to estimate required exposure time in each telescope.|
 
