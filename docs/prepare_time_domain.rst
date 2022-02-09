@@ -130,5 +130,8 @@ Alternatively you can use the command line to prepare a sequence of days in one 
    >>>      -snr 10 -tw 400 401
 
 
-| :warning: We show above a few of the parameters you can tune in this stage. Please see docstring for  `PLAsTiCCPhotometry class <https://resspect.readthedocs.io/en/latest/api/resspect.PLAsTiCCPhotometry.html>`_ for more options regarding the feature extraction procedure, and `exposure_time_calculator <https://resspect.readthedocs.io/en/latest/api/resspect.exposure_time_calculator.html>`_ to check what are the parameters used to estimate required exposure time in each telescope.
+.. warning::
+   We show above a few of the parameters you can tune in this stage. 
+   Please see docstring for  `PLAsTiCCPhotometry class <https://resspect.readthedocs.io/en/latest/api/resspect.PLAsTiCCPhotometry.html>`_ for more options regarding the feature extraction procedure, and 
+   `exposure_time_calculator <https://resspect.readthedocs.io/en/latest/api/resspect.exposure_time_calculator.html>`_ to check what are the parameters used to estimate required exposure time in each telescope.
 
