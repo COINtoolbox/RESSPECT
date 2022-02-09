@@ -84,8 +84,8 @@ def main(user_choice):
     -------
     Use it directly from the command line.
 
-    >>> build_time_domain_PLAsTiCC.py -o <path to output dir> 
-    >>>      -i <path to input zenodo dir> -df False
+    >>> build_time_domain_PLAsTiCC.py -df True -o <path to output dir> 
+    >>>      -i <path to input zenodo dir> 
     """
     
     create_daily_files = user_choice.create_daily_files
