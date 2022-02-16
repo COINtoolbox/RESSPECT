@@ -15,10 +15,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import json
+from itertools import repeat
 import logging
+import multiprocessing
 import os
 from copy import deepcopy
+from typing import Tuple
 from typing import Union
 
 import numpy as np
@@ -76,6 +79,9 @@ class PLAsTiCCPhotometry:
         self._file_list_dict = {}  # type: dict
         self._today = None  # type: int
         self._number_of_telescopes = None  # type: int
+        self._previous_day_features = None
+        self._previous_day_index_mapping = None
+        self._kwargs = None
         self.build()
 
     def build(self):
@@ -146,7 +152,7 @@ class PLAsTiCCPhotometry:
         """
         Read metadata and filter only required classes.
         Populates the metadata attribute.
-        
+
         Parameters
         ----------
         path_to_data_dir: str
@@ -539,6 +545,7 @@ class PLAsTiCCPhotometry:
                         light_curve_data_day, snid)
 
             else:
+                print("Copying")
                 light_curve_data_day = lc_old
 
             if light_curve_data_day is not None:
@@ -558,3 +565,241 @@ class PLAsTiCCPhotometry:
                 ndays = light_curve_data_day.photometry.shape[0]
 
             lc_old = deepcopy(light_curve_data_day)
+
+    def fit_all_snids_lc(
+            self, raw_data_dir: str, snids: np.ndarray, output_dir: str,
+            vol: int = None, queryable_criteria: int = 1,
+            days_since_last_obs: int = 2, get_cost: bool = False,
+            tel_sizes: list = [4, 8], tel_names: list = ['4m', '8m'],
+            feature_method: str = 'Bazin', spec_SNR: int = 10,
+            time_window: list = [0, 1095], sample: str = 'test',
+            number_of_processors: int = 1, **kwargs):
+        """
+        Fits light curves for all the available snids for the time period
+         provided in time window and saves features to individual day features
+         file
+
+        Parameters
+        ----------
+        raw_data_dir
+            Complete path to all PLAsTiCC zenodo files.
+        snids
+            Object ids for the transient to be fitted.
+        output_dir
+            Directory to store output time domain files.
+        vol
+            Index of the original PLAsTiCC zenodo light curve
+            files where the photometry for this object is stored.
+            If None, search for id in all light curve files.
+            Default is None.
+        queryable_criteria
+            Criteria to determine if an obj is queryable.
+            1 -> Cut on last measured photometric point.
+            2 -> if last obs was further than days_since_last_obs,
+                 use Bazin estimate for today. Otherwise, use
+                 the last observed point.
+            Default is 1.
+        days_since_last_obs
+            If there is an observation within these days, use the
+            measured value, otherwise estimate current mag.
+            Only used if "criteria == 2". Default is 2.
+        get_cost
+            If True, calculate cost of taking a spectra in the last
+            observed photometric point. Default is False.
+        tel_sizes
+            Primary mirrors diameters of potential spectroscopic telescopes.
+            Only used if "get_cost == True".
+            Default is [4, 8].
+        tel_names
+            Names of the telescopes under consideration for spectroscopy.
+            Only used if "get_cost == True".
+            Default is ["4m", "8m"].
+        feature_method
+            Feature extraction method.
+            Only possibility is 'Bazin'.
+        spec_SNR
+            SNR required for spectroscopic follow-up. Default is 10.
+        time_window
+            Days of the survey to process, in days since the start of the survey.
+            Default is the entire survey = [0, 1095].
+        sample
+            Sample to load, 'train' or 'test'. Default is 'test'.
+        number_of_processors
+            Number of cpu processes to use.
+        kwargs
+            Any input required by ExpTimeCalc.findexptime function.
+        """
+        self._verify_telescope_names(tel_names, get_cost)
+        self._verify_features_method(feature_method)
+        self._number_of_telescopes = len(tel_names)
+        self._kwargs = kwargs
+        for day_of_survey in range(time_window[0], time_window[1]):
+            # Load previous day features if available
+            self._previous_day_features, self._previous_day_index_mapping = (
+                _load_previous_day_features(day_of_survey, output_dir))
+            features_file_name = os.path.join(
+                output_dir, 'day_' + str(day_of_survey) + '.dat')
+            number_of_points_mapping_file_name = os.path.join(
+                output_dir, "snid_number_of_points.json")
+            # Load snids and number of observed points till previous day fit mapping
+            previous_day_number_of_points = _load_snids_to_points_mapping(
+                number_of_points_mapping_file_name)
+            multi_process = multiprocessing.Pool(number_of_processors)
+            logging.info("Generting features for day %s", day_of_survey)
+            iterator_list = zip(
+                snids, repeat(raw_data_dir), repeat(vol), repeat(day_of_survey),
+                repeat(sample), repeat(get_cost), repeat(tel_names),
+                repeat(queryable_criteria), repeat(days_since_last_obs),
+                repeat(tel_sizes), repeat(spec_SNR),
+                repeat(previous_day_number_of_points),
+            )
+            with open(features_file_name, 'a') as plasticc_features_file:
+                for features_to_write, number_of_observation_points in multi_process.starmap(
+                        self._process_each_snid, iterator_list):
+                    previous_day_number_of_points.update(number_of_observation_points)
+                    if features_to_write is not None:
+                        plasticc_features_file.write(features_to_write)
+            with open(number_of_points_mapping_file_name, "w") as json_file:
+                json.dump(previous_day_number_of_points, json_file)
+
+    def _process_each_snid(
+            self, snid: int, raw_data_dir: str, vol: str, day_of_survey: int,
+            sample: str, get_cost, telescope_names: list,
+            queryable_criteria: int, days_since_last_obs: int,
+            telescope_sizes: list, spectroscopic_snr: int,
+            previous_day_number_of_points: dict) -> Tuple[
+        Union[str, None], Union[int, None]]:
+        """
+        Fits snid light curve for the day of survey and returns features
+
+        Parameters
+        ----------
+        snid
+            Object id for the transient to be fitted.
+        raw_data_dir
+            Complete path to all PLAsTiCC zenodo files.
+        vol
+            Index of the original PLAsTiCC zenodo light curve
+            files where the photometry for this object is stored.
+            If None, search for id in all light curve files.
+            Default is None.
+        day_of_survey
+            current day of survey
+        sample
+            Sample to load, 'train' or 'test'. Default is 'test'.
+        get_cost
+            If True, calculate cost of taking a spectra in the last
+            observed photometric point. Default is False.
+        telescope_names
+            Names of the telescopes under consideration for spectroscopy.
+            Only used if "get_cost == True".
+            Default is ["4m", "8m"].
+        queryable_criteria
+            Criteria to determine if an obj is queryable.
+            1 -> Cut on last measured photometric point.
+            2 -> if last obs was further than days_since_last_obs,
+                 use Bazin estimate for today. Otherwise, use
+                 the last observed point.
+            Default is 1.
+        days_since_last_obs
+            If there is an observation within these days, use the
+            measured value, otherwise estimate current mag.
+            Only used if "criteria == 2". Default is 2.
+        telescope_sizes
+            Primary mirrors diameters of potential spectroscopic telescopes.
+            Only used if "get_cost == True".
+            Default is [4, 8].
+        spectroscopic_snr
+            SNR required for spectroscopic follow-up. Default is 10.
+        previous_day_number_of_points
+            mapping of snid and total number of observed points till previous day
+        Returns
+        -------
+        features_to_write
+            light curve features of given snid
+        number_of_observation_points
+            number of observed points
+        """
+
+        light_curve_data = self._load_plasticc_data(raw_data_dir, vol, snid, sample)
+        self._today = day_of_survey + self.min_epoch
+        light_curve_data_day = deepcopy(light_curve_data)
+
+        ndays_new = sum((
+                light_curve_data_day.photometry['mjd'].values <= self._today))
+        number_of_observation_points = {str(snid): int(ndays_new)}
+        if (snid in previous_day_number_of_points and
+                previous_day_number_of_points[snid] > ndays_new) or (
+                snid not in previous_day_number_of_points):
+            light_curve_data_day = self._process_current_day(
+                light_curve_data_day, queryable_criteria, days_since_last_obs,
+                telescope_names, telescope_sizes, spectroscopic_snr, **self._kwargs)
+
+            light_curve_data_day = self._update_light_curve_meta_data(
+                light_curve_data_day, snid)
+        else:
+            snid = str(snid)
+            if snid in self._previous_day_index_mapping:
+                return (self._previous_day_features[
+                            self._previous_day_index_mapping[snid]],
+                        number_of_observation_points)
+        if light_curve_data_day is not None:
+            features_to_write = self._get_features_to_write(
+                light_curve_data_day, get_cost, telescope_names)
+            return (' '.join(str(each_feature) for each_feature
+                             in features_to_write) + '\n',
+                    number_of_observation_points)
+        return None, number_of_observation_points
+
+
+def _load_previous_day_features(
+        day_of_survey: int, output_dir: str,
+        file_name_prefix: str = "day_") -> Tuple[Union[None, list], dict]:
+    """
+    Loads previous day features file to list and generates snid to its index
+     in the list mapping, which can be used to copy the features if no new observing
+     points are available in the light curve
+
+    Parameters
+    ----------
+    day_of_survey
+        day of survey
+    output_dir
+        Directory to store output time domain files.
+    file_name_prefix
+        features file name prefix string
+    Returns
+    -------
+    previous_day_features
+        loaded previous day features
+    previous_day_index_mapping
+        snid to its index in the features list mapping
+    """
+    if day_of_survey < 2:
+        return None, {}
+    previous_day_file_name = file_name_prefix + str(day_of_survey - 1) + '.dat'
+    previous_day_file_name = os.path.join(output_dir, previous_day_file_name)
+    with open(previous_day_file_name, 'r') as file:
+        previous_day_features = file.readlines()
+    previous_day_index_mapping = {line.split(" ", 1)[0]: index for index, line
+                          in enumerate(previous_day_features)}
+    return previous_day_features, previous_day_index_mapping
+
+
+def _load_snids_to_points_mapping(file_name: str) -> dict:
+    """
+    Loads mapping of snid and total number of observed points till
+     previous day file
+    Parameters
+    ----------
+    file_name
+        mapping file_name "snid_number_of_points.json"
+    Returns
+    -------
+    mapping
+        snid to number of observed points mapping
+    """
+    if os.path.isfile(file_name):
+        with open(file_name, "r") as json_file:
+            return json.load(json_file)
+    return {}
