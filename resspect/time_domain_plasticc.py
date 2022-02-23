@@ -137,7 +137,6 @@ class PLAsTiCCPhotometry:
         maybe_create_directory(output_dir)
         self._features_file_name = os.path.join(
             output_dir, 'day_' + str(day) + '.dat')
-        logging.info('Creating features file')
         with open(self._features_file_name, 'w') as features_file:
             self._set_bazin_header(header)
             features_file.write(' '.join(self._bazin_header) + '\n')
