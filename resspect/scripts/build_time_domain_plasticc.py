@@ -28,8 +28,6 @@ def main(user_choice):
     
     Parameters
     ----------
-    -df: bool
-        If True, create new daily files for the chosen time windown.
     -i: str
         Input PLAsTiCC zenodo directory.
     -o: str
@@ -47,6 +45,9 @@ def main(user_choice):
         If there is an observation within these days, use the
         measured value, otherwise estimate current mag.
         Only used if "criteria == 2". Default is 2.
+    -df: bool (optional)
+        If True, create new daily files for the chosen time windown.
+        Default is False.
     -f: str (optional)
         Feature extraction method.
         Only possibility is 'Bazin'.
@@ -84,7 +85,7 @@ def main(user_choice):
     -------
     Use it directly from the command line.
 
-    >>> build_time_domain_PLAsTiCC.py -df True -o <path to output dir> 
+    >>> build_time_domain_PLAsTiCC.py -o <path to output dir> 
     >>>      -i <path to input zenodo dir> 
     """
     
@@ -107,6 +108,21 @@ def main(user_choice):
     
     photom = PLAsTiCCPhotometry()
     photom.build()
+    
+    print('output_dir = ', output_dir)
+    print('create_daily_files = ', create_daily_files)
+    print('raw_data_dir = ', raw_data_dir)
+    print('field = ', field)
+    print('get_cost = ', get_cost)
+    print('queryable_criteria = ', queryable_criteria)
+    print('sample = ', sample)
+    print('spec_SNR = ', spec_SNR)
+    print('tel_names = ', tel_names)
+    print('tel_sizes = ', tel_sizes)
+    print('time_window = ', time_window)
+    print('vol = ', vol)
+
+    return 0
     
     if create_daily_files:
         photom.create_all_daily_files(output_dir=output_dir,
@@ -135,8 +151,7 @@ if __name__ == '__main__':
                                                  'Prepare Time Domain PLAsTiCC module')
 
     parser.add_argument('-df', '--create-daily-files', 
-                        dest='create_daily_files', required=True,
-                        type=bool,
+                        dest='create_daily_files', default=False, 
                         help='If True, create new daily files.')    
     parser.add_argument('-i', '--raw-data-dir', required=True, type=str,
                         dest='raw_data_dir',
@@ -157,8 +172,8 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--feature-method', dest='feature_method', type=str,
                         required=False, default='Bazin', help='Feature extraction method. ' + \
                         'Only "Bazin" is accepted at the moment.')    
-    parser.add_argument('-g', '--get-cost', dest='get_cost', required=False,
-                        type=bool, default=False, 
+    parser.add_argument('-g', '--get-cost', dest='get_cost', 
+                        default=False, 
                         help='Calculate cost of spectra in each day. Default is False.')
     parser.add_argument('-v', '--volume', dest='vol', type=int, required=False,
                        default=1, help='Index of photometric file. Only used if ' +\

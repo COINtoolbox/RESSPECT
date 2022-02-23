@@ -99,8 +99,7 @@ if __name__ == '__main__':
                         'the last observed point. Default is 1.')
     parser.add_argument('-o', '--output', dest='output', required=True,
                         type=str, help='Path to output time domain directory.')
-    parser.add_argument('-c', '--calculate-cost', dest='get_cost', required=False,
-                        type=bool, default=False, 
+    parser.add_argument('-c', '--calculate-cost', dest='get_cost', default=False, 
                         help='Calculate cost of spectra in each day.')
     parser.add_argument('-f', '--feature-method', dest='feature_method', type=str,
                         required=False, default='Bazin', help='Feature extraction method. ' + \

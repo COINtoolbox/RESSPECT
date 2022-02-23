@@ -75,9 +75,9 @@ def main(user_choices):
 def str2bool(v):
     if isinstance(v, bool):
         return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+    if v.lower() in ('yes', 'true', 't', 'y', '1', 'True', 'TRUE'):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif v.lower() in ('no', 'false', 'f', 'n', '0', 'False', 'FALSE'):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='resspect - '
                                                  'Build Canonical module')
 
-    parser.add_argument('-c', '--compute', required=True, type=str2bool,
+    parser.add_argument('-c', '--compute', type=str2bool,
                         dest='compute', help='If True, compute metadata '
                                              'on SNR and peak mag.')
     parser.add_argument('-d', '--raw-data-dir', dest='raw_data_dir',
