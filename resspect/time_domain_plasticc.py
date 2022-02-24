@@ -666,8 +666,9 @@ class PLAsTiCCPhotometry:
         self._number_of_telescopes = len(tel_names)
         self._kwargs = kwargs
         if create_daily_files:
-            self.create_all_daily_files(
-                output_dir=output_dir, get_cost=get_cost)
+            for day_of_survey in range(time_window[0], time_window[1]):
+                self.create_daily_file(output_dir=output_dir,
+                                       day=day_of_survey, get_cost=get_cost)
 
         for day_of_survey in range(time_window[0], time_window[1]):
             # Load previous day features if available
