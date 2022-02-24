@@ -121,10 +121,10 @@ def main(user_choice):
     print('tel_sizes = ', tel_sizes)
     print('time_window = ', time_window)
     print('vol = ', vol)
-
     return 0
     
     if create_daily_files:
+        print('inside create_daily_files')
         photom.create_all_daily_files(output_dir=output_dir,
                                       get_cost=get_cost)
     
