@@ -593,6 +593,30 @@ class PLAsTiCCPhotometry:
             with open(features_file_name, 'w') as features_file:
                 features_file.write(' '.join(self._bazin_header) + '\n')
 
+    def _maybe_create_daily_feature_files(
+            self, time_window: list, output_dir: str, get_cost: bool):
+        """
+        Creates daily feature files for the specified time window
+        Parameters
+        ----------
+        time_window
+            Days of the survey to process, in days since the start of the survey.
+            Default is the entire survey = [0, 1095].
+        output_dir
+            Output directory to save feature files
+        get_cost
+           if cost of taking a spectra is computed
+        """
+        user_input = input("Are you sure want to create new daily files?(yes/no): ")
+        if user_input.lower() == "yes":
+            for day_of_survey in range(time_window[0], time_window[1]):
+                self.create_daily_file(output_dir=output_dir,
+                                       day=day_of_survey, get_cost=get_cost)
+        elif user_input.lower() == "no":
+            logging.info("Not creating new daily feature files")
+        else:
+            raise ValueError("Unknown input! Please specify yes or no")
+
     def fit_all_snids_lc(
             self, raw_data_dir: str, snids: np.ndarray, output_dir: str,
             vol: int = None, queryable_criteria: int = 1,
@@ -666,9 +690,8 @@ class PLAsTiCCPhotometry:
         self._number_of_telescopes = len(tel_names)
         self._kwargs = kwargs
         if create_daily_files:
-            for day_of_survey in range(time_window[0], time_window[1]):
-                self.create_daily_file(output_dir=output_dir,
-                                       day=day_of_survey, get_cost=get_cost)
+            self._maybe_create_daily_feature_files(
+                time_window, output_dir, get_cost)
 
         for day_of_survey in range(time_window[0], time_window[1]):
             # Load previous day features if available
