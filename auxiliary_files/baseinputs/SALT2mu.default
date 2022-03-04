@@ -41,5 +41,10 @@ sntype=-1
 hgtype=-1
 file=
 prefix=
+
+#surveygroup_biascor='FOUNDATION(zbin=0.01),LSST(zbin=0.05)'
+opt_biascor=2
+simfile_biascor=/media/RESSPECT/data/PLAsTiCC/biascorsims/LSST_DDF_BIASCOR.FITRES.gz,/media/RESSPECT/data/PLAsTiCC/biascorsims/FOUNDATION_BIASCOR.FITRES.gz
+
 #CUTWIN SIM_TYPE_INDEX 1 1
 #CUTWIN PTRUE_Ia 1 1
