@@ -31,6 +31,8 @@ import pandas as pd
 
 from resspect.bazin import bazin
 from resspect.bazin import fit_scipy
+from resspect.bump import bump
+from resspect.bump import fit_bump
 from resspect.exposure_time_calculator import ExpTimeCalc
 from resspect.lightcurves_utils import read_file
 from resspect.lightcurves_utils import get_resspect_header_data
