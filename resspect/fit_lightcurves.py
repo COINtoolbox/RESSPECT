@@ -52,7 +52,7 @@ from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 logging.basicConfig(level=logging.INFO)
 
-__all__ = ['LightCurve', 'fit_snpcc_bazin', 'fit_resspect_bazin',
+__all__ = ['LightCurve', 'fit_snpcc', 'fit_resspect_bazin',
            'fit_plasticc_bazin']
 
 
@@ -886,7 +886,7 @@ class LightCurve:
             plt.show()
 
 
-def _get_features_to_write(light_curve_data: LightCurve) -> list:
+def _get_features_to_write(light_curve_data: LightCurve, function: str ='bazin') -> list:
     """
     Returns features list to write
 
@@ -894,11 +894,19 @@ def _get_features_to_write(light_curve_data: LightCurve) -> list:
     ----------
     light_curve_data
         fitted light curve data
+    function: str (optional)
+        Function used for feature extraction. 
+        Options are "bazin" or "bump". Default is "bazin".
     """
     features_list = [light_curve_data.id, light_curve_data.redshift,
                      light_curve_data.sntype, light_curve_data.sncode,
                      light_curve_data.sample]
-    features_list.extend(light_curve_data.bazin_features)
+    
+    if features == 'bazin':
+        features_list.extend(light_curve_data.bazin_features)
+    elif features == 'bump':
+        features_list.extend(light_curve_data.bump_features)
+        
     return features_list
 
 
@@ -921,8 +929,8 @@ def write_features_to_output_file(
                  in current_features) + '\n')
 
 
-def _snpcc_sample_fit_bazin(
-        file_name: str, path_to_data_dir: str) -> LightCurve:
+def _snpcc_sample_fit(
+        file_name: str, path_to_data_dir: str, function: str) -> LightCurve:
     """
     Reads SNPCC file and performs bazin fit
     Parameters
@@ -932,18 +940,28 @@ def _snpcc_sample_fit_bazin(
     path_to_data_dir
          Path to directory containing the set of individual files,
          one for each light curve.
-
+    function
+        Function used for feature extraction. 
+        Options are 'bazin' or 'bump'.
     """
     light_curve_data = LightCurve()
     light_curve_data.load_snpcc_lc(
         os.path.join(path_to_data_dir, file_name))
-    light_curve_data.fit_bazin_all()
+    
+    if function == 'bazin':
+        light_curve_data.fit_bazin_all()
+    elif function == 'bump':
+        light_curve_data.fit_bump_all()
+    else:
+        raise ValueError('Possible options for "function" are "bazin" or "bump".')
+        
     return light_curve_data
 
 
-def fit_snpcc_bazin(
+def fit_snpcc(
         path_to_data_dir: str, features_file: str,
-        file_prefix: str = "DES_SN", number_of_processors: int = 1):
+        file_prefix: str = "DES_SN", number_of_processors: int = 1, 
+        function: str = 'bazin'):
     """
     Perform Bazin fit to all objects in the SNPCC data.
 
@@ -958,18 +976,22 @@ def fit_snpcc_bazin(
         File names prefix
      number_of_processors: int, default 1
         Number of cpu processes to use.
+     function: str, default bazin
+        Function used for feature extraction.
     """
     files_list = os.listdir(path_to_data_dir)
     files_list = [each_file for each_file in files_list
                   if each_file.startswith(file_prefix)]
     multi_process = multiprocessing.Pool(number_of_processors)
-    logging.info("Starting SNPCC bazin fit...")
+    logging.info("Starting SNPCC " + function + " fit...")
     with open(features_file, 'w') as snpcc_features_file:
         snpcc_features_file.write(' '.join(SNPCC_FEATURES_HEADER) + '\n')
         for light_curve_data in multi_process.starmap(
-                _snpcc_sample_fit_bazin, zip(
-                    files_list, repeat(path_to_data_dir))):
-            if 'None' not in light_curve_data.bazin_features:
+                _snpcc_sample_fit, zip(
+                    files_list, repeat(path_to_data_dir), repeat(function))):
+            features = {'bazin': light_curve_data.bazin_features,
+                        'bump': light_curve_data.bump_features}
+            if 'None' not in features[function]:
                 write_features_to_output_file(
                     light_curve_data, snpcc_features_file)
     logging.info("Features have been saved to: %s", features_file)

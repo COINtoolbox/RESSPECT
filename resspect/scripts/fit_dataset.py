@@ -17,7 +17,7 @@
 
 import argparse
 
-from resspect.fit_lightcurves import fit_snpcc_bazin
+from resspect.fit_lightcurves import fit_snpcc
 from resspect.fit_lightcurves import fit_resspect_bazin
 from resspect.fit_lightcurves import fit_plasticc_bazin
 
@@ -48,7 +48,10 @@ def main(user_choices):
     -n: int or None (optional)
         Number of cores to be used. If None all cores are used. 
         Default is 1.
-
+    -f: str (optional)
+        Function used for feature extraction. Options are "bazin" and "bump".
+        Default is "bazin". Only used for SNPCC for now.
+        
     Examples
     --------
 
@@ -69,8 +72,8 @@ def main(user_choices):
 
     if user_choices.sim_name == 'SNPCC':
         # fit the entire sample
-        fit_snpcc_bazin(path_to_data_dir=data_dir, features_file=features_file,
-                       number_of_processors=ncores)
+        fit_snpcc(path_to_data_dir=data_dir, features_file=features_file,
+                  number_of_processors=ncores, function=function)
     
     elif user_choices.sim_name == 'RESSPECT':
         fit_resspect_bazin(path_photo_file=user_choices.photo_file,
@@ -115,6 +118,9 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--number-of-processors', dest='ncores', 
                        help='Number of processors. Default is 1.',
                        required=False, default=1)
+    parser.add_argument('-f', '--function', dest='function', 
+                       help='Function used for feature extraction.',
+                       required=False, default="bazin")
 
     user_input = parser.parse_args()
 
