@@ -178,6 +178,8 @@ class LightCurve:
         self.queryable = None
         self.bazin_features = []
         self.bazin_features_names = ['a', 'b', 't0', 'tfall', 'trise']
+        self.bump_features = []
+        self.bump_feautures_names = ['p1', 'p2', 'p3', 'time_shift', 'max_flux']
         self.dataset_name = ' '
         self.exp_time = {}
         self.filters = []
@@ -527,6 +529,91 @@ class LightCurve:
         return flux
 
     def fit_bazin_all(self):
+        """
+        Perform Bazin fit for all filters independently and concatenate results.
+        Populates the attributes: bazin_features.
+        """
+        default_bazin_features = ['None'] * len(self.bazin_features_names)
+
+        if self.photometry.shape[0] < 1:
+            self.bazin_features = ['None'] * len(self.bazin_features_names) * len(self.filters)
+
+        elif 'None' not in self.bazin_features:
+            self.bazin_features = []
+            for each_band in self.filters:
+                best_fit = self.fit_bazin(band=each_band)
+                if (best_fit.size > 0) and (not np.isnan(np.sum(best_fit))):
+                    self.bazin_features.extend(best_fit.tolist())
+                else:
+                    self.bazin_features.extend(default_bazin_features)
+        else:
+            self.bazin_features.extend(default_bazin_features)
+            
+    def fit_bump(self, band: str) -> np.ndarray:
+        """Extract Bump features for one filter.
+
+        Parameters
+        ----------
+        band: str
+            Choice of broad band filter
+
+        Returns
+        -------
+        bump_param: np.ndarray
+            Best fit parameters for the Bazin function:
+            [p1, p2, p3, time_shift, max_flux].
+        """
+
+        # build filter flag
+        band_indices = self.photometry['band'] == band
+        if not sum(band_indices) > (len(self.bump_features_names) - 2):
+            return np.array([])
+
+        # get info for this filter
+        time = self.photometry['mjd'].values[band_indices]
+        flux = self.photometry['flux'].values[band_indices]
+        fluxerr = self.photometry['fluxerr'].values[band_indices]
+
+        # fit Bump function
+        bump_param = fit_bump(time, flux, fluxerr)
+
+        return bump_param
+
+    def evaluate_bump(self, time: np.array):
+        """Evaluate the Bazin function given parameter values.
+
+        Parameters
+        ----------
+        time: np.array or list
+            Time since first light curve observation.
+
+        Returns
+        -------
+        dict
+            Value of the Bazin flux in each required time per filter.
+        """
+        # store flux values and starting points
+        flux = {}
+
+        for k in range(len(self.filters)):
+            # store flux values per filter
+            flux[self.filters[k]] = []
+
+            # check if Bazin features exist
+            if 'None' not in self.bazin_features[k * 5 : (k + 1) * 5]:
+                for item in time:
+                    flux[self.filters[k]].append(\
+                           bazin(item, self.bazin_features[0 + k * 5],
+                                 self.bazin_features[1 + k * 5],
+                                 self.bazin_features[2 + k * 5],
+                                 self.bazin_features[3 + k * 5],
+                                 self.bazin_features[4 + k * 5]))
+            else:
+                flux[self.filters[k]].append(None)
+
+        return flux
+
+    def fit_bump_all(self):
         """
         Perform Bazin fit for all filters independently and concatenate results.
         Populates the attributes: bazin_features.
