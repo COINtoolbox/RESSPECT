@@ -49,7 +49,7 @@ def load_features(database_class: DataBase,
        'DES' or 'LSST'. Default is 'DES'.
         Name of the survey which characterizes filter set.
     features_method
-        Feature extraction method. Currently only 'Bazin' is implemented.
+        Feature extraction method. Currently only 'Bazin' and "bump" are implemented.
     number_of_classes
         Number of classes to consider in the classification
         Currently only nclass == 2 is implemented.
@@ -350,7 +350,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     output_queried_file: str
         Full path to output file to store the queried sample.
     features_method: str (optional)
-        Feature extraction method. Currently only 'Bazin' is implemented.
+        Feature extraction method. Currently only 'Bazin' and 'Bump' are implemented.
     classifier: str (optional)
         Machine Learning algorithm.
         Currently implemented options are 'RandomForest', 'GradientBoostedTrees',

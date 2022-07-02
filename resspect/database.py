@@ -111,8 +111,8 @@ class DataBase:
         Evaluate results from classification.
     identify_keywords()
         Break degenerescency between keywords with equal meaning.
-    load_bazin_features(path_to_bazin_file: str)
-        Load Bazin features from file
+    load_features(path_to_features_file: str)
+        Load features from file
     load_photometry_features(path_to_photometry_file:str)
         Load photometric light curves from file
     load_plasticc_mjd(path_to_data_dir: str)
@@ -212,17 +212,17 @@ class DataBase:
         self.validation_metadata = pd.DataFrame()
         self.validation_prob = np.array([])
 
-    def load_bazin_features(self, path_to_bazin_file: str, screen=False,
-                            survey='DES', sample=None):
-        """Load Bazin features from file.
+    def load_features(self, path_to_features_file: str, screen=False,
+                            survey='DES', sample=None, function='bazin'):
+        """Load features from file.
 
         Populate properties: features, feature_names, metadata
         and metadata_names.
 
         Parameters
         ----------
-        path_to_bazin_file: str
-            Complete path to Bazin features file.
+        path_to_features_file: str
+            Complete path to features file.
         screen: bool (optional)
             If True, print on screen number of light curves processed.
             Default is False.
@@ -233,20 +233,23 @@ class DataBase:
             If None, sample is given by a column within the given file.
             else, read independent files for 'train' and 'test'.
             Default is None.
+        function: str (optional)
+            Function used for feature extraction. Options are "bazin" or 
+            "bump". Default is "bump".
         """
 
-        # read matrix with Bazin features
-        if '.tar.gz' in path_to_bazin_file:
-            tar = tarfile.open(path_to_bazin_file, 'r:gz')
+        # read matrix with features
+        if '.tar.gz' in path_to_features_file:
+            tar = tarfile.open(path_to_features_file, 'r:gz')
             fname = tar.getmembers()[0]
             content = tar.extractfile(fname).read()
             data = pd.read_csv(io.BytesIO(content))
             tar.close()
 
         else:
-            data = pd.read_csv(path_to_bazin_file, index_col=False)
+            data = pd.read_csv(path_to_features_file, index_col=False)
             if 'redshift' not in data.keys():
-                data = pd.read_csv(path_to_bazin_file, sep=' ', index_col=False)
+                data = pd.read_csv(path_to_features_file, sep=' ', index_col=False)
 
         # check if queryable is there
         if 'queryable' not in data.keys():
@@ -254,10 +257,16 @@ class DataBase:
 
         # list of features to use
         if survey == 'DES':
-            self.features_names = ['gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA',
-                                   'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB',
-                                   'it0', 'itfall', 'itrise', 'zA', 'zB', 'zt0',
-                                   'ztfall', 'ztrise']
+            if function == "bazin":
+                self.features_names = ['gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA',
+                                       'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB',
+                                       'it0', 'itfall', 'itrise', 'zA', 'zB', 'zt0',
+                                       'ztfall', 'ztrise']
+            elif function == 'bump':
+                self.features_names = ['gp1', 'gp2', 'gp3', 'gmax_flux', 
+                                       'rp1', 'rp2', 'rp3', 'rmax_flux', 
+                                       'ip1', 'ip2', 'ip3', 'imax_flux', 
+                                       'zp1', 'zp2', 'zp3', 'zmax_flux']
 
             self.metadata_names = ['id', 'redshift', 'type', 'code',
                                    'orig_sample', 'queryable']
@@ -417,7 +426,7 @@ class DataBase:
             Complete path to features file.
         method: str (optional)
             Feature extraction method. The current implementation only
-            accepts method=='Bazin' or 'photometry'.
+            accepts method=='Bazin', 'bump' or 'photometry'.
             Default is 'Bazin'.
         screen: bool (optional)
             If True, print on screen number of light curves processed.
@@ -432,15 +441,15 @@ class DataBase:
             Default is None.
         """
 
-        if method == 'Bazin':
-            self.load_bazin_features(path_to_file, screen=screen,
-                                     survey=survey, sample=sample)
+        if method == 'Bazin' or method == 'bump':
+            self.load_features(path_to_file, screen=screen,
+                               survey=survey, sample=sample, function=method)
 
         elif method == 'photometry':
             self.load_photometry_features(path_to_file, screen=screen,
                                           survey=survey, sample=sample)
         else:
-            raise ValueError('Only Bazin and photometry features are implemented!'
+            raise ValueError('Only Bazin, bump or photometry features are implemented!'
                              '\n Feel free to add other options.')
 
     def load_plasticc_mjd(self, path_to_data_dir):
