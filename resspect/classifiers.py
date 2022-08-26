@@ -120,10 +120,12 @@ def random_forest(train_features:  np.array, train_labels: np.array,
 
     return predictions, prob, clf
   
+#######################################################################
+######  we need to find a non-bugged version of xgboost ##############
 
-def gradient_boosted_trees(train_features: np.array,
-                           train_labels: np.array,
-                           test_features: np.array, **kwargs):
+#def gradient_boosted_trees(train_features: np.array,
+#                           train_labels: np.array,
+#                           test_features: np.array, **kwargs):
     """Gradient Boosted Trees classifier.
 
     Parameters
@@ -146,13 +148,14 @@ def gradient_boosted_trees(train_features: np.array,
     """
 
     #create classifier instance
-    clf = XGBClassifier(**kwargs)
+#    clf = XGBClassifier(**kwargs)
 
-    clf.fit(train_features, train_labels)             # train
-    predictions = clf.predict(test_features)          # predict
-    prob = clf.predict_proba(test_features)           # get probabilities
+#    clf.fit(train_features, train_labels)             # train
+#    predictions = clf.predict(test_features)          # predict
+#    prob = clf.predict_proba(test_features)           # get probabilities
 
-    return predictions, prob, clf
+#    return predictions, prob, clf
+#########################################################################
 
 def knn(train_features: np.array, train_labels: np.array,
         test_features: np.array, **kwargs):
