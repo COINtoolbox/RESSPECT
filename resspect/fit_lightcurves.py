@@ -902,9 +902,9 @@ def _get_features_to_write(light_curve_data: LightCurve, function: str ='bazin')
                      light_curve_data.sntype, light_curve_data.sncode,
                      light_curve_data.sample]
     
-    if features == 'bazin':
+    if function == 'bazin':
         features_list.extend(light_curve_data.bazin_features)
-    elif features == 'bump':
+    elif function == 'bump':
         features_list.extend(light_curve_data.bump_features)
         
     return features_list
