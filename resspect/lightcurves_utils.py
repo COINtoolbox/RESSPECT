@@ -39,6 +39,13 @@ BAZIN_HEADERS = {
         'itfall', 'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztrise']
 }
 
+BUMP_HEADERS = {
+    'snpcc_header': ['gp1', 'gp2', 'gp3', 'gtime_shift', 'gmax_flux', 
+                     'rp1', 'rp2', 'rp3', 'rtime_shift', 'rmax_flux', 
+                     'ip1', 'ip2', 'ip3', 'itime_shift', 'imax_flux', 
+                     'zp1', 'zp2', 'zp3', 'ztime_shift', 'zmax_flux']
+}
+
 
 SNPCC_LC_MAPPINGS = {
     "snii": {2, 3, 4, 12, 15, 17, 19, 20, 21, 24, 25,

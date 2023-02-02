@@ -31,6 +31,8 @@ import pandas as pd
 
 from resspect.bazin import bazin
 from resspect.bazin import fit_scipy
+from resspect.bump import bump
+from resspect.bump import fit_bump
 from resspect.exposure_time_calculator import ExpTimeCalc
 from resspect.lightcurves_utils import read_file
 from resspect.lightcurves_utils import get_resspect_header_data
@@ -50,7 +52,7 @@ from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 logging.basicConfig(level=logging.INFO)
 
-__all__ = ['LightCurve', 'fit_snpcc_bazin', 'fit_resspect_bazin',
+__all__ = ['LightCurve', 'fit_snpcc', 'fit_resspect_bazin',
            'fit_plasticc_bazin']
 
 
@@ -120,6 +122,12 @@ class LightCurve:
         Calculates  best-fit parameters from the Bazin func for all filters.
     plot_bazin_fit(save: bool, show: bool, output_file: srt)
         Plot photometric points and Bazin fitted curve.
+    fit_bump(band: str) -> list
+        Calculates best-fit parameters from the Bump function in 1 filter.
+    fit_bump_all()
+        Calculates  best-fit parameters from the Bump func for all filters.
+    plot_bump_fit(save: bool, show: bool, output_file: srt)
+        Plot photometric points and Bump fitted curve.
 
     Examples
     --------
@@ -176,6 +184,8 @@ class LightCurve:
         self.queryable = None
         self.bazin_features = []
         self.bazin_features_names = ['a', 'b', 't0', 'tfall', 'trise']
+        self.bump_features = []
+        self.bump_features_names = ['p1', 'p2', 'p3', 'time_shift', 'max_flux']
         self.dataset_name = ' '
         self.exp_time = {}
         self.filters = []
@@ -544,6 +554,89 @@ class LightCurve:
                     self.bazin_features.extend(default_bazin_features)
         else:
             self.bazin_features.extend(default_bazin_features)
+            
+    def fit_bump(self, band: str) -> np.ndarray:
+        """Extract Bump features for one filter.
+
+        Parameters
+        ----------
+        band: str
+            Choice of broad band filter
+
+        Returns
+        -------
+        bump_param: np.ndarray
+            Best fit parameters for the Bazin function:
+            [p1, p2, p3, time_shift, max_flux].
+        """
+
+        # build filter flag
+        band_indices = self.photometry['band'] == band
+        if not sum(band_indices) > (len(self.bump_features_names) - 2):
+            return np.array([])
+
+        # get info for this filter
+        time = self.photometry['mjd'].values[band_indices]
+        flux = self.photometry['flux'].values[band_indices]
+        fluxerr = self.photometry['fluxerr'].values[band_indices]
+
+        # fit Bump function
+        bump_param = fit_bump(time, flux, fluxerr)
+
+        return bump_param
+
+    def evaluate_bump(self, time: np.array):
+        """Evaluate the Bump function given parameter values.
+
+        Parameters
+        ----------
+        time: np.array or list
+            Time since first light curve observation.
+
+        Returns
+        -------
+        dict
+            Value of the Bump flux in each required time per filter.
+        """
+        # store flux values and starting points
+        flux = {}
+
+        for k in range(len(self.filters)):
+            # store flux values per filter
+            flux[self.filters[k]] = []
+
+            # check if Bump features exist
+            if 'None' not in self.bump_features[k * 5 : (k + 1) * 5]:
+                for item in time:
+                    flux[self.filters[k]].append(\
+                           bump(item, self.bump_features[0 + k * 5],
+                                 self.bump_features[1 + k * 5],
+                                 self.bump_features[2 + k * 5]))
+            else:
+                flux[self.filters[k]].append(None)
+
+        return flux
+
+    def fit_bump_all(self):
+        """
+        Perform Bump fit for all filters independently and concatenate results.
+        Populates the attributes: bump_features.
+        """
+        default_bump_features = ['None'] * len(self.bump_features_names)
+
+        if self.photometry.shape[0] < 1:
+            self.bump_features = ['None'] * len(self.bump_features_names) * len(self.filters)
+
+        elif 'None' not in self.bump_features:
+            self.bump_features = []
+            for each_band in self.filters:
+                best_fit = self.fit_bump(band=each_band)
+                if (len(best_fit) > 0) and (not np.isnan(np.sum(best_fit))):
+                    self.bump_features.extend(best_fit)
+                else:
+                    self.bump_features.extend(default_bump_features)
+        else:
+            self.bump_features.extend(default_bump_features)
 
     def clear_data(self):
         """ Reset to default values """
@@ -671,9 +764,129 @@ class LightCurve:
             plt.savefig(output_file)
         if show:
             plt.show()
+                        
+    def plot_bump_fit(self, save=True, show=False, output_file=' ',
+                       figscale=1, extrapolate=False,
+                       time_flux_pred=None, unit='flux'):
+        """
+        Plot data and Bump fitted function.
+
+        Parameters
+        ----------
+        figscale: float (optional)
+            Allow to control the size of the figure.
+        extrapolate: bool (optional)
+            If True, also plot the estimated flux values.
+            Default is False.
+        output_file: str (optional)
+            Name of file to store the plot.
+        save: bool (optional)
+             Save figure to file. Default is True.
+        show: bool (optinal)
+             Display plot in windown. Default is False.
+        time_flux_pred: list (optional)
+            Time after last observation where flux is to be
+            estimated. It is only used if "extrapolate == True".
+            Default is None.
+        unit: str (optional)
+            Unit for plot. Options are 'flux' or 'mag'.
+            Use zero point from SNANA for flux-to-mag conversion
+            ==> mag = 2.5 * (11 - np.log10(flux)).
+            Default is 'flux'.
+        """
+
+        # number of columns in the plot
+        ncols = len(self.filters) / 2 + len(self.filters) % 2
+        fsize = (figscale * 5 * ncols , figscale * 10)
+
+        plt.figure(figsize=fsize)
+
+        for i in range(len(self.filters)):
+            plt.subplot(2, int(ncols), i + 1)
+            plt.title('Filter: ' + self.filters[i])
+
+            # filter flag
+            filter_flag = self.photometry['band'] == self.filters[i]
+            x = self.photometry['mjd'][filter_flag].values
+            y = self.photometry['flux'][filter_flag].values
+            yerr = self.photometry['fluxerr'][filter_flag].values
+
+            # check Bump fit convergence
+            if 'None' in self.bump_features[i * 5 : (i + 1) * 5]:
+                plot_fit = False
+            else:
+                plot_fit = True
+
+            # shift to avoid large numbers in x-axis
+            time = x + self.bump_features[i * 5 + 3]
+
+            if plot_fit:
+                xaxis = np.linspace(min(time), max(time), 500)[:, np.newaxis]
+                fitted_flux = np.array(self.evaluate_bump(xaxis)[self.filters[i]]) * self.bump_features[i * 5 + 4]
+                if unit == 'flux':
+                    plt.plot(xaxis, fitted_flux, color='red',
+                             lw=1.5, label='Bump fit')
+                elif unit == 'mag':
+                    mag = self.conv_flux_mag(fitted_flux[self.filters[i]])
+                    mag_flag = mag < 50
+                    plt.plot(xaxis[mag_flag], mag[mag_flag], color='red',
+                             lw=1.5)
+                else:
+                    raise ValueError('Unit can only be "flux" or "mag".')
+
+                if extrapolate:
+                    xaxis_extrap = list(xaxis.flatten()) + [time_flux_pred + max(time)]
+                    xaxis_extrap = np.sort(np.array(xaxis_extrap))
+                    ext_flux = np.array(self.evaluate_bump(xaxis_extrap)[self.filters[i]]) \
+                               * self.bump_features[i * 5 + 4]
+                    if unit == 'flux':
+                        plt.plot(xaxis_extrap, ext_flux,
+                                 color='red', lw=1.5, ls='--',
+                                 label='Bump extrap')
+                    elif unit == 'mag':
+                        ext_mag = self.conv_flux_mag(ext_flux[self.filters[i]])
+                        ext_mag_flag = ext_mag < 50
+                        plt.plot(xaxis_extrap[ext_mag_flag],
+                                 ext_mag[ext_mag_flag],
+                                 color='red', lw=1.5, ls='--')
+
+            if unit == 'flux':
+                plt.errorbar(time, y, yerr=yerr, color='blue', fmt='o',
+                             label='obs')
+                plt.ylabel('FLUXCAL')
+            elif unit == 'mag':
+                mag_obs  = self.conv_flux_mag(y)
+                mag_obs_flag = mag_obs < 50
+                time_mag = time[mag_obs_flag]
+
+                plt.scatter(time_mag, mag_obs[mag_obs_flag], color='blue',
+                            label='calc mag', marker='s')
+
+                # if MAG is provided in the table, also plot it
+                # this allows checking the flux mag conversion
+                if 'MAG' in self.photometry.keys():
+                    mag_flag = self.photometry['MAG'].values < 50
+                    mag_ff = np.logical_and(filter_flag, mag_flag)
+                    mag_table = self.photometry['MAG'][mag_ff].values
+                    mjd_table = self.photometry['mjd'][mag_ff].values - min(x)
+
+                    plt.scatter(mjd_table, mag_table, color='black',
+                                label='table mag', marker='x')
+
+                ax = plt.gca()
+                ax.set_ylim(ax.get_ylim()[::-1])
+                plt.ylabel('mag')
+
+            plt.xlabel('days since first observation')
+            plt.tight_layout()
+
+        if save:
+            plt.savefig(output_file)
+        if show:
+            plt.show()
 
 
-def _get_features_to_write(light_curve_data: LightCurve) -> list:
+def _get_features_to_write(light_curve_data: LightCurve, function: str ='bazin') -> list:
     """
     Returns features list to write
 
@@ -681,11 +894,19 @@ def _get_features_to_write(light_curve_data: LightCurve) -> list:
     ----------
     light_curve_data
         fitted light curve data
+    function: str (optional)
+        Function used for feature extraction. 
+        Options are "bazin" or "bump". Default is "bazin".
     """
     features_list = [light_curve_data.id, light_curve_data.redshift,
                      light_curve_data.sntype, light_curve_data.sncode,
                      light_curve_data.sample]
-    features_list.extend(light_curve_data.bazin_features)
+    
+    if function == 'bazin':
+        features_list.extend(light_curve_data.bazin_features)
+    elif function == 'bump':
+        features_list.extend(light_curve_data.bump_features)
+        
     return features_list
 
 
@@ -708,8 +929,8 @@ def write_features_to_output_file(
                  in current_features) + '\n')
 
 
-def _snpcc_sample_fit_bazin(
-        file_name: str, path_to_data_dir: str) -> LightCurve:
+def _snpcc_sample_fit(
+        file_name: str, path_to_data_dir: str, function: str) -> LightCurve:
     """
     Reads SNPCC file and performs bazin fit
     Parameters
@@ -719,18 +940,28 @@ def _snpcc_sample_fit_bazin(
     path_to_data_dir
          Path to directory containing the set of individual files,
          one for each light curve.
-
+    function
+        Function used for feature extraction. 
+        Options are 'bazin' or 'bump'.
     """
     light_curve_data = LightCurve()
     light_curve_data.load_snpcc_lc(
         os.path.join(path_to_data_dir, file_name))
-    light_curve_data.fit_bazin_all()
+    
+    if function == 'bazin':
+        light_curve_data.fit_bazin_all()
+    elif function == 'bump':
+        light_curve_data.fit_bump_all()
+    else:
+        raise ValueError('Possible options for "function" are "bazin" or "bump".')
+        
     return light_curve_data
 
 
-def fit_snpcc_bazin(
+def fit_snpcc(
         path_to_data_dir: str, features_file: str,
-        file_prefix: str = "DES_SN", number_of_processors: int = 1):
+        file_prefix: str = "DES_SN", number_of_processors: int = 1, 
+        function: str = 'bazin'):
     """
     Perform Bazin fit to all objects in the SNPCC data.
 
@@ -745,18 +976,22 @@ def fit_snpcc_bazin(
         File names prefix
      number_of_processors: int, default 1
         Number of cpu processes to use.
+     function: str, default bazin
+        Function used for feature extraction.
     """
     files_list = os.listdir(path_to_data_dir)
     files_list = [each_file for each_file in files_list
                   if each_file.startswith(file_prefix)]
     multi_process = multiprocessing.Pool(number_of_processors)
-    logging.info("Starting SNPCC bazin fit...")
+    logging.info("Starting SNPCC " + function + " fit...")
     with open(features_file, 'w') as snpcc_features_file:
         snpcc_features_file.write(' '.join(SNPCC_FEATURES_HEADER) + '\n')
         for light_curve_data in multi_process.starmap(
-                _snpcc_sample_fit_bazin, zip(
-                    files_list, repeat(path_to_data_dir))):
-            if 'None' not in light_curve_data.bazin_features:
+                _snpcc_sample_fit, zip(
+                    files_list, repeat(path_to_data_dir), repeat(function))):
+            features = {'bazin': light_curve_data.bazin_features,
+                        'bump': light_curve_data.bump_features}
+            if 'None' not in features[function]:
                 write_features_to_output_file(
                     light_curve_data, snpcc_features_file)
     logging.info("Features have been saved to: %s", features_file)
