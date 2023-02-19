@@ -314,7 +314,7 @@ def read_plasticc_full_photometry_data(file_path: str) -> pd.DataFrame:
 
     if file_path.endswith(('.csv', '.csv.gz')):
         full_photometry = pd.read_csv(file_path, index_col=False)
-        if ' ' in full_photometry.keys()[0]:
+        if ' ' in full_photometry.keys()[0] and 'Unnamed:' not in full_photometry.keys()[0]:
             full_photometry = pd.read_csv(file_path, sep=' ', index_col=False)
         return full_photometry
 
