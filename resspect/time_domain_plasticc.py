@@ -189,7 +189,7 @@ class PLAsTiCCPhotometry:
              'true_distmod', 'ddf_bool']]
         classes_mask = meta_data_raw['true_target'].isin(classes)
         if field in ['WFD', 'DDF']:
-            ddf_mask = meta_data_raw.ddf_bool.astype(np.bool).values
+            ddf_mask = meta_data_raw.ddf_bool.astype(bool).values
             if field == 'DDF':
                 filter_mask = np.logical_and(ddf_mask, classes_mask)
             else:
