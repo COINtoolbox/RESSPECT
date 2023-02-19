@@ -925,7 +925,7 @@ def write_features_to_output_file(
     current_features = _get_features_to_write(
         light_curve_data)
     features_file.write(
-        ' '.join(str(each_feature) for each_feature
+        ','.join(str(each_feature) for each_feature
                  in current_features) + '\n')
 
 
