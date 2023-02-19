@@ -155,7 +155,7 @@ class PLAsTiCCPhotometry:
         """
         maybe_create_directory(output_dir)
         self._features_file_name = os.path.join(
-            output_dir, 'day_' + str(day) + '.dat')
+            output_dir, 'day_' + str(day) + '.csv')
         with open(self._features_file_name, 'w') as features_file:
             self._set_bazin_header(header)
             features_file.write(','.join(self._bazin_header) + '\n')
@@ -586,7 +586,7 @@ class PLAsTiCCPhotometry:
                 features_to_write = self._get_features_to_write(
                         light_curve_data_day, get_cost, tel_names)
                 features_file_name = os.path.join(
-                        output_dir, 'day_' + str(day_of_survey) + '.dat')
+                        output_dir, 'day_' + str(day_of_survey) + '.csv')
                 with open(features_file_name, 'a') as plasticc_features_file:
                     plasticc_features_file.write(
                             ','.join(str(each_feature) for each_feature
@@ -717,7 +717,7 @@ class PLAsTiCCPhotometry:
             self._previous_day_features, self._previous_day_index_mapping = (
                 _load_previous_day_features(day_of_survey, output_dir))
             features_file_name = os.path.join(
-                output_dir, 'day_' + str(day_of_survey) + '.dat')
+                output_dir, 'day_' + str(day_of_survey) + '.csv')
             number_of_points_mapping_file_name = os.path.join(
                 output_dir, "snid_number_of_points.json")
             # Load snids and number of observed points till previous day fit mapping
@@ -856,7 +856,7 @@ def _load_previous_day_features(
         snid to its index in the features list mapping
     """
 
-    previous_day_file_name = file_name_prefix + str(day_of_survey - 1) + '.dat'
+    previous_day_file_name = file_name_prefix + str(day_of_survey - 1) + '.csv'
     previous_day_file_name = os.path.join(output_dir, previous_day_file_name)
     if (day_of_survey < 2) or (not os.path.isfile(previous_day_file_name)):
         return None, {}
