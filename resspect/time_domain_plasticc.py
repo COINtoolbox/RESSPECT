@@ -84,16 +84,35 @@ class PLAsTiCCPhotometry:
         self._kwargs = None
         self.build()
 
-    def build(self):
+    def build(self, config='original', photo_file=None,
+              sample=None):
+        """Create dictionary with photometric file names. 
+        
+        Parameters
+        ----------
+        config: str (optional)
+            If 'original', read original zenodo files, else
+            use user provided names. Default is 'original'.
+        photo_file: str or None (optional)
+            Path to light curve file. Only  used if 'conf' != 'original'.
+            Default is None.        
+        sample: str or None (optional)
+            Sample to populate with file names. Options are 'train' or 'test'. 
+            Only  used if 'conf' != 'original'. Default is None.
+        """
+
         self._last_file_index = 11
-        self._file_list_dict['test'] = [
-            'plasticc_test_lightcurves_' + str(i).zfill(2) + '.csv.gz'
-            for i in range(1, self._last_file_index + 1)]
-        self._file_list_dict['train'] = ['plasticc_train_lightcurves.csv.gz']
+        if config == 'original':
+            self._file_list_dict['test'] = [
+                'plasticc_test_lightcurves_' + str(i).zfill(2) + '.csv.gz'
+                for i in range(1, self._last_file_index + 1)]
+            self._file_list_dict['train'] = ['plasticc_train_lightcurves.csv.gz']
+        else:
+            self._file_list_dict[sample] = [photo_file]
 
     def _set_bazin_header(self, get_cost: bool = False, header: str = 'Bazin'):
         """
-        Initializes bazin header
+        Initializes bazin header.
 
         Parameters
         ----------
@@ -139,7 +158,7 @@ class PLAsTiCCPhotometry:
             output_dir, 'day_' + str(day) + '.dat')
         with open(self._features_file_name, 'w') as features_file:
             self._set_bazin_header(header)
-            features_file.write(' '.join(self._bazin_header) + '\n')
+            features_file.write(','.join(self._bazin_header) + '\n')
 
     def create_all_daily_files(self, output_dir:str,
                                get_cost=False):
@@ -570,7 +589,7 @@ class PLAsTiCCPhotometry:
                         output_dir, 'day_' + str(day_of_survey) + '.dat')
                 with open(features_file_name, 'a') as plasticc_features_file:
                     plasticc_features_file.write(
-                            ' '.join(str(each_feature) for each_feature
+                            ','.join(str(each_feature) for each_feature
                                      in features_to_write) + '\n')
 
                     if not bar:
@@ -591,7 +610,7 @@ class PLAsTiCCPhotometry:
         """
         if not os.path.isfile(features_file_name):
             with open(features_file_name, 'w') as features_file:
-                features_file.write(' '.join(self._bazin_header) + '\n')
+                features_file.write(','.join(self._bazin_header) + '\n')
 
     def _maybe_create_daily_feature_files(
             self, time_window: list, output_dir: str, get_cost: bool):
@@ -807,7 +826,7 @@ class PLAsTiCCPhotometry:
         if light_curve_data_day is not None:
             features_to_write = self._get_features_to_write(
                 light_curve_data_day, get_cost, telescope_names)
-            return (' '.join(str(each_feature) for each_feature
+            return (','.join(str(each_feature) for each_feature
                              in features_to_write) + '\n',
                     number_of_observation_points)
         return None, number_of_observation_points
@@ -843,7 +862,7 @@ def _load_previous_day_features(
         return None, {}
     with open(previous_day_file_name, 'r') as file:
         previous_day_features = file.readlines()
-    previous_day_index_mapping = {line.split(" ", 1)[0]: index for index, line
+    previous_day_index_mapping = {line.split(",", 1)[0]: index for index, line
                           in enumerate(previous_day_features)}
     return previous_day_features, previous_day_index_mapping
 
