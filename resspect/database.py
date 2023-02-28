@@ -249,7 +249,7 @@ class DataBase:
         else:
             data = pd.read_csv(path_to_features_file, index_col=False)
             if 'redshift' not in data.keys():
-                data = pd.read_csv(path_to_features_file, sep=' ', index_col=False)
+                data = pd.read_csv(path_to_features_file, index_col=False)
 
         # check if queryable is there
         if 'queryable' not in data.keys():
@@ -842,14 +842,14 @@ class DataBase:
             full_header = self.metadata_names + self.features_names
             wsample = open(output_fname, 'w')
             for item in full_header:
-                wsample.write(item + ' ')
+                wsample.write(item + ',')
             wsample.write('\n')
 
             for j in range(self.train_metadata.shape[0]):
                 for name in self.metadata_names:
-                    wsample.write(str(self.train_metadata[name].iloc[j]) + ' ')
+                    wsample.write(str(self.train_metadata[name].iloc[j]) + ',')
                 for k in range(self.train_features.shape[1] - 1):
-                    wsample.write(str(self.train_features[j][k]) + ' ')
+                    wsample.write(str(self.train_features[j][k]) + ',')
                 wsample.write(str(self.train_features[j][-1]) + '\n')
             wsample.close()
 
@@ -927,9 +927,9 @@ class DataBase:
             id_name = self.identify_keywords()
 
             if self.alt_label:
-                out_fname = 'predict_loop_' + str(loop) + '_alt_label.dat'
+                out_fname = 'predict_loop_' + str(loop) + '_alt_label.csv'
             else:
-                out_fname = 'predict_loop_' + str(loop) + '.dat'
+                out_fname = 'predict_loop_' + str(loop) + '.csv'
             op = open(pred_dir + '/' + out_fname, 'w')
             op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
             for i in range(self.validation_metadata.shape[0]):
@@ -1011,7 +1011,7 @@ class DataBase:
         if save_predictions:
             id_name = self.identify_keywords()
 
-            out_fname = 'predict_loop_' + str(loop) + '.dat'
+            out_fname = 'predict_loop_' + str(loop) + '.csv'
             op = open(pred_dir + '/' + out_fname, 'w')
             op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
             for i in range(self.validation_metadata.shape[0]):
@@ -1555,9 +1555,9 @@ class DataBase:
             with open(output_metrics_file, 'w') as metrics:
                 metrics.write('loop ')
                 for name in self.metrics_list_names:
-                    metrics.write(name + ' ')
+                    metrics.write(name + ',')
                 for j in range(batch - 1):
-                    metrics.write('query_id' + str(j + 1) + ' ')
+                    metrics.write('query_id' + str(j + 1) + ',')
                 metrics.write('query_id' + str(batch) + '\n')
 
         # write to file)
@@ -1566,11 +1566,11 @@ class DataBase:
 
         if sum(flag) > 0:
             with open(output_metrics_file, 'a') as metrics:
-                metrics.write(str(epoch) + ' ')
+                metrics.write(str(epoch) + ',')
                 for value in self.metrics_list_values:
-                    metrics.write(str(value) + ' ')
+                    metrics.write(str(value) + ',')
                 for j in range(sum(flag) - 1):
-                    metrics.write(str(queried_sample[flag][j][1]) + ' ')
+                    metrics.write(str(queried_sample[flag][j][1]) + ',')
                 metrics.write(str(queried_sample[flag][sum(flag) - 1][1]) + '\n')
 
 
@@ -1595,7 +1595,7 @@ class DataBase:
         if full_sample and len(self.queried_sample) > 0:
             full_header = ['epoch'] + self.metadata_names + self.features_names
             query_sample = pd.DataFrame(self.queried_sample, columns=full_header)
-            query_sample.to_csv(queried_sample_file, sep=' ', index=False)
+            query_sample.to_csv(queried_sample_file, index=False)
 
         elif isinstance(loop, int):
             queried_sample = np.array(self.queried_sample)
@@ -1607,14 +1607,14 @@ class DataBase:
                     with open(queried_sample_file, 'w') as query:
                         query.write('day ')
                         for item in full_header:
-                            query.write(item + ' ')
+                            query.write(item + ',')
                         query.write('\n')
 
                 # save query sample to file
                 with open(queried_sample_file, 'a') as query:
                     for batch in range(batch):
                         for elem in queried_sample[flag][batch]:
-                            query.write(str(elem) + ' ')
+                            query.write(str(elem) + ',')
                         query.write('\n')
 
 
