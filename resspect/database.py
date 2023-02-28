@@ -1595,7 +1595,7 @@ class DataBase:
         if full_sample and len(self.queried_sample) > 0:
             full_header = ['epoch'] + self.metadata_names + self.features_names
             query_sample = pd.DataFrame(self.queried_sample, columns=full_header)
-            query_sample.to_csv(queried_sample_file, index=False)
+            query_sample.sort_values(by='epoch').to_csv(queried_sample_file, index=False)
 
         elif isinstance(loop, int):
             queried_sample = np.array(self.queried_sample)
@@ -1605,7 +1605,7 @@ class DataBase:
                     # add header to query sample file
                     full_header = self.metadata_names + self.features_names
                     with open(queried_sample_file, 'w') as query:
-                        query.write('day ')
+                        query.write('day,')
                         for item in full_header:
                             query.write(item + ',')
                         query.write('\n')

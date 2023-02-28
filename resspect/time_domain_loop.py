@@ -354,6 +354,7 @@ def _run_classification_and_evaluation(
     else:
         database_class.classify(method=classifier, **kwargs)
     database_class.evaluate_classification()
+    
     return database_class
 
 
@@ -449,7 +450,7 @@ def _save_metrics_and_queried_sample(
         batch=batch, epoch=epoch)
     if is_save_full_query:
         output_queried_file_name = (output_queried_file_name[:-4] +
-                                    '_' + str(current_loop) + '.dat')
+                                    '_' + str(current_loop) + '.csv')
     database_class.save_queried_sample(
         output_queried_file_name, loop=current_loop,
         full_sample=is_save_full_query, epoch=epoch)
@@ -850,7 +851,7 @@ def run_time_domain_active_learning_loop(
         Complete path to directory holding features files for all days.
     fname_pattern
         List of strings. Set the pattern for filename, except day of
-        survey. If file name is 'day_1_vx.dat' -> ['day_', '_vx.dat']
+        survey. If file name is 'day_1_vx.csv' -> ['day_', '_vx.csv']
     survey_name
         Name of survey to be analyzed. Accepts 'DES' or 'LSST'.
         Default is LSST.
@@ -870,18 +871,19 @@ def run_time_domain_active_learning_loop(
     learning_days = [int(each_day) for each_day in learning_days]
     for epoch in progressbar.progressbar(
             range(learning_days[0], learning_days[-1] - 1)):
-        light_curve_data = _run_classification_and_evaluation(
-            light_curve_data, classifier, is_classifier_bootstrap, **kwargs)
-        if light_curve_data.queryable_ids.shape[0] > 0:
-            object_indices = _get_indices_of_objects_to_be_queried(
-                light_curve_data, strategy, budgets, is_queryable,
-                query_threshold, batch)
-            light_curve_data = _update_samples_with_object_indices(
-                light_curve_data, object_indices, is_queryable, epoch)
-            _save_metrics_and_queried_sample(
+        if light_curve_data.pool_features.shape[0] > 0:
+            light_curve_data = _run_classification_and_evaluation(
+                light_curve_data, classifier, is_classifier_bootstrap, **kwargs)
+            if light_curve_data.queryable_ids.shape[0] > 0:
+                object_indices = _get_indices_of_objects_to_be_queried(
+                    light_curve_data, strategy, budgets, is_queryable,
+                    query_threshold, batch)
+                light_curve_data = _update_samples_with_object_indices(
+                    light_curve_data, object_indices, is_queryable, epoch)
+        _save_metrics_and_queried_sample(
                 light_curve_data, epoch - learning_days[0],
                 output_metric_file_name, output_queried_file_name, len(object_indices), epoch,
-                is_save_full_query)
+                 is_save_full_query)
         next_day_features_file_name = (
                 path_to_features_directory + fname_pattern[0] + str(epoch + 1)
                 + fname_pattern[1])
@@ -929,7 +931,7 @@ def time_domain_loop(days: list, output_metrics_file: str,
         "RandomSampling",
     fname_pattern: str
         List of strings. Set the pattern for filename, except day of
-        survey. If file name is 'day_1_vx.dat' -> ['day_', '_vx.dat'].
+        survey. If file name is 'day_1_vx.csv' -> ['day_', '_vx.csv'].
     path_to_ini_files: dict (optional)
         Path to initial full light curve files.
         Possible keywords are: "train", "test" and "validation".
