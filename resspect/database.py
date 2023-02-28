@@ -1553,7 +1553,7 @@ class DataBase:
         # add header to metrics file
         if not os.path.exists(output_metrics_file) or loop == 0:
             with open(output_metrics_file, 'w') as metrics:
-                metrics.write('loop ')
+                metrics.write('loop,')
                 for name in self.metrics_list_names:
                     metrics.write(name + ',')
                 for j in range(batch - 1):
