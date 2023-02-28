@@ -613,7 +613,8 @@ class PLAsTiCCPhotometry:
                 features_file.write(','.join(self._bazin_header) + '\n')
 
     def _maybe_create_daily_feature_files(
-            self, time_window: list, output_dir: str, get_cost: bool):
+            self, time_window: list, output_dir: str, get_cost: bool, 
+            ask_user=True):
         """
         Creates daily feature files for the specified time window
         Parameters
@@ -625,16 +626,25 @@ class PLAsTiCCPhotometry:
             Output directory to save feature files
         get_cost
            if cost of taking a spectra is computed
+        ask_user: bool (optional)
+           If True, ask user if daily file should be created. Default is True.
         """
-        user_input = input("Are you sure want to create new daily files?(yes/no): ")
-        if user_input.lower() == "yes":
-            for day_of_survey in range(time_window[0], time_window[1]):
-                self.create_daily_file(output_dir=output_dir,
-                                       day=day_of_survey, get_cost=get_cost)
-        elif user_input.lower() == "no":
-            logging.info("Not creating new daily feature files")
+        if ask_user:
+            user_input = input("Are you sure want to create new daily files?(yes/no): ")
+            if user_input.lower() == "yes":
+                for day_of_survey in range(time_window[0], time_window[1]):
+                    self.create_daily_file(output_dir=output_dir,
+                                           day=day_of_survey, get_cost=get_cost)
+            elif user_input.lower() == "no":
+                logging.info("Not creating new daily feature files.")
+            else:
+                raise ValueError("Unknown input! Please specify yes or no.")
         else:
-            raise ValueError("Unknown input! Please specify yes or no")
+            for day_of_survey in range(time_window[0], time_window[1]):
+                    self.create_daily_file(output_dir=output_dir,
+                                           day=day_of_survey, get_cost=get_cost)
+            logging.info("Daily feature files created, warning suppressed by user.")
+            
 
     def fit_all_snids_lc(
             self, raw_data_dir: str, snids: np.ndarray, output_dir: str,
@@ -644,7 +654,7 @@ class PLAsTiCCPhotometry:
             feature_method: str = 'Bazin', spec_SNR: int = 10,
             time_window: list = [0, 1095], sample: str = 'test',
             number_of_processors: int = 1, create_daily_files: bool = False,
-            **kwargs):
+            ask_user: bool = True, **kwargs):
         """
         Fits light curves for all the available snids for the time period
          provided in time window and saves features to individual day features
@@ -700,6 +710,8 @@ class PLAsTiCCPhotometry:
         create_daily_files
             if feature files for all the days should be created
             before startign the fitting process
+        ask_user: bool (optional)
+           If True, ask user if daily file should be created. Default is True.
         kwargs
             Any input required by ExpTimeCalc.findexptime function.
         """
@@ -710,7 +722,7 @@ class PLAsTiCCPhotometry:
         self._kwargs = kwargs
         if create_daily_files:
             self._maybe_create_daily_feature_files(
-                time_window, output_dir, get_cost)
+                time_window, output_dir, get_cost, ask_user=ask_user)
 
         for day_of_survey in range(time_window[0], time_window[1]):
             # Load previous day features if available
