@@ -111,7 +111,7 @@ class DataBase:
         Evaluate results from classification.
     identify_keywords()
         Break degenerescency between keywords with equal meaning.
-    load_features(path_to_features_file: str)
+    load_extracted_features(path_to_features_file: str)
         Load features from file
     load_photometry_features(path_to_photometry_file:str)
         Load photometric light curves from file
@@ -142,7 +142,7 @@ class DataBase:
 
     Initiate the DataBase object and load the data.
     >>> data = DataBase()
-    >>> data.load_features(path_to_bazin_file, method='Bazin')
+    >>> data.load_extracted_features(path_to_bazin_file, method='Bazin')
 
     Separate training and test samples and classify
 
@@ -212,7 +212,7 @@ class DataBase:
         self.validation_metadata = pd.DataFrame()
         self.validation_prob = np.array([])
 
-    def load_features(self, path_to_features_file: str, screen=False,
+    def load_extracted_features(self, path_to_features_file: str, screen=False,
                             survey='DES', sample=None, function='bazin'):
         """Load features from file.
 
@@ -442,7 +442,7 @@ class DataBase:
         """
 
         if method == 'Bazin' or method == 'bump':
-            self.load_features(path_to_file, screen=screen,
+            self.load_extracted_features(path_to_file, screen=screen,
                                survey=survey, sample=sample, function=method)
 
         elif method == 'photometry':
