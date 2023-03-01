@@ -209,7 +209,6 @@ class Canvas(object):
                 raise ValueError('Invalid metric choice!')
                 
             self.strategies[name] = pd.read_csv(path_to_files[i],
-                                                sep=' ',
                                                 index_col=False,
                                                 usecols=names_list)
 

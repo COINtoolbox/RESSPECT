@@ -111,7 +111,7 @@ class DataBase:
         Evaluate results from classification.
     identify_keywords()
         Break degenerescency between keywords with equal meaning.
-    load_features(path_to_features_file: str)
+    load_extracted_features(path_to_features_file: str)
         Load features from file
     load_photometry_features(path_to_photometry_file:str)
         Load photometric light curves from file
@@ -142,7 +142,7 @@ class DataBase:
 
     Initiate the DataBase object and load the data.
     >>> data = DataBase()
-    >>> data.load_features(path_to_bazin_file, method='Bazin')
+    >>> data.load_extracted_features(path_to_bazin_file, method='Bazin')
 
     Separate training and test samples and classify
 
@@ -212,7 +212,7 @@ class DataBase:
         self.validation_metadata = pd.DataFrame()
         self.validation_prob = np.array([])
 
-    def load_features(self, path_to_features_file: str, screen=False,
+    def load_extracted_features(self, path_to_features_file: str, screen=False,
                             survey='DES', sample=None, function='bazin'):
         """Load features from file.
 
@@ -249,7 +249,7 @@ class DataBase:
         else:
             data = pd.read_csv(path_to_features_file, index_col=False)
             if 'redshift' not in data.keys():
-                data = pd.read_csv(path_to_features_file, sep=' ', index_col=False)
+                data = pd.read_csv(path_to_features_file, index_col=False)
 
         # check if queryable is there
         if 'queryable' not in data.keys():
@@ -442,7 +442,7 @@ class DataBase:
         """
 
         if method == 'Bazin' or method == 'bump':
-            self.load_features(path_to_file, screen=screen,
+            self.load_extracted_features(path_to_file, screen=screen,
                                survey=survey, sample=sample, function=method)
 
         elif method == 'photometry':
@@ -842,14 +842,14 @@ class DataBase:
             full_header = self.metadata_names + self.features_names
             wsample = open(output_fname, 'w')
             for item in full_header:
-                wsample.write(item + ' ')
+                wsample.write(item + ',')
             wsample.write('\n')
 
             for j in range(self.train_metadata.shape[0]):
                 for name in self.metadata_names:
-                    wsample.write(str(self.train_metadata[name].iloc[j]) + ' ')
+                    wsample.write(str(self.train_metadata[name].iloc[j]) + ',')
                 for k in range(self.train_features.shape[1] - 1):
-                    wsample.write(str(self.train_features[j][k]) + ' ')
+                    wsample.write(str(self.train_features[j][k]) + ',')
                 wsample.write(str(self.train_features[j][-1]) + '\n')
             wsample.close()
 
@@ -927,9 +927,9 @@ class DataBase:
             id_name = self.identify_keywords()
 
             if self.alt_label:
-                out_fname = 'predict_loop_' + str(loop) + '_alt_label.dat'
+                out_fname = 'predict_loop_' + str(loop) + '_alt_label.csv'
             else:
-                out_fname = 'predict_loop_' + str(loop) + '.dat'
+                out_fname = 'predict_loop_' + str(loop) + '.csv'
             op = open(pred_dir + '/' + out_fname, 'w')
             op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
             for i in range(self.validation_metadata.shape[0]):
@@ -1011,7 +1011,7 @@ class DataBase:
         if save_predictions:
             id_name = self.identify_keywords()
 
-            out_fname = 'predict_loop_' + str(loop) + '.dat'
+            out_fname = 'predict_loop_' + str(loop) + '.csv'
             op = open(pred_dir + '/' + out_fname, 'w')
             op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
             for i in range(self.validation_metadata.shape[0]):
@@ -1553,11 +1553,11 @@ class DataBase:
         # add header to metrics file
         if not os.path.exists(output_metrics_file) or loop == 0:
             with open(output_metrics_file, 'w') as metrics:
-                metrics.write('loop ')
+                metrics.write('loop,')
                 for name in self.metrics_list_names:
-                    metrics.write(name + ' ')
+                    metrics.write(name + ',')
                 for j in range(batch - 1):
-                    metrics.write('query_id' + str(j + 1) + ' ')
+                    metrics.write('query_id' + str(j + 1) + ',')
                 metrics.write('query_id' + str(batch) + '\n')
 
         # write to file)
@@ -1566,11 +1566,11 @@ class DataBase:
 
         if sum(flag) > 0:
             with open(output_metrics_file, 'a') as metrics:
-                metrics.write(str(epoch) + ' ')
+                metrics.write(str(epoch) + ',')
                 for value in self.metrics_list_values:
-                    metrics.write(str(value) + ' ')
+                    metrics.write(str(value) + ',')
                 for j in range(sum(flag) - 1):
-                    metrics.write(str(queried_sample[flag][j][1]) + ' ')
+                    metrics.write(str(queried_sample[flag][j][1]) + ',')
                 metrics.write(str(queried_sample[flag][sum(flag) - 1][1]) + '\n')
 
 
@@ -1595,7 +1595,7 @@ class DataBase:
         if full_sample and len(self.queried_sample) > 0:
             full_header = ['epoch'] + self.metadata_names + self.features_names
             query_sample = pd.DataFrame(self.queried_sample, columns=full_header)
-            query_sample.to_csv(queried_sample_file, sep=' ', index=False)
+            query_sample.sort_values(by='epoch').to_csv(queried_sample_file, index=False)
 
         elif isinstance(loop, int):
             queried_sample = np.array(self.queried_sample)
@@ -1605,16 +1605,16 @@ class DataBase:
                     # add header to query sample file
                     full_header = self.metadata_names + self.features_names
                     with open(queried_sample_file, 'w') as query:
-                        query.write('day ')
+                        query.write('day,')
                         for item in full_header:
-                            query.write(item + ' ')
+                            query.write(item + ',')
                         query.write('\n')
 
                 # save query sample to file
                 with open(queried_sample_file, 'a') as query:
                     for batch in range(batch):
                         for elem in queried_sample[flag][batch]:
-                            query.write(str(elem) + ' ')
+                            query.write(str(elem) + ',')
                         query.write('\n')
 
 

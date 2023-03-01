@@ -84,16 +84,35 @@ class PLAsTiCCPhotometry:
         self._kwargs = None
         self.build()
 
-    def build(self):
+    def build(self, config='original', photo_file=None,
+              sample=None):
+        """Create dictionary with photometric file names. 
+        
+        Parameters
+        ----------
+        config: str (optional)
+            If 'original', read original zenodo files, else
+            use user provided names. Default is 'original'.
+        photo_file: str or None (optional)
+            Path to light curve file. Only  used if 'conf' != 'original'.
+            Default is None.        
+        sample: str or None (optional)
+            Sample to populate with file names. Options are 'train' or 'test'. 
+            Only  used if 'conf' != 'original'. Default is None.
+        """
+
         self._last_file_index = 11
-        self._file_list_dict['test'] = [
-            'plasticc_test_lightcurves_' + str(i).zfill(2) + '.csv.gz'
-            for i in range(1, self._last_file_index + 1)]
-        self._file_list_dict['train'] = ['plasticc_train_lightcurves.csv.gz']
+        if config == 'original':
+            self._file_list_dict['test'] = [
+                'plasticc_test_lightcurves_' + str(i).zfill(2) + '.csv.gz'
+                for i in range(1, self._last_file_index + 1)]
+            self._file_list_dict['train'] = ['plasticc_train_lightcurves.csv.gz']
+        else:
+            self._file_list_dict[sample] = [photo_file]
 
     def _set_bazin_header(self, get_cost: bool = False, header: str = 'Bazin'):
         """
-        Initializes bazin header
+        Initializes bazin header.
 
         Parameters
         ----------
@@ -136,10 +155,10 @@ class PLAsTiCCPhotometry:
         """
         maybe_create_directory(output_dir)
         self._features_file_name = os.path.join(
-            output_dir, 'day_' + str(day) + '.dat')
+            output_dir, 'day_' + str(day) + '.csv')
         with open(self._features_file_name, 'w') as features_file:
             self._set_bazin_header(header)
-            features_file.write(' '.join(self._bazin_header) + '\n')
+            features_file.write(','.join(self._bazin_header) + '\n')
 
     def create_all_daily_files(self, output_dir:str,
                                get_cost=False):
@@ -189,7 +208,7 @@ class PLAsTiCCPhotometry:
              'true_distmod', 'ddf_bool']]
         classes_mask = meta_data_raw['true_target'].isin(classes)
         if field in ['WFD', 'DDF']:
-            ddf_mask = meta_data_raw.ddf_bool.astype(np.bool).values
+            ddf_mask = meta_data_raw.ddf_bool.astype(bool).values
             if field == 'DDF':
                 filter_mask = np.logical_and(ddf_mask, classes_mask)
             else:
@@ -567,10 +586,10 @@ class PLAsTiCCPhotometry:
                 features_to_write = self._get_features_to_write(
                         light_curve_data_day, get_cost, tel_names)
                 features_file_name = os.path.join(
-                        output_dir, 'day_' + str(day_of_survey) + '.dat')
+                        output_dir, 'day_' + str(day_of_survey) + '.csv')
                 with open(features_file_name, 'a') as plasticc_features_file:
                     plasticc_features_file.write(
-                            ' '.join(str(each_feature) for each_feature
+                            ','.join(str(each_feature) for each_feature
                                      in features_to_write) + '\n')
 
                     if not bar:
@@ -591,10 +610,11 @@ class PLAsTiCCPhotometry:
         """
         if not os.path.isfile(features_file_name):
             with open(features_file_name, 'w') as features_file:
-                features_file.write(' '.join(self._bazin_header) + '\n')
+                features_file.write(','.join(self._bazin_header) + '\n')
 
     def _maybe_create_daily_feature_files(
-            self, time_window: list, output_dir: str, get_cost: bool):
+            self, time_window: list, output_dir: str, get_cost: bool, 
+            ask_user=True):
         """
         Creates daily feature files for the specified time window
         Parameters
@@ -606,16 +626,25 @@ class PLAsTiCCPhotometry:
             Output directory to save feature files
         get_cost
            if cost of taking a spectra is computed
+        ask_user: bool (optional)
+           If True, ask user if daily file should be created. Default is True.
         """
-        user_input = input("Are you sure want to create new daily files?(yes/no): ")
-        if user_input.lower() == "yes":
-            for day_of_survey in range(time_window[0], time_window[1]):
-                self.create_daily_file(output_dir=output_dir,
-                                       day=day_of_survey, get_cost=get_cost)
-        elif user_input.lower() == "no":
-            logging.info("Not creating new daily feature files")
+        if ask_user:
+            user_input = input("Are you sure want to create new daily files?(yes/no): ")
+            if user_input.lower() == "yes":
+                for day_of_survey in range(time_window[0], time_window[1]):
+                    self.create_daily_file(output_dir=output_dir,
+                                           day=day_of_survey, get_cost=get_cost)
+            elif user_input.lower() == "no":
+                logging.info("Not creating new daily feature files.")
+            else:
+                raise ValueError("Unknown input! Please specify yes or no.")
         else:
-            raise ValueError("Unknown input! Please specify yes or no")
+            for day_of_survey in range(time_window[0], time_window[1]):
+                    self.create_daily_file(output_dir=output_dir,
+                                           day=day_of_survey, get_cost=get_cost)
+            logging.info("Daily feature files created, warning suppressed by user.")
+            
 
     def fit_all_snids_lc(
             self, raw_data_dir: str, snids: np.ndarray, output_dir: str,
@@ -625,7 +654,7 @@ class PLAsTiCCPhotometry:
             feature_method: str = 'Bazin', spec_SNR: int = 10,
             time_window: list = [0, 1095], sample: str = 'test',
             number_of_processors: int = 1, create_daily_files: bool = False,
-            **kwargs):
+            ask_user: bool = True, **kwargs):
         """
         Fits light curves for all the available snids for the time period
          provided in time window and saves features to individual day features
@@ -681,6 +710,8 @@ class PLAsTiCCPhotometry:
         create_daily_files
             if feature files for all the days should be created
             before startign the fitting process
+        ask_user: bool (optional)
+           If True, ask user if daily file should be created. Default is True.
         kwargs
             Any input required by ExpTimeCalc.findexptime function.
         """
@@ -691,14 +722,14 @@ class PLAsTiCCPhotometry:
         self._kwargs = kwargs
         if create_daily_files:
             self._maybe_create_daily_feature_files(
-                time_window, output_dir, get_cost)
+                time_window, output_dir, get_cost, ask_user=ask_user)
 
         for day_of_survey in range(time_window[0], time_window[1]):
             # Load previous day features if available
             self._previous_day_features, self._previous_day_index_mapping = (
                 _load_previous_day_features(day_of_survey, output_dir))
             features_file_name = os.path.join(
-                output_dir, 'day_' + str(day_of_survey) + '.dat')
+                output_dir, 'day_' + str(day_of_survey) + '.csv')
             number_of_points_mapping_file_name = os.path.join(
                 output_dir, "snid_number_of_points.json")
             # Load snids and number of observed points till previous day fit mapping
@@ -807,7 +838,7 @@ class PLAsTiCCPhotometry:
         if light_curve_data_day is not None:
             features_to_write = self._get_features_to_write(
                 light_curve_data_day, get_cost, telescope_names)
-            return (' '.join(str(each_feature) for each_feature
+            return (','.join(str(each_feature) for each_feature
                              in features_to_write) + '\n',
                     number_of_observation_points)
         return None, number_of_observation_points
@@ -837,13 +868,13 @@ def _load_previous_day_features(
         snid to its index in the features list mapping
     """
 
-    previous_day_file_name = file_name_prefix + str(day_of_survey - 1) + '.dat'
+    previous_day_file_name = file_name_prefix + str(day_of_survey - 1) + '.csv'
     previous_day_file_name = os.path.join(output_dir, previous_day_file_name)
     if (day_of_survey < 2) or (not os.path.isfile(previous_day_file_name)):
         return None, {}
     with open(previous_day_file_name, 'r') as file:
         previous_day_features = file.readlines()
-    previous_day_index_mapping = {line.split(" ", 1)[0]: index for index, line
+    previous_day_index_mapping = {line.split(",", 1)[0]: index for index, line
                           in enumerate(previous_day_features)}
     return previous_day_features, previous_day_index_mapping
 

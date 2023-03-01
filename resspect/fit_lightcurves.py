@@ -925,7 +925,7 @@ def write_features_to_output_file(
     current_features = _get_features_to_write(
         light_curve_data)
     features_file.write(
-        ' '.join(str(each_feature) for each_feature
+        ','.join(str(each_feature) for each_feature
                  in current_features) + '\n')
 
 
@@ -985,7 +985,7 @@ def fit_snpcc(
     multi_process = multiprocessing.Pool(number_of_processors)
     logging.info("Starting SNPCC " + function + " fit...")
     with open(features_file, 'w') as snpcc_features_file:
-        snpcc_features_file.write(' '.join(SNPCC_FEATURES_HEADER) + '\n')
+        snpcc_features_file.write(','.join(SNPCC_FEATURES_HEADER) + '\n')
         for light_curve_data in multi_process.starmap(
                 _snpcc_sample_fit, zip(
                     files_list, repeat(path_to_data_dir), repeat(function))):
@@ -1074,7 +1074,7 @@ def fit_resspect_bazin(path_photo_file: str, path_header_file: str,
     logging.info("Starting RESSPECT bazin fit...")
     with open(output_file, 'w') as ressepect_features_file:
         ressepect_features_file.write(
-            ' '.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
+            ','.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
         iterator_list = zip(
             snid_values[:, 0].tolist(), snid_values[:, 1].tolist(),
             repeat(path_photo_file), repeat(sample), repeat(light_curve_data),
@@ -1162,7 +1162,7 @@ def fit_plasticc_bazin(path_photo_file: str, path_header_file: str,
     logging.info("Starting PLAsTiCC bazin fit...")
     with open(output_file, 'w') as plasticc_features_file:
         plasticc_features_file.write(
-            ' '.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
+            ','.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
         iterator_list = zip(
             snid_values[:, 0].tolist(), snid_values[:, 1].tolist(), repeat(path_photo_file),
             repeat(sample), repeat(light_curve_data), repeat(meta_header))
