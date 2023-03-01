@@ -19,16 +19,19 @@ Full documentation can be found at [readthedocs](https://resspect.readthedocs.io
 
 ### For code:
 
- - python>=3.7  
- - astropy>=4.2.1  
- - matplotlib>=3.4.1
- - numpy>=1.19.5
- - pandas>=1.2.4
- - progressbar2>=3.53.1
- - pytest>=6.2.3
- - scikit_learn>=1.0.2
- - scipy>=1.6.2
- - seaborn>=0.11.1
+ - python >= 3.10.10  
+ - astropy >= 5.2.1  
+ - matplotlib >= 3.7.0
+ - numpy >= 1.24.2
+ - pandas >= 1.5.3
+ - progressbar2 >= 4.2.0
+ - pytest >= 7.2.1
+ - scikit_learn >= 1.2.1
+ - scipy >= 1.10.0
+ - seaborn >= 0.12.2
+ - setuptools >= 65.5.0
+ - xgboost >= 1.7.3
+ - iminuit >= 1.20.0
  - setuptools>=49.2.1
  - xgboost>=1.4.0
  
