@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  my-service:
+    container_name: resspect
+    build: .
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - db
+  db:
+    container_name: resspectdb
+    image: postgres
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=verysecurepassword
+      - POSTGRES_DB=resspectdb
+    volumes:
+      - ./resspectdb.sql:/docker-entrypoint-initdb.d/resspectdb.sql
+    ports:
+      - "5432:5432"
+volumes:
+  db-data:
