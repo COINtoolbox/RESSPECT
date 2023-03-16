@@ -17,7 +17,7 @@ Full documentation can be found at [readthedocs](https://resspect.readthedocs.io
 
 # Dependencies
 
-### For code:
+### For main code:
 
  - python>=3.7  
  - astropy>=4.2.1  
@@ -32,8 +32,11 @@ Full documentation can be found at [readthedocs](https://resspect.readthedocs.io
  - setuptools>=49.2.1
  - xgboost>=1.4.0
  
+### For cosmology metric:
+
+ - cmdstanpy>=1.1.0
  
- ### For documentation:
+### For documentation:
  
   - sphinx>=2.1.2
 
