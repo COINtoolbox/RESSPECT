@@ -18,6 +18,6 @@ services:
     volumes:
       - ./resspectdb.sql:/docker-entrypoint-initdb.d/resspectdb.sql
     ports:
-      - "5432:5432"
+      - "9090:9090"
 volumes:
   db-data:
