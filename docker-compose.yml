@@ -4,6 +4,8 @@ services:
   my-service:
     container_name: resspect
     build: .
+    ports:
+      - "9090:9090"
     volumes:
       - ./data:/app/data
     depends_on:
@@ -17,7 +19,6 @@ services:
       - POSTGRES_DB=resspectdb
     volumes:
       - ./resspectdb.sql:/docker-entrypoint-initdb.d/resspectdb.sql
-    ports:
-      - "9090:9090"
+
 volumes:
   db-data:
