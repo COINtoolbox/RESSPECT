@@ -3,6 +3,7 @@
 CREATE TABLE lightcurve(
     diaSourceId BIGINT PRIMARY KEY,
     diaObjectId BIGINT,
+    mjd DOUBLE PRECISION,
     psFlux DOUBLE PRECISION,
     psFluxErr DOUBLE PRECISION,
     filterName CHAR(10)
