@@ -1,13 +1,20 @@
 version: '3'
 
 services:
-  my-service:
+  ubuntu:
     container_name: resspect
-    build: .
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./data:/app/data
+    image: ubuntu
+    tty: true
+    network_mode: host
+    command: ["sh", "-c", "echo 'Starting container...';echo 'Updating package lists...';apt update;echo 'Upgrading packages...';apt upgrade -y;a;tail -f /dev/null;"]
+    environment:
+      - DB_USER=admin
+      - DB_PASS=verysecurepassword
+      - DB_HOST=resspectdb
+      - DB_PORT=5432
+      - DB_NAME=resspectdb
+
+
     depends_on:
       - db
   db:
