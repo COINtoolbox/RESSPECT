@@ -5,8 +5,6 @@ services:
     container_name: resspect
     image: ubuntu
     tty: true
-    networks: 
-      - resspectNetwork
     command: ["sh", "-c", "echo 'Starting container...';echo 'Updating package lists...';apt update;echo 'Upgrading packages...';apt upgrade -y;tail -f /dev/null;"]
     environment:
       - DB_USER=admin
@@ -14,7 +12,8 @@ services:
       - DB_HOST=resspectdb
       - DB_PORT=5432
       - DB_NAME=resspectdb
-
+    networks:
+      - tom_desc_default
 
     depends_on:
       - db
@@ -22,7 +21,7 @@ services:
     container_name: resspectdb
     image: postgres
     networks: 
-      - resspectNetwork
+      - tom_desc_default
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=verysecurepassword
@@ -32,6 +31,6 @@ services:
 
 
 networks:
-  resspectNetwork:
-    driver: bridge
+  tom_desc_default:
+    external: true
 
