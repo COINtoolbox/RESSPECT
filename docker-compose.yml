@@ -5,8 +5,9 @@ services:
     container_name: resspect
     image: ubuntu
     tty: true
-    network_mode: host
-    command: ["sh", "-c", "echo 'Starting container...';echo 'Updating package lists...';apt update;echo 'Upgrading packages...';apt upgrade -y;a;tail -f /dev/null;"]
+    networks: 
+      - resspectNetwork
+    command: ["sh", "-c", "echo 'Starting container...';echo 'Updating package lists...';apt update;echo 'Upgrading packages...';apt upgrade -y;tail -f /dev/null;"]
     environment:
       - DB_USER=admin
       - DB_PASS=verysecurepassword
@@ -20,6 +21,8 @@ services:
   db:
     container_name: resspectdb
     image: postgres
+    networks: 
+      - resspectNetwork
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=verysecurepassword
@@ -27,5 +30,8 @@ services:
     volumes:
       - ./resspectdb.sql:/docker-entrypoint-initdb.d/resspectdb.sql
 
-volumes:
-  db-data:
+
+networks:
+  resspectNetwork:
+    driver: bridge
+
