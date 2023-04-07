@@ -38,7 +38,9 @@ from resspect.lightcurves_utils import read_file
 from resspect.lightcurves_utils import get_resspect_header_data
 from resspect.lightcurves_utils import load_snpcc_photometry_df
 from resspect.lightcurves_utils import get_photometry_with_id_name_and_snid
+from resspect.lightcurves_utils import read_elasticc_full_photometry_data
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
+from resspect.lightcurves_utils import load_elasticc_photometry_df
 from resspect.lightcurves_utils import load_plasticc_photometry_df
 from resspect.lightcurves_utils import read_resspect_full_photometry_data
 from resspect.lightcurves_utils import insert_band_column_to_resspect_df
@@ -48,6 +50,7 @@ from resspect.lightcurves_utils import SNPCC_FEATURES_HEADER
 from resspect.lightcurves_utils import find_available_key_name_in_header
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
+
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 logging.basicConfig(level=logging.INFO)
@@ -289,6 +292,39 @@ class LightCurve:
             filtered_photometry = insert_band_column_to_resspect_df(
                 filtered_photometry, self.filters)
             self.photometry = load_resspect_photometry_df(filtered_photometry)
+
+    def load_elasticc_lc(self, photo_file: str, snid: int):
+        """
+        Return 1 light curve from ELAsTiCC simulations.
+
+        Parameters
+        ----------
+        photo_file: str
+            Complete path to light curve file.
+        snid: int
+            Identification number for the desired light curve.
+        """
+        self.dataset_name = 'ELAsTiCC'
+        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
+        self.id = snid
+
+        if self.full_photometry.empty:
+            self.full_photometry = read_elasticc_full_photometry_data(
+                photo_file)[1]
+
+        id_names_list = ['object_id', 'SNID', 'snid']
+
+        filtered_photometry, self.id_name = (
+            get_photometry_with_id_name_and_snid(
+                self.full_photometry, id_names_list, snid))
+
+        filter_mapping_dict = {
+            b'u ': 'u', b'g ': 'g', b'r ': 'r', b'i ': 'i', b'z ': 'z', b'Y ': 'Y'
+        }
+
+        if not filtered_photometry.empty:
+            self.photometry = load_elasticc_photometry_df(
+                filtered_photometry, filter_mapping_dict)
 
     def load_plasticc_lc(self, photo_file: str, snid: int):
         """
