@@ -869,6 +869,19 @@ def run_time_domain_active_learning_loop(
 
     """
     learning_days = [int(each_day) for each_day in learning_days]
+    
+    # create dictionary with budgets
+    if bool(budgets):
+        if len(budgets) not in [2, len(np.arange(learning_days[0], learning_days[1]))]:
+            raise ValueError('There must be 1 budget per telescope or ' + \
+                            '1 budget per telescope per night!')
+        
+        c = 0
+        budgets_dict = {}
+        for epoch in range(learning_days[0], learning_days[-1] - 1):
+            budgets_dict[epoch] = list(budgets)[c]
+            c = c + 1
+    
     for epoch in progressbar.progressbar(
             range(learning_days[0], learning_days[-1] - 1)):
         if light_curve_data.pool_features.shape[0] > 0:
@@ -876,7 +889,7 @@ def run_time_domain_active_learning_loop(
                 light_curve_data, classifier, is_classifier_bootstrap, **kwargs)
             if light_curve_data.queryable_ids.shape[0] > 0:
                 object_indices = _get_indices_of_objects_to_be_queried(
-                    light_curve_data, strategy, budgets, is_queryable,
+                    light_curve_data, strategy, budgets_dict[epoch], is_queryable,
                     query_threshold, batch)
                 light_curve_data = _update_samples_with_object_indices(
                     light_curve_data, object_indices, is_queryable, epoch)
