@@ -294,6 +294,25 @@ def load_resspect_photometry_df(photometry_df: pd.DataFrame) -> pd.DataFrame:
                                   photometry_dict['fluxerr'])
     return pd.DataFrame(photometry_dict)
 
+def read_elasticc_full_photometry_data(file_path: str) -> pd.DataFrame:
+    """
+        Reads ELAsTiCC full photometry data to pandas dataframe
+
+        Parameters
+        ----------
+        file_path
+            ELAsTiCC data file path, one of (*PHOT.FITS.gz)
+
+        Returns
+        -------
+        head
+            metadata
+        phot
+           ELAsTiCC photometry dataframe
+        """
+
+    head, phot = read_fits(file_path)
+    return head, phot
 
 def read_plasticc_full_photometry_data(file_path: str) -> pd.DataFrame:
     """
@@ -345,6 +364,34 @@ def _update_plasticc_filter_values(
         updated_filters_array[filters_array == key] = value
     return updated_filters_array
 
+def load_elasticc_photometry_df(
+        photometry_df: pd.DataFrame, filter_mapping_dict) -> pd.DataFrame:
+    """
+    Returns updated ELAsTiCC photometry dataframe by dropping unnecessary
+     columns
+
+    Parameters
+    ----------
+    photometry_df
+        ELAsTiCC photometry dataframe
+    filter_mapping_dict
+        filter id to name mapping dict
+        ex: { b'g ': 'g', b'r ': 'r', ..}
+
+    Returns
+    -------
+    phot_df
+       ELAsTiCC photometry dataframe
+    """
+    photometry_dict = {
+        'MJD': photometry_df['MJD'].values,
+        'BAND': _update_plasticc_filter_values(
+            photometry_df['BAND'].values, filter_mapping_dict),
+        'FLUX': photometry_df['FLUXCAL'].values,
+        'FLUXERR': photometry_df['FLUXCALERR'].values,
+        'PHOTFLAG': photometry_df['PHOTFLAG'].values
+    }
+    return pd.DataFrame(photometry_dict)
 
 def load_plasticc_photometry_df(
         photometry_df: pd.DataFrame, filter_mapping_dict) -> pd.DataFrame:
