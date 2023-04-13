@@ -61,7 +61,7 @@ def write_features_to_output_file(
     current_features = _get_features_to_write(
         light_curve_data)
     features_file.write(
-        ' '.join(str(each_feature) for each_feature
+        ','.join(str(each_feature) for each_feature
                  in current_features) + '\n')
 
 
@@ -117,6 +117,7 @@ def fit_snpcc(
         # TODO: Current implementation uses bazin features header for
         #  all feature extraction
         snpcc_features_file.write(' '.join(SNPCC_FEATURES_HEADER) + '\n')
+        
         for light_curve_data in multi_process.starmap(
                 _snpcc_sample_fit, zip(
                     files_list, repeat(path_to_data_dir), repeat(feature_extractor))):
@@ -208,7 +209,7 @@ def fit_resspect(path_photo_file: str, path_header_file: str,
         # TODO: Current implementation uses bazin features header
         #  for all feature extraction
         ressepect_features_file.write(
-            ' '.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
+            ','.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
         iterator_list = zip(
             snid_values[:, 0].tolist(), snid_values[:, 1].tolist(),
             repeat(path_photo_file), repeat(sample), repeat(light_curve_data),
@@ -301,7 +302,7 @@ def fit_plasticc(path_photo_file: str, path_header_file: str,
         # TODO: Current implementation uses bazin features header for
         #  all feature extraction
         plasticc_features_file.write(
-            ' '.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
+            ','.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
         iterator_list = zip(
             snid_values[:, 0].tolist(), snid_values[:, 1].tolist(), repeat(path_photo_file),
             repeat(sample), repeat(light_curve_data), repeat(meta_header))

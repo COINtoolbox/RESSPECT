@@ -20,3 +20,6 @@ __pycache__/
 
 # PyCharm Files
 .idea
+
+auxiliary_files/cosmo
+auxiliary_files/cosmo.hpp
