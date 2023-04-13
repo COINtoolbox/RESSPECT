@@ -871,16 +871,25 @@ def run_time_domain_active_learning_loop(
     learning_days = [int(each_day) for each_day in learning_days]
     
     # create dictionary with budgets
+    budgets_dict = {}
     if bool(budgets):
         if len(budgets) not in [2, len(np.arange(learning_days[0], learning_days[1]))]:
             raise ValueError('There must be 1 budget per telescope or ' + \
                             '1 budget per telescope per night!')
         
-        c = 0
-        budgets_dict = {}
+        elif len(budgets) == 2:
+            for epoch in range(learning_days[0], learning_days[-1] - 1):
+                budgets_dict[epoch] = budgets
+                          
+        else:
+            c = 0
+            for epoch in range(learning_days[0], learning_days[-1] - 1):
+                budgets_dict[epoch] = list(budgets)[c]
+                c = c + 1
+            
+    else:
         for epoch in range(learning_days[0], learning_days[-1] - 1):
-            budgets_dict[epoch] = list(budgets)[c]
-            c = c + 1
+            budgets_dict[epoch] = None
     
     for epoch in progressbar.progressbar(
             range(learning_days[0], learning_days[-1] - 1)):
