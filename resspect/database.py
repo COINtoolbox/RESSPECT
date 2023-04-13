@@ -16,19 +16,25 @@
 # limitations under the License.
 
 import io
-import numpy as np
 import os
 import pandas as pd
 import tarfile
 
 from resspect.classifiers import *
-
+from resspect.feature_extractors.bazin import BazinFeatureExtractor
+from resspect.feature_extractors.bump import BumpFeatureExtractor
 from resspect.query_strategies import *
 from resspect.query_budget_strategies import *
-from resspect.metrics import efficiency, purity, fom, accuracy, get_snpcc_metric
+from resspect.metrics import get_snpcc_metric
 
 
 __all__ = ['DataBase']
+
+
+FEATURE_EXTRACTOR_MAPPING = {
+    "bazin": BazinFeatureExtractor,
+    "bump": BumpFeatureExtractor
+}
 
 
 class DataBase:
@@ -142,7 +148,7 @@ class DataBase:
 
     Initiate the DataBase object and load the data.
     >>> data = DataBase()
-    >>> data.load_extracted_features(path_to_bazin_file, method='Bazin')
+    >>> data.load_features(path_to_bazin_file, method='bazin')
 
     Separate training and test samples and classify
 
@@ -212,8 +218,8 @@ class DataBase:
         self.validation_metadata = pd.DataFrame()
         self.validation_prob = np.array([])
 
-    def load_extracted_features(self, path_to_features_file: str, screen=False,
-                            survey='DES', sample=None, function='bazin'):
+    def load_features(self, path_to_features_file: str, screen=False,
+                      survey='DES', sample=None, feature_extractor='bazin'):
         """Load features from file.
 
         Populate properties: features, feature_names, metadata
@@ -233,7 +239,7 @@ class DataBase:
             If None, sample is given by a column within the given file.
             else, read independent files for 'train' and 'test'.
             Default is None.
-        function: str (optional)
+        feature_extractor: str (optional)
             Function used for feature extraction. Options are "bazin" or 
             "bump". Default is "bump".
         """
@@ -257,12 +263,12 @@ class DataBase:
 
         # list of features to use
         if survey == 'DES':
-            if function == "bazin":
+            if feature_extractor == "bazin":
                 self.features_names = ['gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA',
                                        'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB',
                                        'it0', 'itfall', 'itrise', 'zA', 'zB', 'zt0',
                                        'ztfall', 'ztrise']
-            elif function == 'bump':
+            elif feature_extractor == 'bump':
                 self.features_names = ['gp1', 'gp2', 'gp3', 'gmax_flux', 
                                        'rp1', 'rp2', 'rp3', 'rmax_flux', 
                                        'ip1', 'ip2', 'ip3', 'imax_flux', 
@@ -343,7 +349,6 @@ class DataBase:
                 print('Loaded ', self.pool_metadata.shape[0], ' ' + \
                       sample +  ' samples!')
 
-
     def load_photometry_features(self, path_to_photometry_file: str,
                                  screen=False, sample=None):
         """Load photometry features from file.
@@ -413,8 +418,8 @@ class DataBase:
                 print('\n Loaded ', self.test_metadata.shape[0],
                       ' samples! \n')
 
-    def load_features(self, path_to_file: str, method='Bazin', screen=False,
-                      survey='DES', sample=None ):
+    def load_features(self, path_to_file: str, feature_extractor: str ='bazin',
+                      screen=False, survey='DES', sample=None ):
         """Load features according to the chosen feature extraction method.
 
         Populates properties: data, features, feature_list, header
@@ -424,10 +429,10 @@ class DataBase:
         ----------
         path_to_file: str
             Complete path to features file.
-        method: str (optional)
+        feature_extractor: str (optional)
             Feature extraction method. The current implementation only
-            accepts method=='Bazin', 'bump' or 'photometry'.
-            Default is 'Bazin'.
+            accepts =='bazin', 'bump' or 'photometry'.
+            Default is 'bazin'.
         screen: bool (optional)
             If True, print on screen number of light curves processed.
             Default is False.
@@ -440,16 +445,15 @@ class DataBase:
             else, read independent files for 'train' and 'test'.
             Default is None.
         """
-
-        if method == 'Bazin' or method == 'bump':
-            self.load_extracted_features(path_to_file, screen=screen,
-                               survey=survey, sample=sample, function=method)
-
-        elif method == 'photometry':
+        if feature_extractor == "photometry":
             self.load_photometry_features(path_to_file, screen=screen,
                                           survey=survey, sample=sample)
+        elif feature_extractor in FEATURE_EXTRACTOR_MAPPING:
+            self.load_features(
+                path_to_file, screen=screen, survey=survey,
+                sample=sample, feature_extractor=feature_extractor)
         else:
-            raise ValueError('Only Bazin, bump or photometry features are implemented!'
+            raise ValueError('Only bazin, bump or photometry features are implemented!'
                              '\n Feel free to add other options.')
 
     def load_plasticc_mjd(self, path_to_data_dir):

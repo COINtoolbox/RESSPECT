@@ -85,7 +85,7 @@ def test_conv_flux_mag(input_lc):
 def test_check_queryable(input_lc):
     """ Test consistency of queryable tests. """
     
-    input_lc.fit_bazin_all()
+    input_lc.fit_all()
     
     min_mjd = min(input_lc.photometry['mjd'].values) 
     epochs = [15, 80]
@@ -151,8 +151,8 @@ def test_fit_bazin(input_lc):
 def test_fit_bazin_all(input_lc):
     """ Test Bazin fit in all filters. """
     
-    input_lc.fit_bazin_all()
-    l1 = len(input_lc.bazin_features)
+    input_lc.fit_all()
+    l1 = len(input_lc.features)
     l2 = len(input_lc.filters) * 5
     
     assert l1 == l2
@@ -167,7 +167,7 @@ def test_evaluate_bazin(input_lc):
     # generate a grid of times
     t = np.arange(min_mjd, max_mjd, 0.5)
     
-    input_lc.fit_bazin_all()
+    input_lc.fit_all()
     flux = input_lc.evaluate_bazin(time=np.random.choice(t, size=5))
     
     res = []

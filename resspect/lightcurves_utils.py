@@ -11,6 +11,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+
 from resspect.snana_fits_to_pd import read_fits
 
 
@@ -549,3 +550,20 @@ def get_query_flags(light_curve_data, telescope_names: list,
         else:
             query_flags.append(False)
     return query_flags
+
+
+def get_files_list(path_to_data_dir: str,
+                    file_prefix: str) -> list:
+    """
+    loads file names available in the folder
+    Parameters
+    ----------
+    path_to_data_dir
+        folder path
+    file_prefix
+        files start name
+    """
+    files_list = os.listdir(path_to_data_dir)
+    files_list = [each_file for each_file in files_list
+                  if each_file.startswith(file_prefix)]
+    return files_list

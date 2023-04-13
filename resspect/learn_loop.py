@@ -49,7 +49,7 @@ def load_features(database_class: DataBase,
        'DES' or 'LSST'. Default is 'DES'.
         Name of the survey which characterizes filter set.
     features_method
-        Feature extraction method. Currently only 'Bazin' and "bump" are implemented.
+        Feature extraction method. Currently only 'bazin' and "bump" are implemented.
     number_of_classes
         Number of classes to consider in the classification
         Currently only nclass == 2 is implemented.
@@ -71,14 +71,14 @@ def load_features(database_class: DataBase,
     """
     if isinstance(path_to_features, str):
         database_class.load_features(
-            path_to_file=path_to_features, method=features_method,
+            path_to_file=path_to_features, feature_extractor=features_method,
             survey=survey)
     else:
         features_set_names = ['train', 'test', 'validation', 'pool']
         for sample_name in features_set_names:
             if sample_name in path_to_features.keys():
                 database_class.load_features(
-                    path_to_features[sample_name], method=features_method,
+                    path_to_features[sample_name], feature_extractor=features_method,
                     survey=survey, sample=sample_name)
             else:
                 logging.warning(f'Path to {sample_name} not given.'
@@ -320,7 +320,7 @@ def update_alternative_label(database_class_alternative: DataBase,
 # TODO: too many arguments! refactor further and update docs
 def learn_loop(nloops: int, strategy: str, path_to_features: str,
                output_metrics_file: str, output_queried_file: str,
-               features_method: str ='Bazin', classifier: str = 'RandomForest',
+               features_method: str = 'bazin', classifier: str = 'RandomForest',
                training: str = 'original', batch: int =1, survey: str = 'DES',
                nclass: int = 2, photo_class_thr: float = 0.5,
                photo_ids_to_file: bool = False, photo_ids_froot: str =' ',
@@ -350,7 +350,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     output_queried_file: str
         Full path to output file to store the queried sample.
     features_method: str (optional)
-        Feature extraction method. Currently only 'Bazin' and 'Bump' are implemented.
+        Feature extraction method. Currently only 'bazin' and 'Bump' are implemented.
     classifier: str (optional)
         Machine Learning algorithm.
         Currently implemented options are 'RandomForest', 'GradientBoostedTrees',

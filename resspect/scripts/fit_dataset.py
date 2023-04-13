@@ -18,8 +18,8 @@
 import argparse
 
 from resspect.fit_lightcurves import fit_snpcc
-from resspect.fit_lightcurves import fit_resspect_bazin
-from resspect.fit_lightcurves import fit_plasticc_bazin
+from resspect.fit_lightcurves import fit_resspect
+from resspect.fit_lightcurves import fit_plasticc
 
 __all__ = ['main']
 
@@ -76,17 +76,17 @@ def main(user_choices):
                   number_of_processors=ncores, function=function)
     
     elif user_choices.sim_name == 'RESSPECT':
-        fit_resspect_bazin(path_photo_file=user_choices.photo_file,
-                           path_header_file=user_choices.header_file,
-                           output_file=features_file, sample=user_choices.sample,
-                          number_of_processors=ncores)
+        fit_resspect(path_photo_file=user_choices.photo_file,
+                     path_header_file=user_choices.header_file,
+                     output_file=features_file, sample=user_choices.sample,
+                     number_of_processors=ncores)
 
     elif user_choices.sim_name == 'PLAsTiCC':
-        fit_plasticc_bazin(path_photo_file=user_choices.photo_file, 
-                           path_header_file=user_choices.header_file,
-                           output_file=features_file,
-                           sample=user_choices.sample,
-                           number_of_processors=ncores)
+        fit_plasticc(path_photo_file=user_choices.photo_file,
+                    path_header_file=user_choices.header_file,
+                    output_file=features_file,
+                    sample=user_choices.sample,
+                    number_of_processors=ncores)
 
     return None
 
