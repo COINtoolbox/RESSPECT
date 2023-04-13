@@ -25,7 +25,7 @@ import progressbar
 from sklearn.neighbors import NearestNeighbors, KernelDensity
 
 from resspect.database import DataBase
-from resspect.fit_lightcurves import LightCurve
+from resspect.feature_extractors.light_curve import LightCurve
 from resspect.lightcurves_utils import SNPCC_CANONICAL_FEATURES
 from resspect.lightcurves_utils import SNPCC_META_HEADER
 

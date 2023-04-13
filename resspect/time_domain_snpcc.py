@@ -19,17 +19,28 @@ import logging
 import multiprocessing
 import os
 from itertools import repeat
-from typing import Union
 
-import progressbar
-from resspect import LightCurve
+from resspect.feature_extractors.bazin import BazinFeatureExtractor
+from resspect.feature_extractors.bump import BumpFeatureExtractor
 from resspect.lightcurves_utils import BAZIN_HEADERS
+from resspect.lightcurves_utils import get_files_list
 from resspect.lightcurves_utils import get_query_flags
 from resspect.lightcurves_utils import maybe_create_directory
 
 logging.basicConfig(level=logging.INFO)
 
 __all__ = ['SNPCCPhotometry']
+
+
+FEATURE_EXTRACTOR_MAPPING = {
+    "bazin": BazinFeatureExtractor,
+    "bump": BumpFeatureExtractor
+}
+
+
+FEATURE_EXTRACTOR_HEADERS_MAPPING = {
+    "bazin": BAZIN_HEADERS
+}
 
 
 class SNPCCPhotometry:
@@ -70,46 +81,14 @@ class SNPCCPhotometry:
         self.max_epoch = max_epoch
         self.min_epoch = min_epoch
         self.rmag_lim = rmag_lim
-        self._bazin_header = None  # type: list
+        self._header = None  # type: list
         self._features_file_name = None  # type: str
         self._today = None  # type: int
         self._number_of_telescopes = None  # type: int
         self._kwargs = None  # type: dict
 
-    def get_lim_mjds(self, raw_data_dir: str) -> list:
-        """
-        Get minimum and maximum MJD for complete sample.
-
-        This function is not necessary if you are working with
-        SNPCC data. The values are hard coded in the class.
-
-        Parameters
-        ----------
-        raw_data_dir: str
-            Complete path to raw data directory.
-
-        Returns
-        -------
-        limits: list
-            List of extreme MJDs for entire sample: [min_MJD, max_MJD].
-        """
-        files_list = _get_files_list(raw_data_dir, 'DES_SN')
-        # store MJDs
-        min_day = []
-        max_day = []
-
-        for each_file in progressbar.progressbar(files_list):
-            light_curve_data = LightCurve()
-            light_curve_data.load_snpcc_lc(os.path.join(raw_data_dir, each_file))
-            min_day.append(min(light_curve_data.photometry['mjd'].values))
-            max_day.append(max(light_curve_data.photometry['mjd'].values))
-            self.min_epoch = min(min_day)
-            self.max_epoch = max(max_day)
-
-        return [min(min_day), max(max_day)]
-
     def create_daily_file(self, output_dir: str,
-                          day: int, header: str = 'Bazin',
+                          day: int, feature_extractor: str = 'bazin',
                           get_cost: bool = False):
         """
         Create one file for a given day of the survey.
@@ -125,23 +104,23 @@ class SNPCCPhotometry:
         get_cost: bool (optional)
             If True, calculate cost of taking a spectra in the last
             observed photometric point. Default is False.
-        header: str (optional)
-            List of elements to be added to the header.
-            Separate by 1 space.
-            Default option uses header for Bazin features file.
+        feature_extractor: str
+            Feature extraction method, only possibility is 'Bazin'.
         """
         maybe_create_directory(output_dir)
         self._features_file_name = os.path.join(
             output_dir, 'day_' + str(day) + '.dat')
         logging.info('Creating features file')
         with open(self._features_file_name, 'w') as features_file:
-            if header == 'Bazin':
-                self._bazin_header = BAZIN_HEADERS['snpcc_header']
-                if get_cost:
-                    self._bazin_header = BAZIN_HEADERS['snpcc_header_with_cost']
-            else:
+            if feature_extractor not in FEATURE_EXTRACTOR_HEADERS_MAPPING:
                 raise ValueError('Only Bazin headers are supported')
-            features_file.write(' '.join(self._bazin_header) + '\n')
+            self._header = FEATURE_EXTRACTOR_HEADERS_MAPPING[
+                feature_extractor]['snpcc_header']
+            if get_cost:
+                self._header = FEATURE_EXTRACTOR_HEADERS_MAPPING[
+                    feature_extractor]['snpcc_header_with_cost']
+
+            features_file.write(' '.join(self._header) + '\n')
 
     def _verify_telescope_names(self, telescope_names: list, get_cost: bool):
         """
@@ -155,14 +134,14 @@ class SNPCCPhotometry:
            if cost of taking a spectra is computed
         """
 
-        if (('cost_' + telescope_names[0] not in self._bazin_header or
-            'cost_' + telescope_names[1] not in self._bazin_header)
+        if (('cost_' + telescope_names[0] not in self._header or
+            'cost_' + telescope_names[1] not in self._header)
                 and get_cost):
 
             raise ValueError('Unknown or not supported telescope names')
 
     def _maybe_create_features_file(self, output_dir: str, day_of_survey: int,
-                                    feature_method: str, get_cost: bool):
+                                    feature_extractor: str, get_cost: bool):
         """
         Creates features output file if not available
 
@@ -172,7 +151,7 @@ class SNPCCPhotometry:
             output directory path to save features file
         day_of_survey: int
             Day since the beginning of survey.
-        feature_method: str
+        feature_extractor: str
             Feature extraction method, only possibility is 'Bazin'.
         get_cost: bool
            if True, cost of taking a spectra is computed.
@@ -180,26 +159,27 @@ class SNPCCPhotometry:
         if not os.path.isfile(self._features_file_name):
             logging.info('Features file doesnt exist')
             self.create_daily_file(
-                output_dir, day_of_survey, feature_method, get_cost)
+                output_dir, day_of_survey, feature_extractor, get_cost)
 
     @staticmethod
     def _verify_dataset_and_features_method(dataset_name: str,
-                                            feature_method: str):
+                                            feature_extractor: str):
         """
         Verifies if valid dataset name and features method is passed
         Parameters
         ----------
         dataset_name: str
             name of the dataset used
-        feature_method: str
+        feature_extractor: str
             Feature extraction method, only possibility is 'Bazin'.
         """
         if dataset_name != 'SNPCC':
             raise ValueError('This class supports only SNPCC dataset!')
-        if feature_method != 'Bazin':
-            raise ValueError('Only Bazin features are implemented!!')
+        # TODO: Update when bump headers are available
+        if feature_extractor != 'bazin':
+            raise ValueError('Only bazin features are implemented!!')
 
-    def _check_queryable(self, light_curve_data: LightCurve,
+    def _check_queryable(self, light_curve_data,
                          queryable_criteria: int,
                          days_since_last_observation: int) -> bool:
         """
@@ -207,7 +187,7 @@ class SNPCCPhotometry:
 
         Parameters
         ----------
-        light_curve_data: resspect.LightCurve
+        light_curve_data:
             An instance of LightCurve class
         queryable_criteria: [1 or 2]
             Criteria to determine if an obj is queryable.
@@ -226,9 +206,9 @@ class SNPCCPhotometry:
             days_since_last_obs=days_since_last_observation)
 
     def _update_queryable_if_get_cost(
-            self, light_curve_data: LightCurve, telescope_names: list,
+            self, light_curve_data, telescope_names: list,
             telescope_sizes: list, spectroscopic_snr: int,
-            kwargs: dict) -> LightCurve:
+            kwargs: dict):
         """
         Updates time required tp take a spectra calc_exp_time() method of
         LightCurve class
@@ -259,16 +239,16 @@ class SNPCCPhotometry:
         return light_curve_data
 
     def _process_each_light_curve(
-            self, light_curve_data: LightCurve, queryable_criteria: int,
+            self, light_curve_data, queryable_criteria: int,
             days_since_last_observation: int, telescope_names: list,
             telescope_sizes: list, spectroscopic_snr: int, kwargs: dict,
-            min_available_points: int = 5) -> Union[LightCurve, None]:
+            min_available_points: int = 5):
         """
         Processes each light curve files.
 
         Parameters
         ----------
-        light_curve_data: resspect.LightCurve
+        light_curve_data:
             An instance of LightCurve class
         queryable_criteria: int
             Criteria to determine if an obj is queryable.
@@ -296,10 +276,10 @@ class SNPCCPhotometry:
         if sum(photo_flag) >= min_available_points:
             light_curve_data.photometry = light_curve_data.photometry[
                 photo_flag]
-            light_curve_data.fit_bazin_all()
+            light_curve_data.fit_all()
 
-            if (len(light_curve_data.bazin_features) > 0 and
-                    'None' not in light_curve_data.bazin_features):
+            if (len(light_curve_data.features) > 0 and
+                    'None' not in light_curve_data.features):
                 light_curve_data.queryable = self._check_queryable(
                     light_curve_data, queryable_criteria,
                     days_since_last_observation)
@@ -312,14 +292,14 @@ class SNPCCPhotometry:
                 return light_curve_data
         return None
 
-    def _get_features_to_write(self, light_curve_data: LightCurve,
+    def _get_features_to_write(self, light_curve_data,
                                get_cost: bool, telescope_names: list) -> list:
         """
         Returns features list to write.
 
         Parameters
         ----------
-        light_curve_data: resspect.LightCurve
+        light_curve_data:
             fitted light curve data
         get_cost: bool
            if cost of taking a spectra is computed
@@ -336,13 +316,13 @@ class SNPCCPhotometry:
             for index in range(self._number_of_telescopes):
                 features_list.append(str(
                     light_curve_data.exp_time[telescope_names[index]]))
-        features_list.extend(light_curve_data.bazin_features)
+        features_list.extend(light_curve_data.features)
         return features_list
 
     def _get_current_sample_features(
             self, file_name: str, raw_data_dir: str, queryable_criteria: int,
             days_since_observation: int, telescope_names: list,
-            telescope_sizes: list, spec_SNR: int) -> LightCurve:
+            telescope_sizes: list, spec_SNR: int, feature_extractor: str):
         """
         Reads a SNPCC file and updates time domain features
 
@@ -373,8 +353,10 @@ class SNPCCPhotometry:
             Default is [4, 8].
         spec_SNR: float (optional)
             SNR required for spectroscopic follow-up. Default is 10.
+        feature_extractor: str
+            Feature extraction method
         """
-        light_curve_data = LightCurve()
+        light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
         light_curve_data.load_snpcc_lc(
             os.path.join(raw_data_dir, file_name))
         light_curve_data = self._process_each_light_curve(
@@ -384,14 +366,14 @@ class SNPCCPhotometry:
 
     # TODO: Too many arguments. Refactor and update docs
     def build_one_epoch(self, raw_data_dir: str, day_of_survey: int,
-                        time_domain_dir: str, feature_method: str = 'Bazin',
+                        time_domain_dir: str, feature_extractor: str = 'bazin',
                         dataset: str = 'SNPCC', days_since_obs: int = 2,
                         queryable_criteria: int = 1, get_cost: bool = False,
                         tel_sizes: list = [4, 8],
                         tel_names: list = ['4m', '8m'], spec_SNR: int = 10,
                         number_of_processors: int = 1, **kwargs):
         """
-        Fit bazin for all objects with enough points in a given day.
+        Fit features for all objects with enough points in a given day.
 
         Generate 1 file containing best-fit Bazin parameters for a given
         day of the survey.
@@ -411,7 +393,7 @@ class SNPCCPhotometry:
             Day since last observation to consider for spectroscopic
             follow-up without the need to extrapolate light curve.
             Only used if "queryable_criteria == 2". Default is 2.
-        feature_method: str (optional)
+        feature_extractor: str (optional)
             Feature extraction method.
             Only possibility is 'Bazin'.
         get_cost: bool (optional)
@@ -437,14 +419,14 @@ class SNPCCPhotometry:
         number_of_processors: int, default 1
             Number of cpu processes to use
         kwargs: extra parameters
-            Any input required by ExpTimeCalc.findexptime function.
+            Any input required by ExpTimeCalc.find exptime function.
         """
         self._kwargs = kwargs
-        self._verify_dataset_and_features_method(dataset, feature_method)
+        self._verify_dataset_and_features_method(dataset, feature_extractor)
         self._verify_telescope_names(tel_names, get_cost)
         self._maybe_create_features_file(
-            time_domain_dir, day_of_survey, feature_method, get_cost)
-        files_list = _get_files_list(raw_data_dir, 'DES_SN')
+            time_domain_dir, day_of_survey, feature_extractor, get_cost)
+        files_list = get_files_list(raw_data_dir, 'DES_SN')
         self._today = day_of_survey + self.min_epoch
         self._number_of_telescopes = len(tel_names)
 
@@ -454,7 +436,7 @@ class SNPCCPhotometry:
             iterator_list = zip(
                 files_list, repeat(raw_data_dir), repeat(queryable_criteria),
                 repeat(days_since_obs), repeat(tel_names), repeat(tel_sizes),
-                repeat(spec_SNR))
+                repeat(spec_SNR), repeat(feature_extractor))
             for light_curve_data in multi_process.starmap(
                     self._get_current_sample_features, iterator_list):
                 if light_curve_data is not None:
@@ -464,23 +446,6 @@ class SNPCCPhotometry:
                         ' '.join(str(each_feature) for each_feature
                                  in features_to_write) + '\n')
         logging.info("Features have been saved to: %s", self._features_file_name)
-
-
-def _get_files_list(path_to_data_dir: str,
-                    file_prefix: str) -> list:
-    """
-    loads file names available in the folder
-    Parameters
-    ----------
-    path_to_data_dir
-        folder path
-    file_prefix
-        files start name
-    """
-    files_list = os.listdir(path_to_data_dir)
-    files_list = [each_file for each_file in files_list
-                  if each_file.startswith(file_prefix)]
-    return files_list
 
 
 def main():

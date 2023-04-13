@@ -10,7 +10,7 @@ def test_can_run_learn_loop(extract_feature):
     from resspect.learn_loop import learn_loop
 
     learn_loop(nloops=1,
-               features_method="Bazin",
+               features_method="bazin",
                strategy="RandomSampling",
                path_to_features=extract_feature,
                output_metrics_file="just_a_name.csv",
@@ -19,12 +19,12 @@ def test_can_run_learn_loop(extract_feature):
 
 @pytest.fixture(scope="function")
 def extract_feature(path_to_test_data):
-    from resspect import fit_snpcc_bazin
+    from resspect import fit_snpcc
 
     path_to_data_dir = path_to_test_data
     output_file = 'output_file.dat'
 
-    fit_snpcc_bazin(path_to_data_dir=path_to_data_dir, features_file=output_file)
+    fit_snpcc(path_to_data_dir=path_to_data_dir, features_file=output_file)
 
     return output_file
 

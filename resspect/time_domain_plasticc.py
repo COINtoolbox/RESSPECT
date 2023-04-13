@@ -27,12 +27,24 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import progressbar
-from resspect import LightCurve
+
+from resspect.feature_extractors.bazin import BazinFeatureExtractor
+from resspect.feature_extractors.bump import BumpFeatureExtractor
 from resspect.lightcurves_utils import BAZIN_HEADERS
 from resspect.lightcurves_utils import get_query_flags
 from resspect.lightcurves_utils import maybe_create_directory
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
+
+
+FEATURE_EXTRACTOR_HEADERS_MAPPING = {
+    "bazin": BAZIN_HEADERS
+}
+
+FEATURE_EXTRACTOR_MAPPING = {
+    "bazin": BazinFeatureExtractor,
+    "bump": BumpFeatureExtractor
+}
 
 
 class PLAsTiCCPhotometry:
@@ -75,7 +87,7 @@ class PLAsTiCCPhotometry:
         self._class_mappings = None  # type: dict
         self._last_file_index = None # type: int
         self._features_file_name = None  # type: str
-        self._bazin_header = None  # type: list
+        self._header = None  # type: list
         self._file_list_dict = {}  # type: dict
         self._today = None  # type: int
         self._number_of_telescopes = None  # type: int
@@ -110,30 +122,30 @@ class PLAsTiCCPhotometry:
         else:
             self._file_list_dict[sample] = [photo_file]
 
-    def _set_bazin_header(self, get_cost: bool = False, header: str = 'Bazin'):
+    def _set_header(self, get_cost: bool = False, feature_extractor: str = 'bazin'):
         """
-        Initializes bazin header.
+        Initializes header
 
         Parameters
         ----------
         get_cost: bool (optional)
             If True, calculate cost of taking a spectra in the last
             observed photometric point. Default is False.
-        header: str (optional)
+        feature_extractor: str (optional)
             List of elements to be added to the header.
             Separate by 1 space.
             Default option uses header for Bazin features file.
         """
-        if header == 'Bazin':
-            self._bazin_header = BAZIN_HEADERS['plasticc_header']
-            if get_cost:
-                self._bazin_header = BAZIN_HEADERS[
-                    'plasticc_header_with_cost']
-        else:
-            raise ValueError('Only Bazin headers are supported')
+        if feature_extractor not in FEATURE_EXTRACTOR_HEADERS_MAPPING:
+            raise ValueError('Only bazin headers are supported')
+        self._header = FEATURE_EXTRACTOR_HEADERS_MAPPING[
+                feature_extractor]['plasticc_header']
+        if get_cost:
+            self._header = FEATURE_EXTRACTOR_HEADERS_MAPPING[
+                feature_extractor]['plasticc_header_with_cost']
 
     def create_daily_file(self, output_dir: str, day: int,
-                          header: str = 'Bazin', get_cost: bool = False):
+                          feature_extractor: str = 'bazin', get_cost: bool = False):
         """
         Create one file for a given day of the survey.
 
@@ -145,7 +157,7 @@ class PLAsTiCCPhotometry:
             Complete path to output directory.
         day: int
             Day passed since the beginning of the survey.
-        header: str (optional)
+        feature_extractor: str (optional)
             List of elements to be added to the header.
             Separate by 1 space.
             Default option uses header for Bazin features file.
@@ -157,8 +169,8 @@ class PLAsTiCCPhotometry:
         self._features_file_name = os.path.join(
             output_dir, 'day_' + str(day) + '.csv')
         with open(self._features_file_name, 'w') as features_file:
-            self._set_bazin_header(header)
-            features_file.write(','.join(self._bazin_header) + '\n')
+            self._set_header(get_cost, feature_extractor=feature_extractor)
+            features_file.write(' '.join(self._header) + '\n')
 
     def create_all_daily_files(self, output_dir:str,
                                get_cost=False):
@@ -229,13 +241,13 @@ class PLAsTiCCPhotometry:
         get_cost
            if cost of taking a spectra is computed
         """
-        if (('cost_' + telescope_names[0] not in self._bazin_header or
-            'cost_' + telescope_names[1] not in self._bazin_header)
+        if (('cost_' + telescope_names[0] not in self._header or
+            'cost_' + telescope_names[1] not in self._header)
                 and get_cost):
             raise ValueError('Unknown or not supported telescope names')
 
     def _load_plasticc_data(self, raw_data_dir: str, volume: int,
-                            snid: int, sample='test') -> LightCurve:
+                            snid: int, sample='test', feature_extractor: str = 'bazin'):
         """
         Loads PLAsTiCC dataset files to LightCurve class
 
@@ -251,8 +263,7 @@ class PLAsTiCCPhotometry:
         sample: str (optional)
             Sample to load, 'train' or 'test'. Default is 'test'.
         """
-        light_curve_data = LightCurve()
-
+        light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
         if sample == 'test':
             file_name = os.path.join(
                     raw_data_dir, self._file_list_dict['test'][volume - 1])
@@ -265,7 +276,7 @@ class PLAsTiCCPhotometry:
         return light_curve_data
 
     def _get_fit_days(self, day: Union[int, None],
-                      light_curve_data: LightCurve) -> list:
+                      light_curve_data) -> list:
         """
         Parameters
         ----------
@@ -284,7 +295,7 @@ class PLAsTiCCPhotometry:
         return [day]
 
     @staticmethod
-    def _verify_features_method(feature_method: str):
+    def _verify_features_method(feature_extractor: str):
         """
         Verifies if valid dataset name and features method is passed
         Parameters
@@ -292,10 +303,11 @@ class PLAsTiCCPhotometry:
         feature_method
             Feature extraction method, only possibility is 'Bazin'.
         """
-        if feature_method != 'Bazin':
-            raise ValueError('Only Bazin features are implemented!!')
+        if feature_extractor not in FEATURE_EXTRACTOR_MAPPING:
+            raise ValueError(
+                'Provided feature extractor method has not been implemented!!')
 
-    def _check_queryable(self, light_curve_data: LightCurve,
+    def _check_queryable(self, light_curve_data,
                          queryable_criteria: int,
                          days_since_last_observation: int) -> bool:
         """
@@ -322,9 +334,9 @@ class PLAsTiCCPhotometry:
             days_since_last_obs=days_since_last_observation)
 
     def _update_queryable_if_get_cost(
-            self, light_curve_data: LightCurve, telescope_names: list,
+            self, light_curve_data, telescope_names: list,
             telescope_sizes: list, spectroscopic_snr: int,
-            **kwargs) -> LightCurve:
+            **kwargs):
         """
         Updates time required to take a spectra calc_exp_time() method of
         LightCurve class
@@ -356,7 +368,7 @@ class PLAsTiCCPhotometry:
         return light_curve_data
 
     def _process_current_day(
-            self, light_curve_data_day: LightCurve, queryable_criteria: int,
+            self, light_curve_data_day, queryable_criteria: int,
             days_since_last_observation: int, telescope_names: list,
             telescope_sizes: list, spectroscopic_snr: int,
             min_available_points: int = 4, **kwargs):
@@ -395,10 +407,10 @@ class PLAsTiCCPhotometry:
         if np.sum(photo_flag) > min_available_points:
             light_curve_data_day.photometry = light_curve_data_day.photometry[
                 photo_flag]
-            light_curve_data_day.fit_bazin_all()
+            light_curve_data_day.fit_all()
 
-            if (len(light_curve_data_day.bazin_features) > 0 and
-                    'None' not in light_curve_data_day.bazin_features):
+            if (len(light_curve_data_day.features) > 0 and
+                    'None' not in light_curve_data_day.features):
 
                 light_curve_data_day.queryable = self._check_queryable(
                     light_curve_data_day, queryable_criteria,
@@ -415,7 +427,7 @@ class PLAsTiCCPhotometry:
         return None
 
     def _get_features_to_write(
-            self, light_curve_data_day: LightCurve,
+            self, light_curve_data_day,
             get_cost: bool, telescope_names: list) -> list:
         """
         Returns features list to write
@@ -444,12 +456,12 @@ class PLAsTiCCPhotometry:
             for index in range(self._number_of_telescopes):
                 features_list.append(str(
                     light_curve_data_day.exp_time[telescope_names[index]]))
-        features_list.extend(light_curve_data_day.bazin_features)
+        features_list.extend(light_curve_data_day.features)
 
         return features_list
 
-    def _update_light_curve_meta_data(self, light_curve_data_day: LightCurve,
-                                      snid: int) -> Union[LightCurve, None]:
+    def _update_light_curve_meta_data(self, light_curve_data_day,
+                                      snid: int):
         """
         Loads light curve data of the given SNID
 
@@ -482,7 +494,7 @@ class PLAsTiCCPhotometry:
     def fit_one_lc(self, raw_data_dir: str, snid: int, output_dir: str,
                    vol=None, day=None, queryable_criteria=1,
                    days_since_last_obs=2, get_cost=False, tel_sizes=[4, 8],
-                   tel_names=['4m', '8m'], feature_method='Bazin', spec_SNR=10,
+                   tel_names=['4m', '8m'], feature_extractor='bazin', spec_SNR=10,
                    time_window=[0, 1095], sample='test', bar=False,
                    **kwargs):
         """
@@ -529,7 +541,7 @@ class PLAsTiCCPhotometry:
             Primary mirrors diameters of potential spectroscopic telescopes.
             Only used if "get_cost == True".
             Default is [4, 8].
-        feature_method: str (optional)
+        feature_extractor: str (optional)
             Feature extraction method.
             Only possibility is 'Bazin'.
         spec_SNR: float (optional)
@@ -545,10 +557,11 @@ class PLAsTiCCPhotometry:
             Any input required by ExpTimeCalc.findexptime function.
         """
         self._verify_telescope_names(tel_names, get_cost)
-        self._verify_features_method(feature_method)
+        self._verify_features_method(feature_extractor)
         self._number_of_telescopes = len(tel_names)
 
-        light_curve_data = self._load_plasticc_data(raw_data_dir, vol, snid, sample)
+        light_curve_data = self._load_plasticc_data(
+            raw_data_dir, vol, snid, sample, feature_extractor)
         fit_days = np.arange(time_window[0], time_window[1])
 
         if bar:
@@ -610,7 +623,7 @@ class PLAsTiCCPhotometry:
         """
         if not os.path.isfile(features_file_name):
             with open(features_file_name, 'w') as features_file:
-                features_file.write(','.join(self._bazin_header) + '\n')
+                features_file.write(' '.join(self._header) + '\n')
 
     def _maybe_create_daily_feature_files(
             self, time_window: list, output_dir: str, get_cost: bool, 
@@ -651,7 +664,7 @@ class PLAsTiCCPhotometry:
             vol: int = None, queryable_criteria: int = 1,
             days_since_last_obs: int = 2, get_cost: bool = False,
             tel_sizes: list = [4, 8], tel_names: list = ['4m', '8m'],
-            feature_method: str = 'Bazin', spec_SNR: int = 10,
+            feature_extractor: str = 'bazin', spec_SNR: int = 10,
             time_window: list = [0, 1095], sample: str = 'test',
             number_of_processors: int = 1, create_daily_files: bool = False,
             ask_user: bool = True, **kwargs):
@@ -695,9 +708,8 @@ class PLAsTiCCPhotometry:
             Names of the telescopes under consideration for spectroscopy.
             Only used if "get_cost == True".
             Default is ["4m", "8m"].
-        feature_method
+        feature_extractor
             Feature extraction method.
-            Only possibility is 'Bazin'.
         spec_SNR
             SNR required for spectroscopic follow-up. Default is 10.
         time_window
@@ -715,9 +727,9 @@ class PLAsTiCCPhotometry:
         kwargs
             Any input required by ExpTimeCalc.findexptime function.
         """
-        self._set_bazin_header(get_cost=get_cost)
+        self._set_header(get_cost=get_cost)
         self._verify_telescope_names(tel_names, get_cost)
-        self._verify_features_method(feature_method)
+        self._verify_features_method(feature_extractor)
         self._number_of_telescopes = len(tel_names)
         self._kwargs = kwargs
         if create_daily_files:
@@ -755,12 +767,12 @@ class PLAsTiCCPhotometry:
                 json.dump(previous_day_number_of_points, json_file)
 
     def _process_each_snid(
-            self, snid: int, raw_data_dir: str, vol: str, day_of_survey: int,
+            self, snid: int, raw_data_dir: str, vol: int, day_of_survey: int,
             sample: str, get_cost, telescope_names: list,
             queryable_criteria: int, days_since_last_obs: int,
             telescope_sizes: list, spectroscopic_snr: int,
-            previous_day_number_of_points: dict) -> Tuple[
-        Union[str, None], Union[int, None]]:
+            previous_day_number_of_points: dict) -> Tuple[Union[str, None],
+        Union[int, None]]:
         """
         Fits snid light curve for the day of survey and returns features
 
@@ -874,8 +886,10 @@ def _load_previous_day_features(
         return None, {}
     with open(previous_day_file_name, 'r') as file:
         previous_day_features = file.readlines()
-    previous_day_index_mapping = {line.split(",", 1)[0]: index for index, line
-                          in enumerate(previous_day_features)}
+    previous_day_index_mapping = {
+        line.split(" ", 1)[0]: index for index, line in enumerate(
+            previous_day_features)}
+
     return previous_day_features, previous_day_index_mapping
 
 
