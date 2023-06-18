@@ -52,6 +52,7 @@ def bazin(time, a, b, t0, tfall, trise):
         X = np.exp(-(time - t0) / tfall) / (1 + np.exp(-(time - t0) / trise))
         return a * X + b
 
+
 def bazinr(time, a, b, t0, tfall, r):
     """
     A wrapper function for bazin() which replaces trise by r = tfall/trise.
@@ -78,13 +79,14 @@ def bazinr(time, a, b, t0, tfall, r):
 
     """
 
-    trise = tfall/r    
+    trise = tfall / r
     res = bazin(time, a, b, t0, tfall, trise)
-    
+
     if max(res) < 10e10:
         return res
     else:
         return np.array([item if item < 10e10 else 10e10 for item in res])
+
 
 def errfunc(params, time, flux, fluxerr):
     """
@@ -133,50 +135,49 @@ def fit_scipy(time, flux, fluxerr):
     flux = np.asarray(flux)
     imax = flux.argmax()
     flux_max = flux[imax]
-    
+
     # Parameter bounds
     a_bounds = [1.e-3, 10e10]
     b_bounds = [-10e10, 10e10]
-    t0_bounds = [-0.5*time.max(), 1.5*time.max()]
+    t0_bounds = [-0.5 * time.max(), 1.5 * time.max()]
     tfall_bounds = [1.e-3, 10e10]
     r_bounds = [1, 10e10]
 
     # Parameter guess
-    a_guess = 2*flux_max
+    a_guess = 2 * flux_max
     b_guess = 0
     t0_guess = time[imax]
-    
-    tfall_guess = time[imax-2:imax+2].std()/2
+
+    tfall_guess = time[imax - 2:imax + 2].std() / 2
     if np.isnan(tfall_guess):
-        tfall_guess = time[imax-1:imax+1].std()/2
+        tfall_guess = time[imax - 1:imax + 1].std() / 2
         if np.isnan(tfall_guess):
-            tfall_guess=50
-    if tfall_guess<1:
-        tfall_guess=50
+            tfall_guess = 50
+    if tfall_guess < 1:
+        tfall_guess = 50
 
     r_guess = 2
 
     # Clip guesses to stay in bound
-    a_guess = np.clip(a=a_guess,a_min=a_bounds[0],a_max=a_bounds[1])
-    b_guess = np.clip(a=b_guess,a_min=b_bounds[0],a_max=b_bounds[1])
-    t0_guess = np.clip(a=t0_guess,a_min=t0_bounds[0],a_max=t0_bounds[1])
-    tfall_guess = np.clip(a=tfall_guess,a_min=tfall_bounds[0],a_max=tfall_bounds[1])
-    r_guess = np.clip(a=r_guess,a_min=r_bounds[0],a_max=r_bounds[1])
+    a_guess = np.clip(a=a_guess, a_min=a_bounds[0], a_max=a_bounds[1])
+    b_guess = np.clip(a=b_guess, a_min=b_bounds[0], a_max=b_bounds[1])
+    t0_guess = np.clip(a=t0_guess, a_min=t0_bounds[0], a_max=t0_bounds[1])
+    tfall_guess = np.clip(a=tfall_guess, a_min=tfall_bounds[0], a_max=tfall_bounds[1])
+    r_guess = np.clip(a=r_guess, a_min=r_bounds[0], a_max=r_bounds[1])
 
-
-    guess = [a_guess,b_guess,t0_guess,tfall_guess,r_guess]
-
+    guess = [a_guess, b_guess, t0_guess, tfall_guess, r_guess]
 
     bounds = [[a_bounds[0], b_bounds[0], t0_bounds[0], tfall_bounds[0], r_bounds[0]],
               [a_bounds[1], b_bounds[1], t0_bounds[1], tfall_bounds[1], r_bounds[1]]]
-    
-    result = least_squares(errfunc, guess, args=(time, flux, fluxerr), method='trf', loss='linear',bounds=bounds)
-    
-    a_fit,b_fit,t0_fit,tfall_fit,r_fit = result.x
-    trise_fit = tfall_fit/r_fit
-    final_result = np.array([a_fit,b_fit,t0_fit,tfall_fit,trise_fit])
-    
+
+    result = least_squares(errfunc, guess, args=(time, flux, fluxerr), method='trf', loss='linear', bounds=bounds)
+
+    a_fit, b_fit, t0_fit, tfall_fit, r_fit = result.x
+    trise_fit = tfall_fit / r_fit
+    final_result = np.array([a_fit, b_fit, t0_fit, tfall_fit, trise_fit])
+
     return final_result
+
 
 def main():
     return None

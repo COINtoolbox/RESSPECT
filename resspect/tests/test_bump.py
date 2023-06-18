@@ -16,7 +16,7 @@ def test_bump():
     Test the Bump function evaluation.
     """
 
-    from resspect import bump
+    from resspect.utils.bump_utils import bump
     
     time = np.array([0])
     p1 = 0.225
