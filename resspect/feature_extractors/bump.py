@@ -5,9 +5,9 @@
 import matplotlib.pylab as plt
 import numpy as np
 
-from resspect.bump import bump
-from resspect.bump import fit_bump
 from resspect.feature_extractors.light_curve import LightCurve
+from resspect.utils.bump_utils import bump
+from resspect.utils.bump_utils import fit_bump
 
 
 class BumpFeatureExtractor(LightCurve):

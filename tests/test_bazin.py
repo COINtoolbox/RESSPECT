@@ -14,7 +14,7 @@ def test_bazin():
     Test the Bazin function evaluation.
     """
 
-    from resspect import bazin
+    from resspect.utils.bazin_utils import bazin
     
     time = 3
     a = 1
@@ -33,7 +33,8 @@ def test_errfunc():
     Test the error between calculates and observed error.
     """
 
-    from resspect import bazin, errfunc
+    from resspect.utils.bazin_utils import bazin
+    from resspect.utils.bazin_utils import errfunc
     
     # input for bazin
     time = np.arange(0, 50, 3.5)
