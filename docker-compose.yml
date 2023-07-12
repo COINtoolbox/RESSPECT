@@ -1,11 +1,21 @@
 version: '3'
 
 services:
-  ubuntu:
-    container_name: resspect
-    image: ubuntu
+  resspect:
     tty: true
-    command: ["sh", "-c", "echo 'Starting container...';echo 'Updating package lists...';apt update;echo 'Upgrading packages...';apt upgrade -y;tail -f /dev/null;"]
+    container_name: resspect
+    build: ./docker_resspect
+    ports:
+      - "8081:8081"
+    depends_on:
+      - "db"
+    volumes:
+      - type: bind
+        source: ./resspect
+        target: /resspect
+      - type: bind
+        source: ./secrets
+        target: /secrets
     environment:
       - DB_USER=admin
       - DB_PASS=verysecurepassword
@@ -14,9 +24,6 @@ services:
       - DB_NAME=resspectdb
     networks:
       - tom_desc_default
-
-    depends_on:
-      - db
   db:
     container_name: resspectdb
     image: postgres
