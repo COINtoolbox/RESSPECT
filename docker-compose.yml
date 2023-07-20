@@ -26,7 +26,7 @@ services:
       - tom_desc_default
   db:
     container_name: resspectdb
-     image: postgres
+    image: postgres
     networks: 
       - tom_desc_default
     environment:
@@ -36,6 +36,9 @@ services:
       - POSTGRES_DATA_DIR=/docker-entrypoint-initdb.d
     volumes:
       - ./resspectdb.sql:/docker-entrypoint-initdb.d/resspectdb.sql
+      - type: bind
+        source: ./resspect
+        target: /resspect
 
 
 networks:
