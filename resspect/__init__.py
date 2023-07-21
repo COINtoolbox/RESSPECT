@@ -28,14 +28,14 @@ from .metrics import *
 from .query_strategies import *
 from .plot_results import *
 from .snana_fits_to_pd import *
-from .scripts.build_canonical import main as build_canonical
-from .scripts.build_time_domain_snpcc import main as build_time_domain_snpcc
-from .scripts.build_time_domain_plasticc import main as build_time_domain_plasticc
-from .scripts.calculate_cosmology_metric import main as calculate_cosmology_metric
-from .scripts.fit_dataset import main as fit_dataset
-from .scripts.make_metrics_plots import main as make_metrics_plots
-from .scripts.run_loop import main as run_loop
-from .scripts.run_time_domain import main as run_time_domain
+from .scripts.build_canonical import build_canonical as build_canonical
+from .scripts.build_time_domain_snpcc import build_time_domain_snpcc as build_time_domain_snpcc
+from .scripts.build_time_domain_plasticc import build_time_domain_plasticc as build_time_domain_plasticc
+from .scripts.calculate_cosmology_metric import calculate_cosmology_metric as calculate_cosmology_metric
+from .scripts.fit_dataset import fit_dataset as fit_dataset
+from .scripts.make_metrics_plots import make_metrics_plots as make_metrics_plots
+from .scripts.run_loop import run_loop as run_loop
+from .scripts.run_time_domain import run_time_domain as run_time_domain
 from .time_domain_plasticc import *
 from .time_domain_snpcc import *
 from .time_domain_loop import *

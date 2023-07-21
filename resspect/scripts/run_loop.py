@@ -15,14 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ['learn_loop', 'main']
+__all__ = ['learn_loop', 'run_loop']
 
 from resspect.learn_loop import learn_loop
 
 import argparse
 
 
-def main(args):
+def run_loop(args):
     """Command line interface to run the active learning loop.
 
     Parameters
@@ -81,7 +81,7 @@ def main(args):
                training=train, batch=args.batch)
 
 
-if __name__ == '__main__':
+def main():
 
     # get input directory and output file name from user
     parser = argparse.ArgumentParser(description='resspect - '
@@ -118,4 +118,8 @@ if __name__ == '__main__':
 
     from_user = parser.parse_args()
 
-    main(from_user)
+    run_loop(from_user)
+
+
+if __name__ == '__main__':
+    main()

@@ -21,10 +21,10 @@ from resspect.fit_lightcurves import fit_snpcc
 from resspect.fit_lightcurves import fit_resspect
 from resspect.fit_lightcurves import fit_plasticc
 
-__all__ = ['main']
+__all__ = ['fit_dataset']
 
 
-def main(user_choices):
+def fit_dataset(user_choices):
     """Fit the entire sample with the Bazin function.
 
     All results are saved to file.
@@ -91,7 +91,7 @@ def main(user_choices):
     return None
 
 
-if __name__ == '__main__':
+def main():
 
     # get input directory and output file name from user
     parser = argparse.ArgumentParser(description='resspect - Fit Light curves module')
@@ -124,4 +124,8 @@ if __name__ == '__main__':
 
     user_input = parser.parse_args()
 
-    main(user_input)
+    fit_dataset(user_input)
+
+
+if __name__ == '__main__':
+    main()

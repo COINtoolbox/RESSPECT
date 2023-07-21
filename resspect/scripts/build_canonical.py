@@ -19,9 +19,9 @@ import argparse
 
 from resspect.build_snpcc_canonical import *
 
-__all__ = ['main']
+__all__ = ['build_canonical']
 
-def main(user_choices):
+def build_canonical(user_choices):
     """Build canonical sample for SNPCC data set fitted with Bazin features.
 
     Parameters
@@ -83,8 +83,7 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-if __name__ == '__main__':
-
+def main():
     # get input directory and output file name from user
     parser = argparse.ArgumentParser(description='resspect - '
                                                  'Build Canonical module')
@@ -124,4 +123,8 @@ if __name__ == '__main__':
     # get input directory and output file name from user
     from_user = parser.parse_args()
 
-    main(from_user)
+    build_canonical(from_user)
+
+
+if __name__ == '__main__':
+    main()
