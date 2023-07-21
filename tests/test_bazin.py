@@ -8,8 +8,6 @@ import pytest
 
 from pandas import read_csv
 
-from resspect import testing
-
 
 def test_bazin():
     """
@@ -63,13 +61,13 @@ def test_errfunc():
     assert np.all(res > 0)
     
     
-def test_fit_scipy():
+def test_fit_scipy(test_data_path):
     """
     Test the scipy fit to Bazin parametrization.
     """
     from resspect import fit_scipy
     
-    fname = testing.download_data('tests/lc_mjd_flux.csv')
+    fname = test_data_path / 'lc_mjd_flux.csv'
     data = read_csv(fname)
     
     time = data['mjd'].values
