@@ -4,7 +4,7 @@ services:
   resspect:
     tty: true
     container_name: resspect
-    build: ./docker_resspect
+    build: ./
     ports:
       - "8081:8081"
     depends_on:
