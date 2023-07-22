@@ -39,6 +39,11 @@ make_metrics_plots = "resspect.scripts.make_metrics_plots:main"
 run_loop = "resspect.scripts.run_loop:main"
 run_time_domain = "resspect.scripts.run_time_domain:main"
 
+[project.optional-dependencies]
+dev = [
+  "pytest",
+]
+
 [tool.setuptools.packages.find]
 include = ["resspect"]
 
@@ -48,26 +53,11 @@ addopts = ["--pyargs"]
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist =
-    py{37}-{unit}
-skipsdist = true
+envlist = py37
 
 [testenv]
-usedevelop = true
-allowlist_externals = which
-passenv =
-    HOME
-    MPLBACKEND
-deps =
-    -r requirements.txt
-    coverage
-    objgraph
-    pytest-remotedata
+extras = dev
+isolated_build = true
 commands =
-    python --version
-    which python
-    which pip
-    which pytest
-    pip freeze -l
     pytest -s
 """
