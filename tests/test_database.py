@@ -20,19 +20,18 @@ import os
 import pandas as pd
 import pytest
 
-from resspect import testing
 from resspect import DataBase
 
 
-def test_load_bazin_features():
+def test_load_bazin_features(test_data_path):
     """Test loading Bazin features."""
     
     # test full light curve case
-    fname1 = testing.download_data("tests/Bazin_SNPCC1.dat")
+    fname1 = test_data_path / "Bazin_SNPCC1.dat"
     
     data1 = DataBase()
-    data1.load_bazin_features(path_to_bazin_file=fname1, 
-                             screen=True, survey='DES', sample=None)
+    data1.load_features(path_to_file=fname1,
+                        screen=True, survey='DES', sample=None, feature_extractor='bazin')
     
     # read data independently
     data_temp1 = pd.read_csv(fname1, sep=" ")        
@@ -43,11 +42,11 @@ def test_load_bazin_features():
     queryable1 = 'queryable' in data1.metadata_names
     
     # test time domain case
-    fname2 = testing.download_data('tests/day_20.dat')
+    fname2 = test_data_path / 'day_20.dat'
     
     data2 = DataBase()
-    data2.load_bazin_features(path_to_bazin_file=fname2, screen=True,
-                              survey='DES', sample=None)
+    data2.load_features(path_to_file=fname2, screen=True,
+                        survey='DES', sample=None, feature_extractor='bazin')
                               
     data_temp2 = pd.read_csv(fname2)
     

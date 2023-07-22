@@ -39,8 +39,25 @@ make_metrics_plots = "resspect.scripts.make_metrics_plots:main"
 run_loop = "resspect.scripts.run_loop:main"
 run_time_domain = "resspect.scripts.run_time_domain:main"
 
+[project.optional-dependencies]
+dev = [
+  "pytest",
+]
+
 [tool.setuptools.packages.find]
 include = ["resspect"]
 
 [tool.pytest]
 addopts = ["--pyargs"]
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py38
+
+[testenv]
+extras = dev
+isolated_build = true
+commands =
+    pytest -s
+"""

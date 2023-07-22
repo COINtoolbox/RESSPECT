@@ -16,28 +16,38 @@
 # limitations under the License.
 
 import numpy as np
-import os
 import pytest
 
-from resspect import testing
-from resspect.fit_lightcurves import LightCurve
+from resspect.feature_extractors.light_curve import LightCurve
+from resspect.feature_extractors.bazin import BazinFeatureExtractor
 
 
 @pytest.fixture(scope='function')
-def input_lc():
+def input_lc(test_data_path):
     """ Read an SNPCC light curve. """
 
-    path_to_lc = testing.download_data("tests/DES_SN848233.DAT")
+    path_to_lc = test_data_path / "DES_SN848233.DAT"
     lc = LightCurve()
-    lc.load_snpcc_lc(path_to_lc)
+    lc.load_snpcc_lc(str(path_to_lc))
     
     return lc
 
 
-def test_load_snpcc_lc():
+@pytest.fixture(scope='function')
+def input_bazin_lc(test_data_path):
+    """ Read an SNPCC light curve. """
+
+    path_to_lc = test_data_path / "DES_SN848233.DAT"
+    lc = BazinFeatureExtractor()
+    lc.load_snpcc_lc(str(path_to_lc))
+
+    return lc
+
+
+def test_load_snpcc_lc(test_data_path):
     """ Test loading a light curve from SNPCC data. """
 
-    path_to_lc = testing.download_data("tests/DES_SN848233.DAT")
+    path_to_lc = test_data_path / "DES_SN848233.DAT"
 
     lc = LightCurve()
     lc.load_snpcc_lc(path_to_lc)
@@ -49,24 +59,24 @@ def test_load_snpcc_lc():
     assert np.all(header == lc.photometry.keys())
     
 
-def test_load_resspect_lc():
+def test_load_resspect_lc(test_data_path):
     """ Test loading a light curve from RESSPECT sims. """
     
-    path_to_lc = testing.download_data("tests/RESSPECT_PHOTO.csv.gz")
+    path_to_lc = test_data_path / "RESSPECT_PHOTO.csv.gz"
     lc = LightCurve()
-    lc.load_resspect_lc(path_to_lc, snid=941867)
+    lc.load_resspect_lc(str(path_to_lc), snid=941867)
     
     header = np.array(['mjd', 'band', 'flux', 'fluxerr', 'SNR'])
     
     assert np.all(header == lc.photometry.keys())
     
     
-def test_load_plasticc_lc():
+def test_load_plasticc_lc(test_data_path):
     """ Test loading a light curve from PLAsTiCC. """
     
-    path_to_lc = testing.download_data("tests/plasticc_lightcurves.csv.gz")
+    path_to_lc = test_data_path / "plasticc_lightcurves.csv.gz"
     lc = LightCurve()
-    lc.load_plasticc_lc(path_to_lc, snid=229855)
+    lc.load_plasticc_lc(str(path_to_lc), snid=229855)
     
     header = np.array(['mjd', 'band', 'flux', 'fluxerr', 'detected_bool'])
     
@@ -82,12 +92,12 @@ def test_conv_flux_mag(input_lc):
     assert np.all(mag > 20)
     
 
-def test_check_queryable(input_lc):
+def test_check_queryable(input_bazin_lc):
     """ Test consistency of queryable tests. """
     
-    input_lc.fit_all()
+    input_bazin_lc.fit_all()
     
-    min_mjd = min(input_lc.photometry['mjd'].values) 
+    min_mjd = min(input_bazin_lc.photometry['mjd'].values) 
     epochs = [15, 80]
     
     res = {}
@@ -97,8 +107,8 @@ def test_check_queryable(input_lc):
         for d in epochs:
             res[c][d] = {}  
         
-            for f in input_lc.filters:
-                res[c][d][f] = input_lc.check_queryable(mjd=min_mjd + d,
+            for f in input_bazin_lc.filters:
+                res[c][d][f] = input_bazin_lc.check_queryable(mjd=min_mjd + d,
                                                         filter_lim=24, 
                                                         criteria=c, 
                                                         days_since_last_obs=2,
@@ -111,7 +121,7 @@ def test_check_queryable(input_lc):
             fid[c][d] = {}
     
     for c in range(1, 3):
-        for f in input_lc.filters:
+        for f in input_bazin_lc.filters:
             fid[c][epochs[0]][f] = False
             fid[c][epochs[1]][f] = True
     
@@ -120,7 +130,7 @@ def test_check_queryable(input_lc):
     
     for c in range(1, 3):
         for d in epochs:
-            for f in input_lc.filters:
+            for f in input_bazin_lc.filters:
                 check.append(fid[c][d][f] == res[c][d][f])
                 
     assert np.all(np.array(check))
@@ -140,38 +150,38 @@ def test_calc_exp_time(input_lc):
     assert res > 0
     
     
-def test_fit_bazin(input_lc):
+def test_fit_bazin(input_bazin_lc):
     """ Test bazin fit inside light curve. """
     
-    params = input_lc.fit_bazin(band='r')
+    params = input_bazin_lc.fit(band='r')
     
     assert len(params) == 5
     
     
-def test_fit_bazin_all(input_lc):
+def test_fit_bazin_all(input_bazin_lc):
     """ Test Bazin fit in all filters. """
     
-    input_lc.fit_all()
-    l1 = len(input_lc.features)
-    l2 = len(input_lc.filters) * 5
+    input_bazin_lc.fit_all()
+    l1 = len(input_bazin_lc.features)
+    l2 = len(input_bazin_lc.filters) * 5
     
     assert l1 == l2
     
     
-def test_evaluate_bazin(input_lc):
+def test_evaluate_bazin(input_bazin_lc):
     """ Test if bazin values are non-negative. """
     
-    min_mjd = min(input_lc.photometry['mjd'].values)
-    max_mjd = max(input_lc.photometry['mjd'].values)
+    min_mjd = min(input_bazin_lc.photometry['mjd'].values)
+    max_mjd = max(input_bazin_lc.photometry['mjd'].values)
     
     # generate a grid of times
     t = np.arange(min_mjd, max_mjd, 0.5)
     
-    input_lc.fit_all()
-    flux = input_lc.evaluate_bazin(time=np.random.choice(t, size=5))
+    input_bazin_lc.fit_all()
+    flux = input_bazin_lc.evaluate(time=np.random.choice(t, size=5))
     
     res = []
-    for f in input_lc.filters:
+    for f in input_bazin_lc.filters:
         res = res + flux[f]
     
     res = np.array(res)

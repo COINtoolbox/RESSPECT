@@ -29,7 +29,7 @@ def test_assign_cosmo():
     """
     from resspect import cosmo_metric_utils as cmu
 
-    cosmo = w0waCDM(70, 0.3, 0.7, -0.9, 0.0)
+    cosmo = w0waCDM(70, 0.3, 0.7, -0.9, 0.0, name='w0waCDM')
     updated_cosmo = cmu.assign_cosmo(cosmo, model=[72, 0.29, 0.71, -1, 0.0])
 
     assert int(updated_cosmo.H0.value) == int(72)
