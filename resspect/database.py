@@ -123,8 +123,10 @@ class DataBase:
         Load photometric light curves from file
     load_plasticc_mjd(path_to_data_dir: str)
         Get min and max mjds for PLAsTiCC data
-    load_features(path_to_file: str, method: str)
+    load_features_from_file(path_to_file: str, method: str)
         Load features according to the chosen feature extraction method.
+    load_features(path_to_file: str, method: str)
+        Load features or photometry according to the chosen feature extraction method.
     make_query(strategy: str, batch: int) -> list
         Identify new object to be added to the training sample.
     output_photo_Ia(threshold: float)
@@ -218,7 +220,7 @@ class DataBase:
         self.validation_metadata = pd.DataFrame()
         self.validation_prob = np.array([])
 
-    def load_features(self, path_to_features_file: str, screen=False,
+    def load_features_from_file(self, path_to_features_file: str, screen=False,
                       survey='DES', sample=None, feature_extractor='bazin'):
         """Load features from file.
 
