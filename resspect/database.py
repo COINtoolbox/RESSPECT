@@ -451,7 +451,7 @@ class DataBase:
             self.load_photometry_features(path_to_file, screen=screen,
                                           survey=survey, sample=sample)
         elif feature_extractor in FEATURE_EXTRACTOR_MAPPING:
-            self.load_features(
+            self.load_features_from_file(
                 path_to_file, screen=screen, survey=survey,
                 sample=sample, feature_extractor=feature_extractor)
         else:
