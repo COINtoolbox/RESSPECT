@@ -14,12 +14,12 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 
 RUN pip install --upgrade pip
 
-COPY requirements.txt .
-RUN pip install \
-	--no-cache \
-	--disable-pip-version-check \
-	--requirement requirements.txt && \
-    rm -rf /.cache/pip
+COPY pyproject.toml ./pyproject.toml
+RUN pip install dephell[full] && \
+    dephell deps convert --from=pyproject.toml --to=requirements.txt && \
+    pip install -r requirements.txt && \
+    pip uninstall -y dephell && \
+    rm -rf /root/.cache/pip
 
 
 EXPOSE 8081
