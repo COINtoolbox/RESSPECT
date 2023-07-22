@@ -27,7 +27,7 @@ def test_load_bazin_features(test_data_path):
     """Test loading Bazin features."""
     
     # test full light curve case
-    fname1 = test_data_path / "Bazin_SNPCC1.dat"
+    fname1 = str(test_data_path / "Bazin_SNPCC1.dat") 
     
     data1 = DataBase()
     data1.load_features(path_to_file=fname1,
@@ -42,7 +42,7 @@ def test_load_bazin_features(test_data_path):
     queryable1 = 'queryable' in data1.metadata_names
     
     # test time domain case
-    fname2 = test_data_path / 'day_20.dat'
+    fname2 = str(test_data_path / 'day_20.dat')
     
     data2 = DataBase()
     data2.load_features(path_to_file=fname2, screen=True,
