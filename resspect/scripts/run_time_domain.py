@@ -15,14 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ['main']
+__all__ = ['run_time_domain']
 
 import argparse
 
 from resspect.time_domain_loop import time_domain_loop
 
 
-def main(user_choice):
+def run_time_domain(user_choice):
     """Command line interface to the Time Domain Active Learning scenario.
 
     Parameters
@@ -111,7 +111,7 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-if __name__ == '__main__':
+def main():
 
     # get input directory and output file name from user
     parser = argparse.ArgumentParser(description='resspect - '
@@ -160,4 +160,8 @@ if __name__ == '__main__':
 
     from_user = parser.parse_args()
 
-    main(from_user)
+    run_time_domain(from_user)
+
+
+if __name__ == '__main__':
+    main()

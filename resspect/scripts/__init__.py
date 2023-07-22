@@ -15,14 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .build_canonical import main as build_canonical
-from .build_time_domain_snpcc import main as build_time_domain_snpcc
-from .build_time_domain_plasticc import main as build_time_domain_plasticc
-from .calculate_cosmology_metric import main as calculate_cosmology_metric
-from .fit_dataset import main as fit_dataset
-from .make_metrics_plots import main as make_metrics_plots
-from .run_loop import main as run_loop
-from .run_time_domain import main as run_time_domain
+from .build_canonical import build_canonical
+from .build_time_domain_snpcc import build_time_domain_snpcc
+from .build_time_domain_plasticc import build_time_domain_plasticc
+from .calculate_cosmology_metric import calculate_cosmology_metric
+from .fit_dataset import fit_dataset
+from .make_metrics_plots import make_metrics_plots
+from .run_loop import run_loop
+from .run_time_domain import run_time_domain
 
 
 __all__ = ['build_canonical',

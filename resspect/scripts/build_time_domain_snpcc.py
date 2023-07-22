@@ -19,10 +19,10 @@ import argparse
 
 from resspect.time_domain_snpcc import SNPCCPhotometry
 
-__all__ = ['main']
+__all__ = ['build_time_domain_snpcc']
 
 
-def main(user_choice):
+def build_time_domain_snpcc(user_choice):
     """Generates features files for a list of days of the survey.
 
     Parameters
@@ -80,7 +80,7 @@ def main(user_choice):
                              tel_names=tel_names, spec_SNR=spec_SNR)
 
 
-if __name__ == '__main__':
+def main():
     # get input directory and output file name from user
     parser = argparse.ArgumentParser(description='resspect - '
                                                  'Prepare Time Domain module')
@@ -122,4 +122,8 @@ if __name__ == '__main__':
     # get input directory and output file name from user
     from_user = parser.parse_args()
 
-    main(from_user)
+    build_time_domain_snpcc(from_user)
+
+
+if __name__ == '__main__':
+    main()

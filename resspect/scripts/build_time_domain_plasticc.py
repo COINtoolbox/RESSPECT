@@ -20,10 +20,10 @@ import argparse
 from resspect.time_domain_plasticc import PLAsTiCCPhotometry
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 
-__all__ = ['main']
+__all__ = ['build_time_domain_plasticc']
 
 
-def main(user_choice):
+def build_time_domain_plasticc(user_choice):
     """Generates features files for all objects in a metadata file.
     
     Parameters
@@ -145,7 +145,7 @@ def main(user_choice):
                           spec_SNR=spec_SNR, 
                           time_window=time_window, sample=sample)
     
-if __name__ == '__main__':
+def main():
     # get input directory and output file name from user
     parser = argparse.ArgumentParser(description='resspect - '
                                                  'Prepare Time Domain PLAsTiCC module')
@@ -200,4 +200,8 @@ if __name__ == '__main__':
     # get input directory and output file name from user
     user_choices = parser.parse_args()
 
-    main(user_choices)
+    build_time_domain_plasticc(user_choices)
+
+
+if __name__ == '__main__':
+    main()
