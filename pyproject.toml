@@ -45,7 +45,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["resspect"]
+include = ["resspect*"]
 
 [tool.pytest]
 addopts = ["--pyargs"]
