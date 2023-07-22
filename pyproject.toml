@@ -53,7 +53,7 @@ addopts = ["--pyargs"]
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py37
+envlist = py38
 
 [testenv]
 extras = dev
