@@ -44,3 +44,30 @@ include = ["resspect"]
 
 [tool.pytest]
 addopts = ["--pyargs"]
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist =
+    py{37}-{unit}
+skipsdist = true
+
+[testenv]
+usedevelop = true
+allowlist_externals = which
+passenv =
+    HOME
+    MPLBACKEND
+deps =
+    -r requirements.txt
+    coverage
+    objgraph
+    pytest-remotedata
+commands =
+    python --version
+    which python
+    which pip
+    which pytest
+    pip freeze -l
+    pytest -s
+"""
