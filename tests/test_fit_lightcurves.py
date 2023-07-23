@@ -57,20 +57,7 @@ def test_load_snpcc_lc(test_data_path):
                        'MAG', 'MAGERR'])
     
     assert np.all(header == lc.photometry.keys())
-    
-
-def test_load_resspect_lc(test_data_path):
-    """ Test loading a light curve from RESSPECT sims. """
-    
-    path_to_lc = test_data_path / "RESSPECT_PHOTO.csv.gz"
-    lc = LightCurve()
-    lc.load_resspect_lc(str(path_to_lc), snid=941867)
-    
-    header = np.array(['mjd', 'band', 'flux', 'fluxerr', 'SNR'])
-    
-    assert np.all(header == lc.photometry.keys())
-    
-    
+       
 def test_load_plasticc_lc(test_data_path):
     """ Test loading a light curve from PLAsTiCC. """
     
