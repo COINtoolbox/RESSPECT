@@ -68,7 +68,8 @@ def write_features_to_output_file(
 def _snpcc_sample_fit(
         file_name: str, path_to_data_dir: str, feature_extractor: str):
     """
-    Reads SNPCC file and performs fit
+    Reads SNPCC file and performs fit.
+    
     Parameters
     ----------
     file_name
@@ -84,6 +85,7 @@ def _snpcc_sample_fit(
     light_curve_data.load_snpcc_lc(
         os.path.join(path_to_data_dir, file_name))
     light_curve_data.fit_all()
+    
     return light_curve_data
 
 

@@ -108,7 +108,7 @@ class LightCurve:
     def __init__(self):
         self.queryable = None
         self.features = []
-        self.features_names = ['p1', 'p2', 'p3', 'time_shift', 'max_flux']
+        #self.features_names = ['p1', 'p2', 'p3', 'time_shift', 'max_flux']
         self.dataset_name = ' '
         self.exp_time = {}
         self.filters = []
@@ -394,8 +394,40 @@ class LightCurve:
     def evaluate(self, time: np.ndarray) -> dict:
         raise NotImplementedError
 
-    def fit(self, band: str) -> np.ndarray:
-        raise NotImplementedError
+    def fit(self, band: str, feature_method='bazin') -> np.ndarray:
+        """Extract features for one filter.
+
+        Parameters
+        ----------
+        band: str
+            Choice of broad band filter
+        feature_method: str (optional)
+            Feature extraction method. Only 'Bazin' is implemented.
+            Default is 'Bazin'.
+
+        Returns
+        -------
+        bazin_param: np.ndarray
+            Best fit parameters for the Bazin function:
+            [a, b, t0, tfall, trise].
+        """
+
+        # build filter flag
+        band_indices = self.photometry['band'] == band
+        if not sum(band_indices) > (len(self.bazin_features_names) - 1):
+            return np.array([])
+
+        # get info for this filter
+        time = self.photometry['mjd'].values[band_indices]
+        flux = self.photometry['flux'].values[band_indices]
+        fluxerr = self.photometry['fluxerr'].values[band_indices]
+
+        if feature_method == 'Bazin':
+            # fit Bazin function
+            bazin_param = fit_scipy(time - time[0], flux, fluxerr)
+            return bazin_param
+        else:
+            raise ValueError('Only Bazin features are implemented!')
 
     def fit_all(self):
         raise NotImplementedError
