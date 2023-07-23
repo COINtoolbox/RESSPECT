@@ -108,7 +108,7 @@ class LightCurve:
     def __init__(self):
         self.queryable = None
         self.features = []
-        self.features_names = ['p1', 'p2', 'p3', 'time_shift', 'max_flux']
+        #self.features_names = ['p1', 'p2', 'p3', 'time_shift', 'max_flux']
         self.dataset_name = ' '
         self.exp_time = {}
         self.filters = []
@@ -390,18 +390,6 @@ class LightCurve:
         else:
             self.exp_time[telescope_name] = 9999
             return 9999
-
-    def evaluate(self, time: np.ndarray) -> dict:
-        raise NotImplementedError
-
-    def fit(self, band: str) -> np.ndarray:
-        raise NotImplementedError
-
-    def fit_all(self):
-        raise NotImplementedError
-
-    def plot_fit(self):
-        raise NotImplementedError
 
     def clear_data(self):
         """ Reset to default values """
