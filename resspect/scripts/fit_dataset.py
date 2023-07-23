@@ -18,7 +18,6 @@
 import argparse
 
 from resspect.fit_lightcurves import fit_snpcc
-from resspect.fit_lightcurves import fit_resspect
 from resspect.fit_lightcurves import fit_plasticc
 
 __all__ = ['fit_dataset']
