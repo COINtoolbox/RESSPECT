@@ -59,8 +59,6 @@ def build_canonical(user_choices):
 
     """
 
-    print(user_choices.compute)
-
     sample = build_snpcc_canonical(path_to_raw_data=user_choices.raw_data_dir,
                                    path_to_features=user_choices.features,
                                    compute=user_choices.compute,
