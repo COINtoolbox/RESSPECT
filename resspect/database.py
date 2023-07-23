@@ -255,9 +255,9 @@ class DataBase:
             tar.close()
 
         else:
-            data = pd.read_csv(path_to_features_file, index_col=False, delim_whitespace=True)
+            data = pd.read_csv(path_to_features_file, index_col=False)
             if 'redshift' not in data.keys():
-                data = pd.read_csv(path_to_features_file, index_col=False, delim_whitespace=True)
+                data = pd.read_csv(path_to_features_file, index_col=False)
 
         # check if queryable is there
         if 'queryable' not in data.keys():
