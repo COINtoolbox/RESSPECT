@@ -28,9 +28,6 @@ from resspect.lightcurves_utils import load_snpcc_photometry_df
 from resspect.lightcurves_utils import get_photometry_with_id_name_and_snid
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
 from resspect.lightcurves_utils import load_plasticc_photometry_df
-from resspect.lightcurves_utils import read_resspect_full_photometry_data
-from resspect.lightcurves_utils import insert_band_column_to_resspect_df
-from resspect.lightcurves_utils import load_resspect_photometry_df
 from resspect.lightcurves_utils import get_snpcc_sntype
 
 
@@ -183,35 +180,6 @@ class LightCurve:
         self.metadata = [self.id, self.redshift, self.sntype, self.sncode, self.sample]
         if photometry_raw.size > 0:
             self.photometry = load_snpcc_photometry_df(photometry_raw, header)
-
-    def load_resspect_lc(self, photo_file: str, snid: int):
-        """
-        Return 1 light curve from RESSPECT simulations.
-
-        Parameters
-        ----------
-        photo_file: str
-            Complete path to light curves file.
-        snid: int
-            Identification number for the desired light curve.
-        """
-
-        self.dataset_name = 'RESSPECT'
-        self.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
-        self.id = snid
-
-        if self.full_photometry.empty:
-            _, self.full_photometry = read_resspect_full_photometry_data(
-                photo_file)
-        id_names_list = ['SNID', 'snid', 'objid', 'id']
-        filtered_photometry, self.id_name = (
-            get_photometry_with_id_name_and_snid(
-                self.full_photometry, id_names_list, snid))
-
-        if not filtered_photometry.empty:
-            filtered_photometry = insert_band_column_to_resspect_df(
-                filtered_photometry, self.filters)
-            self.photometry = load_resspect_photometry_df(filtered_photometry)
 
     def load_plasticc_lc(self, photo_file: str, snid: int):
         """

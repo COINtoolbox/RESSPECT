@@ -39,9 +39,9 @@ def fit_dataset(user_choices):
         Path to directory containing raw data.
         Only used for SNPCC simulations.
     -hd: str (optional)
-        Path to header file. Only used for RESSPECT simulations.
+        Path to header file. Only used for PLASTICC simulations.
     -p: str (optional)
-        Path to photometry file. Only used for RESSPECT simulations.
+        Path to photometry file. Only used for PLASTICC simulations.
     -sp: str or None (optional)
         Sample to be fitted. Options are 'train', 'test' or None.
         Default is None.
@@ -59,7 +59,7 @@ def fit_dataset(user_choices):
 
     >>> fit_dataset.py -s SNPCC -dd <path_to_data_dir> -o <output_file>
 
-    For RESSPECT or PLAsTiCC:
+    For PLAsTiCC:
 
     >>> fit_dataset.py -s <dataset_name> -p <path_to_photo_file> 
              -hd <path_to_header_file> -o <output_file> 
@@ -74,12 +74,6 @@ def fit_dataset(user_choices):
         # fit the entire sample
         fit_snpcc(path_to_data_dir=data_dir, features_file=features_file,
                   number_of_processors=ncores, feature_extractor=user_choices.function)
-    
-    elif user_choices.sim_name == 'RESSPECT':
-        fit_resspect(path_photo_file=user_choices.photo_file,
-                     path_header_file=user_choices.header_file,
-                     output_file=features_file, sample=user_choices.sample,
-                     number_of_processors=ncores)
 
     elif user_choices.sim_name in ['PLAsTiCC', 'PLASTICC', 'plasticc']:
         fit_plasticc(path_photo_file=user_choices.photo_file,
@@ -100,16 +94,16 @@ def main():
                         help='Path to directory holding raw data. Only used for SNPCC',
                         required=False, default=' ')
     parser.add_argument('-hd', '--header', dest='header_file', 
-                        help='Path to header file. Only used for RESSPECT.',
+                        help='Path to header file. Only used for PLASTICC.',
                         required=False, default=' ')
     parser.add_argument('-o', '--output', dest='output', help='Path to output file.', 
                         required=True)
     parser.add_argument('-p', '--photo', dest='photo_file',
-                        help='Path to photometry file. Only used for RESSPECT.',
+                        help='Path to photometry file. Only used for PLASTICC.',
                         required=False, default=' ')
     parser.add_argument('-s', '--simulation', dest='sim_name', 
                         help='Name of simulation (data set). ' + \
-                             'Options are "SNPCC", "RESSPECT" or "PLAsTiCC".',
+                             'Options are "SNPCC" or "PLAsTiCC".',
                         required=True)
     parser.add_argument('-sp', '--sample', dest='sample',
                         help='Sample to be fitted. Options are "train", ' + \
