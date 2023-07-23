@@ -422,7 +422,8 @@ class DataBase:
 
     def load_features(self, path_to_file: str, feature_extractor: str ='bazin',
                       screen=False, survey='DES', sample=None ):
-        """Load features according to the chosen feature extraction method.
+        """
+        Load features according to the chosen feature extraction method.
 
         Populates properties: data, features, feature_list, header
         and header_list.
