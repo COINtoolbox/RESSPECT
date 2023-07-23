@@ -131,10 +131,10 @@ class Canonical:
             if not canonical_input_file:
                 raise ValueError('File not found! Set "calculate = True" '
                                  'to build canonical info file.')
-            self.meta_data = pd.read_csv(canonical_input_file, sep=' ',
+            self.meta_data = pd.read_csv(canonical_input_file,
                                          index_col=False)
         if save:
-            self.meta_data.to_csv(canonical_output_file, sep=' ', index=False)
+            self.meta_data.to_csv(canonical_output_file, index=False)
 
     def get_light_curves_meta_data(self, path_to_rawdata: str) -> list:
         light_cure_files = _get_files_list(path_to_rawdata)
@@ -269,7 +269,7 @@ class Canonical:
             nearest_neighbor_class = NearestNeighbors(
                 n_neighbors=number_of_neighbors,
                 algorithm=nearest_neighbor_algorithm)
-            current_train_sample = train_samples[index].values
+            current_train_sample = train_samples[index]
             nearest_neighbor_indices.append(
                 self._get_nearest_neighbor_indices(nearest_neighbor_class,
                                                    each_test_sample,
@@ -319,10 +319,10 @@ def get_meta_data_from_features(path_to_features: str,
     path_to_features: str
         Complete path to Bazin features files
     features_method: str (optional)
-        Method for feature extraction. Only 'Bazin' is implemented.
+        Method for feature extraction. Only 'bazin' is implemented.
     """
     data = DataBase()
-    data.load_features(path_to_file=path_to_features, method=features_method,
+    data.load_features(path_to_file=path_to_features, feature_extractor=features_method,
                        screen=screen)
     return data
 
@@ -330,7 +330,8 @@ def get_meta_data_from_features(path_to_features: str,
 def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,
                           output_canonical_file: str, output_info_file='',
                           compute=True, save=True, input_info_file='',
-                          features_method='Bazin', screen=False):
+                          features_method='bazin', screen=False,
+                          number_of_neighbors=1):
     """Build canonical sample for SNPCC data.
 
     Parameters
@@ -357,7 +358,9 @@ def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,
         Save simulation metadata information to file.
         Default is True.
     screen: bool (optional)
-            If true, display steps info on screen. Default is False.
+        If true, display steps info on screen. Default is False.
+    number_of_neighbors: int (optional)
+        Number of neighbors in each sample. Default is 1.
 
     Returns
     -------
@@ -376,7 +379,7 @@ def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,
     # identify samples
     sample.snpcc_identify_samples()
     # find neighbors
-    sample.find_neighbors()
+    sample.find_neighbors(number_of_neighbors=number_of_neighbors)
 
     # get metadata from features file
     features_data = get_meta_data_from_features(
@@ -384,16 +387,15 @@ def build_snpcc_canonical(path_to_raw_data: str, path_to_features: str,
     sample.header = features_data.metadata
     # identify new samples
 
-    features_data.metadata["queryable"][
-        features_data.metadata["id"].isin(sample.canonical_ids)] = True
-    features_data.metadata["queryable"][
-        ~features_data.metadata["id"].isin(sample.canonical_ids)] = False
+    flag = features_data.metadata["id"].isin(sample.canonical_ids)
+    for i in range(flag.shape[0]):
+        features_data.metadata.at[i, 'queryable'] = flag[i]
 
     # save to file
     features = pd.DataFrame(features_data.features,
                             columns=features_data.features_names)
     features_data.data = pd.concat([features_data.metadata, features], axis=1)
-    features_data.data.to_csv(output_canonical_file, sep=' ', index=False)
+    features_data.data.to_csv(output_canonical_file, index=False)
 
     # update Canonical object
     sample.canonical_sample = features_data.data

@@ -32,9 +32,9 @@ but composed of different objects.
 
    >>> # define variables
    >>> data_dir = 'data/SIMGEN_PUBLIC_DES/'
-   >>> output_sample_file = 'results/Bazin_SNPCC_canonical.dat'
-   >>> output_metadata_file = 'results/Bazin_metadata.dat'
-   >>> features_file = 'results/Bazin.dat'
+   >>> output_sample_file = 'results/Bazin_SNPCC_canonical.csv'
+   >>> output_metadata_file = 'results/Bazin_metadata.csv'
+   >>> features_file = 'results/Bazin.csv'
 
    >>> sample = build_snpcc_canonical(path_to_raw_data=data_dir, path_to_features=features_file,
    >>>                               output_canonical_file=output_sample_file,
@@ -68,11 +68,8 @@ In the command line, using the same parameters as in the code above, you can do 
     >>>       -o <output file for canonical sample> -p <comparison plot file>
     >>>       -s <if True save metadata to file>
 
-You can check that the file ``results/Bazin_SNPCC_canonical.dat`` is very similar to the original features file.
-The only difference is that now a few of the ``sample`` variables are set to ``queryable``:
-
-.. literalinclude:: images/sample_canonical.dat
- :lines: 1-2, 9-14
+You can check that the file ``results/Bazin_SNPCC_canonical.csv`` is very similar to the original features file.
+The only difference is that now a few of the ``queryable`` column marks the Canonical sample as ``True''.
 
 This means that you can use the :py:mod:`resspect.learn_loop` module in combination with a ``RandomSampling`` strategy but
 reading data from the canonical sample. In this way, at each iteration the code will select a random object from the test sample, 
