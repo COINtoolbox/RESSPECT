@@ -227,14 +227,21 @@ class SNPCCPhotometry:
             Default is [4, 8].
         spectroscopic_snr
             SNR required for spectroscopic follow-up. Default is 10.
-        kwargs
+        kwargs: dict
             Any input required by ExpTimeCalc.findexptime function.
         """
+        local_keys = ['mag', 'SNRin', 'cwl_nm', 'bandpass_nm', 'band', 'airmass', 'skymode',
+                      'skymag', 'nread', 'skyADU', 'fwhm']
+
+        kwargs2 = {}
+        for name in kwargs.keys():
+            kwargs2[name] = kwargs[name]
+        
         for index in range(self._number_of_telescopes):
             light_curve_data.calc_exp_time(
                 telescope_diam=telescope_sizes[index],
                 telescope_name=telescope_names[index],
-                SNR=spectroscopic_snr, **kwargs
+                SNR=spectroscopic_snr, **kwargs2
             )
         return light_curve_data
 
@@ -431,7 +438,9 @@ class SNPCCPhotometry:
         self._number_of_telescopes = len(tel_names)
 
         multi_process = multiprocessing.Pool(number_of_processors)
-        logging.info("Starting SNPCC time domian features extraction...")
+        
+        logging.info("Starting SNPCC time domain features extraction...")
+        
         with open(self._features_file_name, 'a') as snpcc_features_file:
             iterator_list = zip(
                 files_list, repeat(raw_data_dir), repeat(queryable_criteria),
