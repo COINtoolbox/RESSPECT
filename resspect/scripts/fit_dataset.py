@@ -73,7 +73,7 @@ def fit_dataset(user_choices):
     if user_choices.sim_name == 'SNPCC':
         # fit the entire sample
         fit_snpcc(path_to_data_dir=data_dir, features_file=features_file,
-                  number_of_processors=ncores, function=function)
+                  number_of_processors=ncores, function=user_choices.function)
     
     elif user_choices.sim_name == 'RESSPECT':
         fit_resspect(path_photo_file=user_choices.photo_file,
