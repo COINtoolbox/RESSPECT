@@ -420,6 +420,46 @@ class DataBase:
                 print('\n Loaded ', self.test_metadata.shape[0],
                       ' samples! \n')
 
+    def query_db(sample):
+        raise NotImplementedError
+    
+    def load_photometry_from_db(sample=None):
+        # sample can be None, train, validation, pool, test
+        # depending on what kind of dataset is being built by this call
+        # resspect keeps each of these in separate variables
+        # None means that the call to the db determines by itself the split
+        # into subsets, for instance if the DB has already a notion of these
+        # subsets.
+        #
+        # The query returns a table 'data' that must have
+        # - the features for the subset of type 'sample'
+        # - the metadata, with keys id', 'redshift', 'type', 'code',
+        #   'orig_sample', 'queryable', and optionally last_rmag
+        #   and cost_<name> where name is a telescope name
+        
+        d, md = query_db(sample)
+        
+        if sample == None:
+            self.features = d
+            self.metadata = md
+
+        elif sample == 'train':
+            self.train_features = d
+            self.train_metadata = md
+
+        elif sample == 'test':
+            self.test_features = d
+            self.test_metadata = md
+
+        elif sample == 'validation':
+            self.validation_features = d
+            self.validation_metadata = md
+
+        elif sample == 'pool':
+            self.pool_features = d
+            self.pool_metadata = md
+            
+    
     def load_features(self, path_to_file: str, feature_extractor: str ='bazin',
                       screen=False, survey='DES', sample=None ):
         """
@@ -448,7 +488,9 @@ class DataBase:
             else, read independent files for 'train' and 'test'.
             Default is None.
         """
-        if feature_extractor == "photometry":
+        if feature_extractor == "db":
+            self.load_photometry_from_db(sample)
+        elif feature_extractor == "photometry":
             self.load_photometry_features(path_to_file, screen=screen,
                                           survey=survey, sample=sample)
         elif feature_extractor in FEATURE_EXTRACTOR_MAPPING:
