@@ -175,7 +175,7 @@ Dependencies
 
 ``resspect`` was developed under ``Python3``. The complete list of dependencies is given below:
 
- - Python>=3.7
+ - Python>=3.8
  - astropy>4.0
  - matplotlib>=3.1.1
  - numpy>=1.17.0
