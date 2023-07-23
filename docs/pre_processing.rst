@@ -8,7 +8,7 @@ as input to the learning algorithm.
 
 ``resspect`` can handle FITS format data from the RESSPECT project, csv data from the Photometric LSST Astronomical Classification Challenge (`PLAsTiCC <https://zenodo.org/record/2539456#.Xrsk33UzZuQ>`_)  and text-like data from the SuperNova Photometric Classification Challenge (`SNPCC <https://arxiv.org/abs/1008.1024>`_).
 
-
+<!---
 Load 1 light curve: 
 -------------------
 
@@ -247,7 +247,7 @@ For RESSPECT:
    >>> sample = 'train'       
 
    >>> fit_resspect_bazin(photo_file, header_file, output_file, sample=sample)
-
+-->
 
 For PLAsTiCC:
 ^^^^^^^^^^^^^
@@ -286,7 +286,7 @@ The same result can be achieved using the command line:
 .. code-block:: bash
     :linenos:
 
-    # for RESSPECT or PLAsTiCC
+    # for PLAsTiCC
     >>> fit_dataset.py -s <dataset_name> -p <path_to_photo_file> 
              -hd <path_to_header_file> -sp <sample> -o <output_file> 
 

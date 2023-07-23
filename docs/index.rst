@@ -30,7 +30,7 @@ Navigate to a ``working_directory`` where you will store the new virtual environ
 
 .. code-block:: bash
 
-    >>> python3 -m venv resspect
+    >>> python3.10 -m venv resspect
 
 .. hint:: Make sure you deactivate any ``conda`` environment you might have running before moving forward. 
 
@@ -59,7 +59,7 @@ You can now install this package with:
 
 .. code-block:: bash
 
-    (resspect) >>> python setup.py develop
+    (resspect) >>> pip install -e .
 
 .. hint:: You may choose to create your virtual environment within the folder of the repository. If you choose to do this, you must remember to exclude the virtual environment directory from version control using e.g., ``.gitignore``. 
 
@@ -175,7 +175,7 @@ Dependencies
 
 ``resspect`` was developed under ``Python3``. The complete list of dependencies is given below:
 
- - Python>=3.7
+ - Python>=3.8
  - astropy>4.0
  - matplotlib>=3.1.1
  - numpy>=1.17.0

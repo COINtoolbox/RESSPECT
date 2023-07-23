@@ -116,7 +116,7 @@ def fit_snpcc(
     with open(features_file, 'w') as snpcc_features_file:
         # TODO: Current implementation uses bazin features header for
         #  all feature extraction
-        snpcc_features_file.write(' '.join(SNPCC_FEATURES_HEADER) + '\n')
+        snpcc_features_file.write(','.join(SNPCC_FEATURES_HEADER) + '\n')
         
         for light_curve_data in multi_process.starmap(
                 _snpcc_sample_fit, zip(
