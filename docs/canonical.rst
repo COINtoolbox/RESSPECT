@@ -69,10 +69,7 @@ In the command line, using the same parameters as in the code above, you can do 
     >>>       -s <if True save metadata to file>
 
 You can check that the file ``results/Bazin_SNPCC_canonical.csv`` is very similar to the original features file.
-The only difference is that now a few of the ``sample`` variables are set to ``queryable``:
-
-.. literalinclude:: images/sample_canonical.csv
- :lines: 1-2, 6-9
+The only difference is that now a few of the ``queryable`` column marks the Canonical sample as ``True''.
 
 This means that you can use the :py:mod:`resspect.learn_loop` module in combination with a ``RandomSampling`` strategy but
 reading data from the canonical sample. In this way, at each iteration the code will select a random object from the test sample, 
