@@ -110,7 +110,9 @@ Active Learning loop in time domain
 ===================================
 
 Considering that you have previously prepared the time domain data, you can run the active learning loop
-following the same algorithm described in `Ishida et al., 2019 <https://cosmostatistics-initiative.org/portfolio-item/active-learning-for-sn-classification/>`_    by using the :py:mod:`resspect.time_domain_loop` module:
+following the same algorithm described in `Ishida et al., 2019 <https://cosmostatistics-initiative.org/portfolio-item/active-learning-for-sn-classification/>`_    by using the :py:mod:`resspect.time_domain_loop` module.
+
+.. note:: The code below requires a file with features extracted from full light curves from which the initial sample will be drawn.
 
 .. code-block:: python
     :linenos:
@@ -121,8 +123,7 @@ following the same algorithm described in `Ishida et al., 2019 <https://cosmosta
     >>> training = 'original'                           # if int take int number of objects for initial training, 50% being Ia
     >>> strategy = 'UncSampling'                        # learning strategy
     >>> batch = 1                                       # if int, ignore cost per observation, if None find optimal batch size
-    >>> sep_files = False                               # if True, expects train, test and validation samples in separate files
-    >>> budgets = None
+    >>> sep_files = False                               # if True, expects train, test and validation samples in separate filess
     
     >>> path_to_features_dir = 'results/time_domain/'   # folder where the files for each day are stored
     
