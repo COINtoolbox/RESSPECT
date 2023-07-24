@@ -433,7 +433,7 @@ class DataBase:
         #
         # The query returns a table 'data' that must have
         # - the features for the subset of type 'sample'
-        # - the metadata, with keys id', 'redshift', 'type', 'code',
+        # - the metadata, with keys 'id', 'redshift', 'type', 'code',
         #   'orig_sample', 'queryable', and optionally last_rmag
         #   and cost_<name> where name is a telescope name
         
