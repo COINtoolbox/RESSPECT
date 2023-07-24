@@ -39,9 +39,7 @@ def _get_features_to_write(light_curve_data) -> list:
     light_curve_data
         fitted light curve data
     """
-    features_list = [light_curve_data.id, light_curve_data.redshift,
-                     light_curve_data.sntype, light_curve_data.sncode,
-                     light_curve_data.sample]
+    features_list = light_curve_data.metadata
     features_list.extend(light_curve_data.features)
     return features_list
 
@@ -165,6 +163,10 @@ def _resspect_sample_fit(
     light_curve_data.sntype = meta_header[sntype_name][index]
     light_curve_data.sample = sample
     light_curve_data_copy = copy(light_curve_data)
+    light_curve_data_copy.metadata = [light_curve_data.id, light_curve_data.redshift,
+                                      light_curve_data.sntype, light_curve_data.sncode,
+                                      light_curve_data.sample]
+    
     light_curve_data.clear_data()
     return light_curve_data_copy
 
@@ -256,6 +258,10 @@ def _plasticc_sample_fit(
         light_curve_data.sncode]
     light_curve_data.sample = sample
     light_curve_data_copy = copy(light_curve_data)
+    light_curve_data_copy.metadata = [light_curve_data.id, light_curve_data.redshift,
+                                      light_curve_data.sntype, light_curve_data.sncode,
+                                      light_curve_data.sample]
+    
     light_curve_data.clear_data()
     return light_curve_data_copy
 

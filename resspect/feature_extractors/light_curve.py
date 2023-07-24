@@ -180,6 +180,7 @@ class LightCurve:
         photometry_raw, header = self._get_snpcc_photometry_raw_and_header(
             lc_data)
 
+        self.metadata = [self.id, self.redshift, self.sntype, self.sncode, self.sample]
         if photometry_raw.size > 0:
             self.photometry = load_snpcc_photometry_df(photometry_raw, header)
 
