@@ -32,7 +32,7 @@ def load_dataset(file_names_dict: dict, survey_name: str = 'DES',
                  is_separate_files: bool = False, samples_list: list = [None],
                  is_load_build_samples: bool = True,
                  number_of_classes: int = 2,
-                 feature_extraction_method: str = 'Bazin',
+                 feature_extraction_method: str = 'bazin',
                  is_save_samples: bool = False) -> DataBase:
     """
     Reads a data sample from file.
@@ -70,8 +70,8 @@ def load_dataset(file_names_dict: dict, survey_name: str = 'DES',
         Currently only nclass == 2 is implemented.
     feature_extraction_method: str (optional)
         Feature extraction method. The current implementation only
-        accepts method=='Bazin' or 'photometry'.
-        Default is 'Bazin'.
+        accepts method=='bazin' or 'photometry'.
+        Default is 'bazin'.
     is_save_samples: bool (optional)
         If True, save training and test samples to file.
         Default is False.
@@ -84,7 +84,7 @@ def load_dataset(file_names_dict: dict, survey_name: str = 'DES',
     for sample in samples_list:
         database_class.load_features(
             file_names_dict[sample], survey=survey_name, sample=sample,
-            method=feature_extraction_method)
+            feature_extractor=feature_extraction_method)
     if is_load_build_samples:
         database_class.build_samples(
             initial_training=initial_training, nclass=number_of_classes,
@@ -100,7 +100,7 @@ def _load_first_loop_and_full_data(
         initial_training: Union[str, int] = 'original',
         ia_training_fraction: float = 0.5, is_queryable: bool = False,
         is_separate_files: bool = False, number_of_classes: int = 2,
-        feature_extraction_method: str = 'Bazin',
+        feature_extraction_method: str = 'bazin',
         is_save_samples: bool = False) -> Tuple[DataBase, DataBase]:
     """
     Loads first loop and initial light curve training data
@@ -871,16 +871,13 @@ def run_time_domain_active_learning_loop(
     learning_days = [int(each_day) for each_day in learning_days]
     
     # create dictionary with budgets
-    if bool(budgets):
-        if len(budgets) not in [2, len(np.arange(learning_days[0], learning_days[1]))]:
-            raise ValueError('There must be 1 budget per telescope or ' + \
+    if budgets is not None and len(budgets) not in [2, len(np.arange(learning_days[0], learning_days[1]))]:
+        raise ValueError('There must be 1 budget per telescope or ' + \
                             '1 budget per telescope per night!')
-        
-        c = 0
-        budgets_dict = {}
-        for epoch in range(learning_days[0], learning_days[-1] - 1):
-            budgets_dict[epoch] = list(budgets)[c]
-            c = c + 1
+
+    budgets_dict = {}
+    for epoch in range(learning_days[0], learning_days[-1] - 1):
+        budgets_dict[epoch] = budgets
     
     for epoch in progressbar.progressbar(
             range(learning_days[0], learning_days[-1] - 1)):

@@ -122,6 +122,7 @@ following the same algorithm described in `Ishida et al., 2019 <https://cosmosta
     >>> strategy = 'UncSampling'                        # learning strategy
     >>> batch = 1                                       # if int, ignore cost per observation, if None find optimal batch size
     >>> sep_files = False                               # if True, expects train, test and validation samples in separate files
+    >>> budgets = None
     
     >>> path_to_features_dir = 'results/time_domain/'   # folder where the files for each day are stored
     
@@ -148,13 +149,12 @@ following the same algorithm described in `Ishida et al., 2019 <https://cosmosta
     >>>                  output_queried_file=output_query_file, path_to_ini_files=path_to_ini_files,
     >>>                  path_to_features_dir=path_to_features_dir,
     >>>                  strategy=strategy, fname_pattern=fname_pattern, batch=batch, classifier=classifier,
-    >>>                  sep_files=sep_files,
+    >>>                  sep_files=sep_files, budgets=budgets,
     >>>                  screen=screen, initial_training=training,
     >>>                  survey=survey, queryable=queryable, n_estimators=n_estimators)
 
 
-Make sure you check the full documentation of the module to understand which variables are required depending
-on the case you wish to run.
+Make sure you check the full documentation of the module to understand which variables are required depending on the case you wish to run.
 
 More details can be found in the corresponding `docstring <https://github.com/COINtoolbox/resspect/blob/master/resspect/scripts/run_time_domain.py>`_.
 

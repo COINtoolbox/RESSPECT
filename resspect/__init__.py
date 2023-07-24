@@ -25,8 +25,9 @@ from .exposure_time_calculator import *
 from .fit_lightcurves import *
 from .learn_loop import *
 from .metrics import *
-from .query_strategies import *
 from .plot_results import *
+from .query_strategies import *
+from .samples_utils import *
 from .snana_fits_to_pd import *
 from .scripts.build_canonical import build_canonical as build_canonical
 from .scripts.build_time_domain_snpcc import build_time_domain_snpcc as build_time_domain_snpcc
@@ -88,9 +89,11 @@ __all__ = ['accuracy',
            'purity',
            'random_forest',           
            'random_sampling',
+           'read_features_fullLC_samples',
            'read_fits',
            'run_loop',
            'run_time_domain',
+           'sep_samples',
            'SNPCCPhotometry',
            'svm',
            'time_domain_loop',
