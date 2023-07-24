@@ -11,7 +11,7 @@ authors = [
 ]
 license = { text = "GPL-3.0-or-later" }
 dependencies = [
-    "flask==2.1.1",
+    "flask==2.3.2",
     "astropy>=5.2.1",
     "matplotlib>=3.7.0",
     "numpy>=1.24.2",
