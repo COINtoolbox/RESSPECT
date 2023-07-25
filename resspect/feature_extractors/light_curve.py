@@ -18,6 +18,7 @@
 import logging
 from typing import Tuple
 import warnings
+import os
 
 import numpy as np
 import pandas as pd
@@ -121,6 +122,25 @@ class LightCurve:
         self.sncode = 0
         self.sntype = ' '
 
+    @staticmethod
+    def from_file(filename):
+        light_curves = []
+        with open(filename, 'r') as f:
+            for ff in f.readlines():
+                survey, path = ff.split()
+                if not os.path.exists(path):
+                    raise FileNotFoundError('File Not found: '+path)
+                survey = survey.strip().upper()
+                lc = LightCurve()
+                if survey == "SNPCC":
+                    lc.load_snpcc_lc(path)
+                elif survey == "PLASTICC":
+                    lc.load_plasticc_lc(path)
+                else:
+                    raise NameError("survey argument not recognized: "+survey)
+                light_curves.append(lc)
+        return light_curves
+    
     def _get_snpcc_photometry_raw_and_header(
             self, lc_data: np.ndarray,
             sntype_test_value: str = "-9") -> Tuple[np.ndarray, list]:
