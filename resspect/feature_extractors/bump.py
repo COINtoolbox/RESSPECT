@@ -11,8 +11,8 @@ from resspect.feature_extractors.light_curve import LightCurve
 
 
 class BumpFeatureExtractor(LightCurve):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, lc=None):
+        super().__init__(lc)
         self.features_names = ['p1', 'p2', 'p3', 'time_shift', 'max_flux']
 
     def evaluate(self, time: np.array) -> dict:

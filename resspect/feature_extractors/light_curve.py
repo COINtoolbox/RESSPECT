@@ -141,7 +141,7 @@ class LightCurve:
         self.last_mag = lc.last_mag
         self.photometry = lc.photometry
         self.redshift = lc.redshift
-        self.sample = ls.sample
+        self.sample = lc.sample
         self.sim_peakmag = lc.sim_peakmag
         self.sim_pkmjd = lc.sim_pkmjd
         self.sncode = lc.sncode
@@ -166,18 +166,6 @@ class LightCurve:
                 light_curves.append(lc)
         return light_curves
 
-    @staticmethod
-    def compute_feature(feature_type: str, allLC: list) -> list:
-        feature_list = []
-        if feature_type == 'bazin':
-            extractor = BazinFeatureExtractor
-        elif feature_extractor == 'bump':
-            extractor = BumpFeatureExtractor
-        for lc in allLC:
-            ex = extractor(lc)
-            ex.fit_all()
-            feature_list.appen(ex)
-        
     def _get_snpcc_photometry_raw_and_header(
             self, lc_data: np.ndarray,
             sntype_test_value: str = "-9") -> Tuple[np.ndarray, list]:

@@ -43,6 +43,17 @@ FEATURE_EXTRACTOR_MAPPING = {
 }
 
 
+
+def compute_features(feature_type: str, allLC: list) -> list:
+    feature_list = []
+    extractor = FEATURE_EXTRACTOR_MAPPING[feature_type]
+    for lc in allLC:
+        ex = extractor(lc)
+        ex.fit_all()
+        ex.metadata = [ex.id, ex.redshift, ex.sntype, ex.sncode, ex.sample]
+        feature_list.append((ex.metadata, ex.features))
+    return feature_list
+        
 def _get_features_to_write(light_curve_data) -> list:
     """
     Returns features list to write
