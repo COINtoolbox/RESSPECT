@@ -453,7 +453,7 @@ def _save_metrics_and_queried_sample(
                                     '_' + str(current_loop) + '.csv')
     database_class.save_queried_sample(
         output_queried_file_name, loop=current_loop,
-        full_sample=is_save_full_query, epoch=epoch)
+        full_sample=is_save_full_query, epoch=epoch, batch=batch)
 
 
 def _load_next_day_data(

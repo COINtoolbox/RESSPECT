@@ -16,7 +16,7 @@ For start, we can load the feature information:
 
    >>> from resspect import DataBase
 
-   >>> path_to_features_file = 'results/Bazin.dat'
+   >>> path_to_features_file = 'results/Bazin.csv'
 
    >>> data = DataBase()
    >>> data.load_features(path_to_features_file, method='Bazin', screen=True)
@@ -87,9 +87,9 @@ In interactive mode, you must define the required variables and use the :py:mod:
    >>> method = 'Bazin'                               # only option in v1.0
    >>> ml = 'RandomForest'                            # classifier
    >>> strategy = 'RandomSampling'                    # learning strategy
-   >>> input_file = 'results/Bazin.dat'               # input features file
-   >>> metric = 'results/metrics.dat'                 # output metrics file
-   >>> queried = 'results/queried.dat'                # output query file
+   >>> input_file = 'results/Bazin.csv'               # input features file
+   >>> metric = 'results/metrics.csv'                 # output metrics file
+   >>> queried = 'results/queried.csv'                # output query file
    >>> train = 'original'                             # initial training
    >>> batch = 1                                      # size of batch
 
@@ -128,12 +128,12 @@ following the same algorithm described in `Ishida et al., 2019 <https://cosmosta
     >>> path_to_features_dir = 'results/time_domain/'   # folder where the files for each day are stored
     
     >>> output_metrics_file = 'results/metrics_' + strategy + '_' + str(training) + \
-                           '_batch' + str(batch) +  '.dat'                               # output results for metrics
+                           '_batch' + str(batch) +  '.csv'                               # output results for metrics
     >>> output_query_file = 'results/queried_' + strategy + '_' + str(training) + \
-                            '_batch' + str(batch) +  '.dat'                              # output query sample
+                            '_batch' + str(batch) +  '.csv'                              # output query sample
                             
     >>> path_to_ini_files = {}
-    >>> path_to_ini_files['train'] = 'results/Bazin.dat'                                 # features from full light curves for initial training sample 
+    >>> path_to_ini_files['train'] = 'results/Bazin.csv'                                 # features from full light curves for initial training sample 
     >>> survey='DES'
     
     >>> classifier = 'RandomForest'
@@ -141,7 +141,7 @@ following the same algorithm described in `Ishida et al., 2019 <https://cosmosta
     
     >>> feature_method = 'Bazin'
     >>> screen = False                                  # if True will print many intermediate steps for debuging 
-    >>> fname_pattern = ['day_', '.dat']                # pattern on filename where different days of the survey are stored                              
+    >>> fname_pattern = ['day_', '.csv']                # pattern on filename where different days of the survey are stored                              
     >>> queryable= True                                 # if True, check brightness before considering an object queryable
     
 
@@ -177,4 +177,39 @@ The result will be something like the plot below (accounting for variations due 
 Separate samples and Telescope resources
 ----------------------------------------
 
-Beyond the simple learning loop described above, `resspect` also handdles a few batch strategies which take into account the available telescope time for spectroscopic follow-up... TBC
+In a realistic situation, you might like to consider a more complex experiment design. For example, using a fixed validation sample and taking into account the time evolution of the transient and available resources for spectroscopic follow-up. 
+
+The RESSPECT reported an extensive study which takes into account many of the caveats related to realistic astronomical observations. The full report can be found at `Kennamer et al., 2020 <https://cosmostatistics-initiative.org/portfolio-item/resspect1/>`_.
+
+In following the procedure described in `Kennamer et al., 2020 <https://cosmostatistics-initiative.org/portfolio-item/resspect1/>`_, the first step is to separate objects into `train`, `test`, `validation` and `query` samples.
+
+.. code-block:: python
+    :linenos:
+
+    >>> from resspect import sep_samples  
+    >>> from resspect import read_features_fullLC_samples
+
+    >>> # user input
+    >>> path_to_features = 'results/Bazin.csv'
+    >>> output_dir = 'results/'         # output directory where files will be saved
+    >>> n_test_val = 1000               # number of objects in each sample: test and validation
+    >>> n_train = 1500                  # number of objects to be separated for training
+    >>>                                 # this should be big enough to allow tests according
+    >>>                                 # to multiple initial conditions
+
+    >>> # read data and separate samples
+    >>> all_data = pd.read_csv(path_to_features, index_col=False)
+    >>> samples = sep_samples(all_data['id'].values, n_test_val=n_test_val, 
+    >>>                       n_train=n_train)
+
+    >>> # read features and save them to separate files
+    >>> for sample in samples.keys():
+    >>>     output_fname = output_dir + sample + '_bazin.csv'
+    >>>     read_features_fullLC_samples(samples[sample], output_fname,
+                                         path_to_features)
+   
+
+This will save samples to individual files. From these, only the `query` sample needs to be prepared for time domain. 
+
+
+
