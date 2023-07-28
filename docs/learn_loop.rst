@@ -209,7 +209,37 @@ In following the procedure described in `Kennamer et al., 2020 <https://cosmosta
                                          path_to_features)
    
 
-This will save samples to individual files. From these, only the `query` sample needs to be prepared for time domain. 
+This will save samples to individual files. From these, only the `query` sample needs to be prepared for time domain, following instructions in :ref:`Prepare data for Time Domain <prepare_time_domain>`. Once that is done, there is only a few inputs that needs to be changed in the last call of the `time_domain_loop` function. 
+
+.. code-block:: python
+    :linenos:
+
+    >>> sep_files = True         
+    >>> batch = None                            # use telescope time budgets instead of fixed number of queries per loop      
+    >>> budgets = (6. * 3600, 6. * 3600)        # budget of 6 hours per night of observation
+
+    >>> path_to_features_dir = 'results/time_domain/'  # this is the path to the directory where the query sample
+                                                       # processed for time domain is stored
+
+    >>> path_to_ini_files = {}
+    >>> path_to_ini_files['train'] = 'results/train_bazin.csv'       
+    >>> path_to_ini_files['test'] = 'results/test_bazin.csv'
+    >>> path_to_ini_files['validation'] = 'results/val_bazin.csv'
+
+    
+    >>> # run time domain loop
+    >>> time_domain_loop(days=days, output_metrics_file=output_diag_file,
+                         output_queried_file=output_query_file, 
+                         path_to_ini_files=path_to_ini_files,
+                         path_to_features_dir=path_to_features_dir,
+                         strategy=strategy, fname_pattern=fname_pattern, 
+                         batch=batch, classifier=classifier,
+                         sep_files=sep_files, budgets=budgets,
+                         screen=screen, initial_training=training,
+                         survey=survey, queryable=queryable, n_estimators=n_estimators)
+
+
+    
 
 
 
