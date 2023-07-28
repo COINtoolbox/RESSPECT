@@ -24,6 +24,7 @@ __all__ = ['uncertainty_sampling',
            'qbd_entropy']
 
 import numpy as np
+import pandas as pd
 
 
 def compute_entropy(ps: np.array):
@@ -185,8 +186,9 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
                             replace=False)
 
     if queryable:
+        
         # flag only the queryable objects
-        flag = list(pd.Series(data=test_ids[order]).isin(queryable_ids))
+        flag = list(pd.Series(data=test_ids[indx]).isin(queryable_ids))
 
         ini_index = flag.index(True)
 
