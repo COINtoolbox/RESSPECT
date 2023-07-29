@@ -101,7 +101,7 @@ Alternatively you can also run everything from the command line:
 
 .. code-block:: bash
 
-   >>> run_loop.py -i <input features file> -b <batch size> -n <number of loops>
+   >>> run_loop -i <input features file> -b <batch size> -n <number of loops>
    >>>             -m <output metrics file> -q <output queried sample file>
    >>>             -s <learning strategy> -t <choice of initial training>
 
@@ -119,37 +119,52 @@ following the same algorithm described in `Ishida et al., 2019 <https://cosmosta
 
     >>> from resspect import time_domain_loop
     
-    >>> days = [20, 180]                                # first and last day of the survey to be considered
-    >>> training = 'original'                           # if int take int number of objects for initial training, 50% being Ia
+    >>> days = [20, 180]                                # first and last day of the survey
+    >>> training = 'original'                           # if int take int number of objs 
+                                                        # for initial training, 50% being Ia
+
     >>> strategy = 'UncSampling'                        # learning strategy
-    >>> batch = 1                                       # if int, ignore cost per observation, if None find optimal batch size
-    >>> sep_files = False                               # if True, expects train, test and validation samples in separate filess
+    >>> batch = 1                                       # if int, ignore cost per observation, 
+                                                        # if None find optimal batch size
+
+    >>> sep_files = False                               # if True, expects train, test and 
+                                                        # validation samples in separate filess
     
     >>> path_to_features_dir = 'results/time_domain/'   # folder where the files for each day are stored
-    
+
+    >>> # output results for metrics
     >>> output_metrics_file = 'results/metrics_' + strategy + '_' + str(training) + \
-                           '_batch' + str(batch) +  '.csv'                               # output results for metrics
+                           '_batch' + str(batch) +  '.csv'         
+
+    >>> # output query sample
     >>> output_query_file = 'results/queried_' + strategy + '_' + str(training) + \
-                            '_batch' + str(batch) +  '.csv'                              # output query sample
+                            '_batch' + str(batch) +  '.csv'                              
                             
     >>> path_to_ini_files = {}
-    >>> path_to_ini_files['train'] = 'results/Bazin.csv'                                 # features from full light curves for initial training sample 
+
+    >>> # features from full light curves for initial training sample 
+    >>> path_to_ini_files['train'] = 'results/Bazin.csv'
     >>> survey='DES'
-    
+
     >>> classifier = 'RandomForest'
     >>> n_estimators = 1000                             # number of trees in the forest
     
     >>> feature_method = 'Bazin'
-    >>> screen = False                                  # if True will print many intermediate steps for debuging 
-    >>> fname_pattern = ['day_', '.csv']                # pattern on filename where different days of the survey are stored                              
-    >>> queryable= True                                 # if True, check brightness before considering an object queryable
+    >>> screen = False                                  # if True will print many things for debuging 
+    >>> fname_pattern = ['day_', '.csv']                # pattern on filename where different days 
+                                                        # are stored                              
+
+    >>> queryable= True                                 # if True, check brightness before considering 
+                                                        # an object queryable
     
 
     >>> # run time domain loop
     >>> time_domain_loop(days=days, output_metrics_file=output_metrics_file,
-    >>>                  output_queried_file=output_query_file, path_to_ini_files=path_to_ini_files,
+    >>>                  output_queried_file=output_query_file, 
+    >>>                  path_to_ini_files=path_to_ini_files,
     >>>                  path_to_features_dir=path_to_features_dir,
-    >>>                  strategy=strategy, fname_pattern=fname_pattern, batch=batch, classifier=classifier,
+    >>>                  strategy=strategy, fname_pattern=fname_pattern, batch=batch, 
+    >>>                  classifier=classifier,
     >>>                  sep_files=sep_files, budgets=budgets,
     >>>                  screen=screen, initial_training=training,
     >>>                  survey=survey, queryable=queryable, n_estimators=n_estimators)
@@ -215,10 +230,13 @@ This will save samples to individual files. From these, only the `query` sample 
     :linenos:
 
     >>> sep_files = True         
-    >>> batch = None                            # use telescope time budgets instead of fixed number of queries per loop      
+    >>> batch = None                            # use telescope time budgets instead of 
+                                                # fixed number of queries per loop      
+
     >>> budgets = (6. * 3600, 6. * 3600)        # budget of 6 hours per night of observation
 
-    >>> path_to_features_dir = 'results/time_domain/'  # this is the path to the directory where the query sample
+    >>> path_to_features_dir = 'results/time_domain/'  # this is the path to the directory 
+                                                       # where the pool sample
                                                        # processed for time domain is stored
 
     >>> path_to_ini_files = {}
@@ -229,14 +247,14 @@ This will save samples to individual files. From these, only the `query` sample 
     
     >>> # run time domain loop
     >>> time_domain_loop(days=days, output_metrics_file=output_diag_file,
-                         output_queried_file=output_query_file, 
-                         path_to_ini_files=path_to_ini_files,
-                         path_to_features_dir=path_to_features_dir,
-                         strategy=strategy, fname_pattern=fname_pattern, 
-                         batch=batch, classifier=classifier,
-                         sep_files=sep_files, budgets=budgets,
-                         screen=screen, initial_training=training,
-                         survey=survey, queryable=queryable, n_estimators=n_estimators)
+    >>>                  output_queried_file=output_query_file, 
+    >>>                  path_to_ini_files=path_to_ini_files,
+    >>>                  path_to_features_dir=path_to_features_dir,
+    >>>                  strategy=strategy, fname_pattern=fname_pattern, 
+    >>>                  batch=batch, classifier=classifier,
+    >>>                  sep_files=sep_files, budgets=budgets,
+    >>>                  screen=screen, initial_training=training,
+    >>>                  survey=survey, queryable=queryable, n_estimators=n_estimators)
 
 The same result can be achieved using the command line using the `run_time_domain` script:
 
