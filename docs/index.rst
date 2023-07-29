@@ -48,20 +48,11 @@ Next, clone this repository in another chosen location:
 
     (resspect) >>> git clone https://github.com/COINtoolbox/resspect
 
-Navigate to the repository folder and do
-
-.. code-block:: bash
-
-    (resspect) >>> pip install -r requirements.txt
-
-
-You can now install this package with:
+Navigate to the repository folder and you can now install this package with:
 
 .. code-block:: bash
 
     (resspect) >>> pip install -e .
-
-.. hint:: You may choose to create your virtual environment within the folder of the repository. If you choose to do this, you must remember to exclude the virtual environment directory from version control using e.g., ``.gitignore``. 
 
 
 Setting up a working directory
@@ -89,9 +80,6 @@ chosen working directory and unpack the data.
 This data was provided by Rick Kessler, after the publication of results from the
 `SuperNova Photometric Classification Challenge <https://arxiv.org/abs/1008.1024>`_ (SNPCC).
 It allows you to run tests and validate your installation.
-
-
-Data for the RESSPECT project can be found in the COIN server. Check the minutes document for the module you are interested in for information about the exact location.
 
 
 Analysis steps
@@ -163,7 +151,9 @@ Acknowledgements
 
 This work is part of the Recommendation System for Spectroscopic Followup (RESSPECT) project, governed by an inter-collaboration agreement signed between the `Cosmostatistics Initiative (COIN) <https://cosmostatistics-initiative.org/>`_ and the `LSST Dark Energy Science Collaboration (DESC) <https://lsstdesc.org/>`_.
 
-The `COsmostatistics INitiative (COIN) <https://cosmostatistics-initiative.org>`_ receives financial support from `CNRS <http://www.cnrs.fr/>`_ as part of its MOMENTUM programme over the 2018-2020 period, under the project *Active Learning for Large Scale Sky Surveys*.
+The `COsmostatistics INitiative (COIN) <https://cosmostatistics-initiative.org>`_ is an international network of researchers whose goal is to foster interdisciplinarity inspired by Astronomy. 
+
+COIN received financial support from `CNRS <http://www.cnrs.fr/>`_ for the development of this project, as part of its MOMENTUM programme over the 2018-2020 period, under the project *Active Learning for Large Scale Sky Surveys*.
 
 This work would not be possible without intensive consultation to online platforms and
 discussion forums. Although it is not possible to provide a complete list of the open source
