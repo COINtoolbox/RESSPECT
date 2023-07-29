@@ -238,8 +238,15 @@ This will save samples to individual files. From these, only the `query` sample 
                          screen=screen, initial_training=training,
                          survey=survey, queryable=queryable, n_estimators=n_estimators)
 
+The same result can be achieved using the command line using the `run_time_domain` script:
 
+.. code-block:: bash
+    :linenos:
+
+    >>> run_time_domain -d <first day of survey> <last day of survey>
+    >>>        -m <output metrics file> -q <output queried file> -f <features pool sample directory>
+    >>>        -s <learning strategy> -t <training choice>
+    >>>        -fl <path to initial training > -pv <path to validation> -pt <path to test>
     
 
-
-
+.. warning:: Make sure you check the values of the optional variables as well!
