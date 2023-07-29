@@ -64,11 +64,11 @@ class SNPCCPhotometry:
         Get minimum and maximum MJD for complete sample.
     create_daily_file(raw_data_dir: str, day: int, output_dir: str,
                       header: str)
-        Create one file for a given day of the survey.
+        Creates one file for a given day of the survey.
         Only populates the file with header.
         It will erase existing files!
     build_one_epoch(raw_data_dir: str, day_of_survey: int,
-                    time_domain_dir: str, feature_method: str,
+                    time_domain_dir: str, feature_extractor: str,
                     dataset: str)
         Selects objects with observed points until given MJD,
         performs feature extraction and evaluate if query is possible.
@@ -109,7 +109,7 @@ class SNPCCPhotometry:
         """
         maybe_create_directory(output_dir)
         self._features_file_name = os.path.join(
-            output_dir, 'day_' + str(day) + '.dat')
+            output_dir, 'day_' + str(day) + '.csv')
         logging.info('Creating features file')
         with open(self._features_file_name, 'w') as features_file:
             if feature_extractor not in FEATURE_EXTRACTOR_HEADERS_MAPPING:
@@ -120,7 +120,7 @@ class SNPCCPhotometry:
                 self._header = FEATURE_EXTRACTOR_HEADERS_MAPPING[
                     feature_extractor]['snpcc_header_with_cost']
 
-            features_file.write(' '.join(self._header) + '\n')
+            features_file.write(','.join(self._header) + '\n')
 
     def _verify_telescope_names(self, telescope_names: list, get_cost: bool):
         """
@@ -227,14 +227,23 @@ class SNPCCPhotometry:
             Default is [4, 8].
         spectroscopic_snr
             SNR required for spectroscopic follow-up. Default is 10.
-        kwargs
+        kwargs: dict
             Any input required by ExpTimeCalc.findexptime function.
         """
+        local_keys = ['mag', 'SNRin', 'cwl_nm', 'bandpass_nm', 'band', 'airmass', 'skymode',
+                      'skymag', 'nread', 'skyADU', 'fwhm']
+
+        # select input for exposure time calculator
+        kwargs2 = {}
+        for name in kwargs.keys():
+            if name in local_keys:
+                 kwargs2[name] = kwargs[name]
+        
         for index in range(self._number_of_telescopes):
             light_curve_data.calc_exp_time(
                 telescope_diam=telescope_sizes[index],
                 telescope_name=telescope_names[index],
-                SNR=spectroscopic_snr, **kwargs
+                SNR=spectroscopic_snr, **kwargs2
             )
         return light_curve_data
 
@@ -431,7 +440,9 @@ class SNPCCPhotometry:
         self._number_of_telescopes = len(tel_names)
 
         multi_process = multiprocessing.Pool(number_of_processors)
-        logging.info("Starting SNPCC time domian features extraction...")
+        
+        logging.info("Starting SNPCC time domain features extraction...")
+        
         with open(self._features_file_name, 'a') as snpcc_features_file:
             iterator_list = zip(
                 files_list, repeat(raw_data_dir), repeat(queryable_criteria),
@@ -443,7 +454,7 @@ class SNPCCPhotometry:
                     features_to_write = self._get_features_to_write(
                         light_curve_data, get_cost, tel_names)
                     snpcc_features_file.write(
-                        ' '.join(str(each_feature) for each_feature
+                        ','.join(str(each_feature) for each_feature
                                  in features_to_write) + '\n')
         logging.info("Features have been saved to: %s", self._features_file_name)
 

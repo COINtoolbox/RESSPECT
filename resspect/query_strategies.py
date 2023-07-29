@@ -24,6 +24,7 @@ __all__ = ['uncertainty_sampling',
            'qbd_entropy']
 
 import numpy as np
+import pandas as pd
 
 
 def compute_entropy(ps: np.array):
@@ -115,12 +116,7 @@ def uncertainty_sampling(class_prob: np.array, test_ids: np.array,
     order = dist.argsort()
 
     # only allow objects in the query sample to be chosen
-    flag = []
-    for item in order:
-        if test_ids[item] in queryable_ids:
-            flag.append(True)
-        else:
-            flag.append(False)
+    flag = list(pd.Series(data=test_ids[order]).isin(queryable_ids))
 
     # check if there are queryable objects within threshold
     indx = int(len(flag) * query_thre)
@@ -190,13 +186,9 @@ def random_sampling(test_ids: np.array, queryable_ids: np.array,
                             replace=False)
 
     if queryable:
+        
         # flag only the queryable objects
-        flag = []
-        for item in indx:
-            if test_ids[item] in queryable_ids:
-                flag.append(True)
-            else:
-                flag.append(False)
+        flag = list(pd.Series(data=test_ids[indx]).isin(queryable_ids))
 
         ini_index = flag.index(True)
 
@@ -267,12 +259,7 @@ def uncertainty_sampling_entropy(class_prob: np.array, test_ids: np.array,
     order = entropies.argsort()[::-1]
 
     # only allow objects in the query sample to be chosen
-    flag = []
-    for item in order:
-        if test_ids[item] in queryable_ids:
-            flag.append(True)
-        else:
-            flag.append(False)
+    flag = list(pd.Series(data=test_ids[order]).isin(queryable_ids))
 
     # check if there are queryable objects within threshold
     indx = int(len(flag) * query_thre)
@@ -338,12 +325,7 @@ def uncertainty_sampling_least_confident(class_prob: np.array, test_ids: np.arra
     order = prob_predicted_class.argsort()
 
     # only allow objects in the query sample to be chosen
-    flag = []
-    for item in order:
-        if test_ids[item] in queryable_ids:
-            flag.append(True)
-        else:
-            flag.append(False)
+    flag = list(pd.Series(data=test_ids[order]).isin(queryable_ids))
 
     # check if there are queryable objects within threshold
     indx = int(len(flag) * query_thre)
@@ -409,12 +391,7 @@ def uncertainty_sampling_margin(class_prob: np.array, test_ids: np.array,
     order = margin.argsort()
 
     # only allow objects in the query sample to be chosen
-    flag = []
-    for item in order:
-        if test_ids[item] in queryable_ids:
-            flag.append(True)
-        else:
-            flag.append(False)
+    flag = list(pd.Series(data=test_ids[order]).isin(queryable_ids))
 
     # check if there are queryable objects within threshold
     indx = int(len(flag) * query_thre)
@@ -481,12 +458,7 @@ def qbd_mi(ensemble_probs: np.array, test_ids: np.array,
     order = mis.argsort()[::-1]
 
     # only allow objects in the query sample to be chosen
-    flag = []
-    for item in order:
-        if test_ids[item] in queryable_ids:
-            flag.append(True)
-        else:
-            flag.append(False)
+    flag = list(pd.Series(data=test_ids[order]).isin(queryable_ids))
 
     # check if there are queryable objects within threshold
     indx = int(len(flag) * query_thre)
@@ -553,12 +525,7 @@ def qbd_entropy(ensemble_probs: np.array, test_ids: np.array,
     order = entropies.argsort()[::-1]
 
     # only allow objects in the query sample to be chosen
-    flag = []
-    for item in order:
-        if test_ids[item] in queryable_ids:
-            flag.append(True)
-        else:
-            flag.append(False)
+    flag = list(pd.Series(data=test_ids[order]).isin(queryable_ids))
 
     # check if there are queryable objects within threshold
     indx = int(len(flag) * query_thre)
