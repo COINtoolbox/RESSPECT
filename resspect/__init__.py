@@ -44,6 +44,11 @@ from .batch_functions import *
 from .query_budget_strategies import *
 from .bump import *
 
+import importlib.metadata
+
+__version__ = importlib.metadata.version("resspect")
+
+
 __all__ = ['accuracy',
            'assign_cosmo',
            'bazin',
