@@ -66,7 +66,7 @@ def test_fit_scipy(test_data_path):
     """
     Test the scipy fit to Bazin parametrization.
     """
-    from resspect import fit_scipy
+    from resspect.utils.bazin_utils import fit_scipy
     
     fname = test_data_path / 'lc_mjd_flux.csv'
     data = read_csv(fname)
