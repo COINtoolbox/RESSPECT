@@ -33,7 +33,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx_rtd_theme',
               'sphinx.ext.autosummary',
               'sphinx.ext.mathjax',
-              'sphinx.ext.napoleon']
+              'sphinx.ext.napoleon',
+              'sphinx_rtd_theme']
               #'sphinx_automodapi.smart_resolver',
               #'sphinx_automodapi.automodapi']
 
