@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .bazin import *
 from .build_plasticc_canonical import *
 from .build_plasticc_metadata import *
 from .build_snpcc_canonical import *
@@ -42,7 +41,6 @@ from .time_domain_snpcc import *
 from .time_domain_loop import *
 from .batch_functions import *
 from .query_budget_strategies import *
-from .bump import *
 
 import importlib.metadata
 
@@ -51,12 +49,10 @@ __version__ = importlib.metadata.version("resspect")
 
 __all__ = ['accuracy',
            'assign_cosmo',
-           'bazin',
            'build_canonical',
            'build_plasticc_canonical',
            'build_plasticc_metadata',
            'build_snpcc_canonical',
-           'bump',
            'calculate_SNR',
            'Canonical',
            'CanonicalPLAsTiCC',

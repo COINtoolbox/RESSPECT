@@ -8,15 +8,13 @@ import pytest
 
 from pandas import read_csv
 
-from resspect import bump, fit_bump
-
-
 def test_bump():
     """
     Test the Bump function evaluation.
     """
 
-
+    from resspect.utils.bump_utils import bump
+    
     time = np.array([0])
     p1 = 0.225
     p2 = -2.5

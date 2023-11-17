@@ -5,9 +5,9 @@
 import matplotlib.pylab as plt
 import numpy as np
 
-from resspect import bazin
-from resspect.bazin import fit_scipy
 from resspect.feature_extractors.light_curve import LightCurve
+from resspect.utils.bazin_utils import bazin
+from resspect.utils.bazin_utils import fit_scipy
 
 __all__ = ['BazinFeatureExtractor']
 
