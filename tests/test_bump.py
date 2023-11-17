@@ -32,6 +32,9 @@ def test_fit_bump(test_data_path):
     """
     Test fit to Bump parametrization.
     """
+    
+    from resspect.utils.bump_utils import fit_bump
+    
     fname = test_data_path / 'lc_mjd_flux.csv'
     data = read_csv(fname)
     
