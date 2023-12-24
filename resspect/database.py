@@ -780,7 +780,7 @@ class DataBase:
     def build_samples(self, initial_training='original', nclass=2,
                       screen=False, Ia_frac=0.5,
                       queryable=False, save_samples=False, sep_files=False,
-                      survey='DES', output_fname=' '):
+                      survey='DES', output_fname=None):
         """Separate train, test and validation samples.
 
         Populate properties: train_features, train_header, test_features,
@@ -841,7 +841,7 @@ class DataBase:
                 print('   From which queryable: ',
                       self.queryable_ids.shape[0], '\n')
 
-        if save_samples:
+        if isinstance(initial_training, int) and output_fname is not None:
 
             full_header = self.metadata_names + self.features_names
             wsample = open(output_fname, 'w')
