@@ -30,6 +30,7 @@ author = 'The RESSPECT team'
 
 master_doc = 'index'
 extensions = ['sphinx.ext.autodoc',
+              'sphinx_rtd_theme',
               'sphinx.ext.autosummary',
               'sphinx.ext.mathjax',
               'sphinx.ext.napoleon']

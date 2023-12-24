@@ -16,7 +16,7 @@ The code has been modify for the task of enabling photometric supernova cosmolog
 Getting started
 ===============
 
-This code was developed for ``Python3`` and was not tested in Windows. 
+This code was developed for ``Python3`` and was not tested in Windows.
 
 We recommend that you work within a `virtual environment <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/>`_.
 
@@ -32,7 +32,7 @@ Navigate to a ``working_directory`` where you will store the new virtual environ
 
     >>> python3.10 -m venv resspect
 
-.. hint:: Make sure you deactivate any ``conda`` environment you might have running before moving forward. 
+.. hint:: Make sure you deactivate any ``conda`` environment you might have running before moving forward.
 
 Once the environment is set up you can activate it:
 
@@ -40,7 +40,7 @@ Once the environment is set up you can activate it:
 
    >>> source <working_directory>/bin/activate
 
-You should see a ``(resspect)`` flag in the extreme left of terminal command line. 
+You should see a ``(resspect)`` flag in the extreme left of terminal command line.
 
 Next, clone this repository in another chosen location:
 
@@ -118,10 +118,11 @@ Details of the tools available to evaluate different steps on feature extraction
 
 Alternatively, you can also perform the full light curve fit for the entire sample from the command line.
 
-If you are only interested in testing your installation you should work with the SNPCC data:  
+If you are only interested in testing your installation you should work with the SNPCC data:
 
 .. code-block:: bash
-    >>> fit_dataset.py -s SNPCC -dd <path_to_data_dir> -o <output_file>
+
+   >>> fit_dataset.py -s SNPCC -dd <path_to_data_dir> -o <output_file>
 
 Once the data has been processed you can apply the full Active Learning loop according to your needs.
 A detail description on how to use this tool is provided in the :ref:`Learning Loop page <learnloop>`.
@@ -151,7 +152,7 @@ Acknowledgements
 
 This work is part of the Recommendation System for Spectroscopic Followup (RESSPECT) project, governed by an inter-collaboration agreement signed between the `Cosmostatistics Initiative (COIN) <https://cosmostatistics-initiative.org/>`_ and the `LSST Dark Energy Science Collaboration (DESC) <https://lsstdesc.org/>`_.
 
-The `COsmostatistics INitiative (COIN) <https://cosmostatistics-initiative.org>`_ is an international network of researchers whose goal is to foster interdisciplinarity inspired by Astronomy. 
+The `COsmostatistics INitiative (COIN) <https://cosmostatistics-initiative.org>`_ is an international network of researchers whose goal is to foster interdisciplinarity inspired by Astronomy.
 
 COIN received financial support from `CNRS <http://www.cnrs.fr/>`_ for the development of this project, as part of its MOMENTUM programme over the 2018-2020 period, under the project *Active Learning for Large Scale Sky Surveys*.
 

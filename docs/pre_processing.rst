@@ -11,9 +11,9 @@ as input to the learning algorithm.
 
 Before starting any analysis, you need to choose a feature extraction method, all light curves will then be handdled by this method. In the examples below we used the Bazin feature extraction method  (`Bazin et al., 2009 <https://arxiv.org/abs/0904.1066>`_ ).
 
-Load 1 light curve: 
+Load 1 light curve:
 -------------------
-    
+
 
 For SNPCC:
 ^^^^^^^^^^
@@ -34,8 +34,8 @@ You can load this data using:
 
    >>> lc = BazinFeatureExtractor()             # create light curve instance
    >>> lc.load_snpcc_lc(path_to_lc)             # read data
-   
-This allows you to visually inspect the content of the light curve:  
+
+This allows you to visually inspect the content of the light curve:
 
 .. code-block:: python
    :linenos:
@@ -51,9 +51,9 @@ This allows you to visually inspect the content of the light curve:
 
 
 Fit 1 light curve:
------------
+------------------
 
-In order to feature extraction in one specific filter, you can do:  
+In order to feature extraction in one specific filter, you can do:
 
 .. code-block:: python
    :linenos:
@@ -94,11 +94,12 @@ This can be done in flux as well as in magnitude:
 
     >>> lc.plot_fit(save=False, show=True, unit='mag')
 
+
 .. figure:: images/SN729076_mag.png
-   :align: center
-   :height: 480 px
-   :width: 640 px
-   :alt: Bazing fit to light curve. This is an example from SNPCC data.
+    :align: center
+    :height: 480 px
+    :width: 640 px
+    :alt: Bazing fit to light curve. This is an example from SNPCC data.
 
     Example of light from SNPCC data.
 
@@ -112,20 +113,20 @@ Before deploying  large batches for pre-processing, you might want to visualize 
 
     >>> # define max MJD for this light curve
     >>> max_mjd = max(lc.photometry['mjd']) - min(lc.photometry['mjd'])
-    
-    >>> lc.plot_fit(save=False, show=True, extrapolate=True, 
+
+    >>> lc.plot_fit(save=False, show=True, extrapolate=True,
                           time_flux_pred=[max_mjd+3, max_mjd+5, max_mjd+10])
 
 
 .. figure:: images/SN729076_flux_extrap.png
-   :align: center
-   :height: 480 px
-   :width: 640 px
-   :alt: Bazing fit to light curve. This is an example from SNPCC data.
+    :align: center
+    :height: 480 px
+    :width: 640 px
+    :alt: Bazing fit to light curve. This is an example from SNPCC data.
 
     Example of extrapolated light from SNPCC data.
-    
-    
+
+
 For PLAsTiCC:
 ^^^^^^^^^^^^^
 
@@ -138,7 +139,7 @@ Reading only 1 light curve from PLAsTiCC requires an object identifier. This can
 
     >>> path_to_metadata = '~/plasticc_train_metadata.csv'
     >>> path_to_lightcurves = '~/plasticc_train_lightcurves.csv.gz'
-    
+
     # read metadata for the entire sample
     >>> metadata = pd.read_csv(path_to_metadata)
 
@@ -151,7 +152,7 @@ Reading only 1 light curve from PLAsTiCC requires an object identifier. This can
            'libid_cadence', 'tflux_u', 'tflux_g', 'tflux_r', 'tflux_i', 'tflux_z',
            'tflux_y'],
          dtype='object')
-    
+
     # choose 1 object
     >>> snid = metadata['object_id'].values[0]
 
@@ -179,7 +180,7 @@ For SNPCC:
    >>> feature_extractor = 'bazin'
 
    >>> fit_snpcc(path_to_data_dir=path_to_data_dir, features_file=features_file)
-   
+
 
 For PLAsTiCC:
 ^^^^^^^^^^^^^
@@ -189,14 +190,14 @@ For PLAsTiCC:
 
    >>> from resspect import fit_plasticc
 
-   >>> path_photo_file = '~/plasticc_train_lightcurves.csv' 
+   >>> path_photo_file = '~/plasticc_train_lightcurves.csv'
    >>> path_header_file = '~/plasticc_train_metadata.csv.gz'
-   >>> output_file = 'results/PLAsTiCC_Bazin_train.dat'  
-   >>> feature_extractor = 'bazin'          
+   >>> output_file = 'results/PLAsTiCC_Bazin_train.dat'
+   >>> feature_extractor = 'bazin'
 
    >>> sample = 'train'
 
-   >>> fit_plasticc(path_photo_file=path_photo_file, 
+   >>> fit_plasticc(path_photo_file=path_photo_file,
                     path_header_file=path_header_file,
                     output_file=output_file,
                     feature_extractor=feature_extractor,
@@ -207,12 +208,11 @@ The same result can be achieved using the command line:
 
 .. code-block:: bash
     :linenos:
-    
+
     # for SNPCC
     >>> fit_dataset -s SNPCC -dd <path_to_data_dir> -o <output_file>
 
     # for PLAsTiCC
-    >>> fit_dataset -s <dataset_name> -p <path_to_photo_file> 
-             -hd <path_to_header_file> -sp <sample> -o <output_file> 
+    >>> fit_dataset -s <dataset_name> -p <path_to_photo_file>
+             -hd <path_to_header_file> -sp <sample> -o <output_file>
 
-    
