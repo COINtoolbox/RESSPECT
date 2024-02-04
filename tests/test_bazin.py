@@ -14,7 +14,7 @@ def test_bazin():
     Test the Bazin function evaluation.
     """
 
-    from resspect import bazin
+    from resspect.utils.bazin_utils import bazin
     
     time = 3
     a = 1
@@ -33,7 +33,8 @@ def test_errfunc():
     Test the error between calculates and observed error.
     """
 
-    from resspect import bazin, errfunc
+    from resspect.utils.bazin_utils import bazin
+    from resspect.utils.bazin_utils import errfunc
     
     # input for bazin
     time = np.arange(0, 50, 3.5)
@@ -65,7 +66,7 @@ def test_fit_scipy(test_data_path):
     """
     Test the scipy fit to Bazin parametrization.
     """
-    from resspect import fit_scipy
+    from resspect.utils.bazin_utils import fit_scipy
     
     fname = test_data_path / 'lc_mjd_flux.csv'
     data = read_csv(fname)

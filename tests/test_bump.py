@@ -8,15 +8,13 @@ import pytest
 
 from pandas import read_csv
 
-from resspect import bump, fit_bump
-
-
 def test_bump():
     """
     Test the Bump function evaluation.
     """
 
-
+    from resspect.utils.bump_utils import bump
+    
     time = np.array([0])
     p1 = 0.225
     p2 = -2.5
@@ -31,6 +29,9 @@ def test_fit_bump(test_data_path):
     """
     Test fit to Bump parametrization.
     """
+    
+    from resspect.utils.bump_utils import fit_bump
+    
     fname = test_data_path / 'lc_mjd_flux.csv'
     data = read_csv(fname)
     
