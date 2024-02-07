@@ -222,7 +222,7 @@ class DataBase:
         self.validation_metadata = pd.DataFrame()
         self.validation_prob = np.array([])
 
-    def load_features(self, path_to_features_file: str, screen=False,
+    def load_features_from_file(self, path_to_features_file: str, screen=False,
                       survey='DES', sample=None, feature_extractor: str='bazin'):
 
         """Load features from file.
