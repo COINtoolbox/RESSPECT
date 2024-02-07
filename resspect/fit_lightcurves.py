@@ -43,6 +43,17 @@ FEATURE_EXTRACTOR_MAPPING = {
 }
 
 
+
+def compute_features(feature_type: str, allLC: list) -> list:
+    feature_list = []
+    extractor = FEATURE_EXTRACTOR_MAPPING[feature_type]
+    for lc in allLC:
+        ex = extractor(lc)
+        ex.fit_all()
+        ex.metadata = [ex.id, ex.redshift, ex.sntype, ex.sncode, ex.sample]
+        feature_list.append((ex.metadata, ex.features))
+    return feature_list
+        
 def _get_features_to_write(light_curve_data) -> list:
     """
     Returns features list to write
@@ -52,9 +63,7 @@ def _get_features_to_write(light_curve_data) -> list:
     light_curve_data
         fitted light curve data
     """
-    features_list = [light_curve_data.id, light_curve_data.redshift,
-                     light_curve_data.sntype, light_curve_data.sncode,
-                     light_curve_data.sample]
+    features_list = light_curve_data.metadata
     features_list.extend(light_curve_data.features)
     return features_list
 
@@ -172,6 +181,10 @@ def _plasticc_sample_fit(
         light_curve_data.sncode]
     light_curve_data.sample = sample
     light_curve_data_copy = copy(light_curve_data)
+    light_curve_data_copy.metadata = [light_curve_data.id, light_curve_data.redshift,
+                                      light_curve_data.sntype, light_curve_data.sncode,
+                                      light_curve_data.sample]
+    
     light_curve_data.clear_data()
     return light_curve_data_copy
 
