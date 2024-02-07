@@ -63,6 +63,22 @@ SNPCC_FEATURES_HEADER = [
     'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztrise'
 ]
 
+SNPCC_MALANCHEV_FEATURES_HEADER = [
+    'id', 'redshift', 'type', 'code', 'orig_sample',
+    'ganderson_darling_normal','ginter_percentile_range_5',
+    'gchi2','gstetson_K','gweighted_mean','gduration', 'gotsu_mean_diff','gotsu_std_lower', 'gotsu_std_upper',
+    'gotsu_lower_to_all_ratio', 'glinear_fit_slope', 'glinear_fit_slope_sigma','glinear_fit_reduced_chi2',
+    'randerson_darling_normal', 'rinter_percentile_range_5',
+    'rchi2', 'rstetson_K', 'rweighted_mean','rduration', 'rotsu_mean_diff','rotsu_std_lower', 'rotsu_std_upper',
+    'rotsu_lower_to_all_ratio', 'rlinear_fit_slope', 'rlinear_fit_slope_sigma','rlinear_fit_reduced_chi2',
+    'ianderson_darling_normal','iinter_percentile_range_5',
+    'ichi2', 'istetson_K', 'iweighted_mean','iduration', 'iotsu_mean_diff','iotsu_std_lower', 'iotsu_std_upper',
+    'iotsu_lower_to_all_ratio', 'ilinear_fit_slope', 'ilinear_fit_slope_sigma','ilinear_fit_reduced_chi2',
+    'zanderson_darling_normal','zinter_percentile_range_5',
+    'zchi2', 'zstetson_K', 'zweighted_mean','zduration', 'zotsu_mean_diff','zotsu_std_lower', 'zotsu_std_upper',
+    'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 'zlinear_fit_slope_sigma','zlinear_fit_reduced_chi2'
+]
+
 PLASTICC_RESSPECT_FEATURES_HEADER = [
     'id', 'redshift', 'type', 'code', 'orig_sample', 'uA', 'uB', 'ut0',
     'utfall', 'utrise', 'gA', 'gB', 'gt0', 'gtfall','gtrise', 'rA', 'rB',
@@ -83,6 +99,36 @@ SNPCC_META_HEADER = ['snid', 'orig_sample', 'sntype', 'z', 'g_pkmag',
 
 SNPCC_CANONICAL_FEATURES = ['z', 'g_pkmag', 'r_pkmag', 'i_pkmag',
                             'z_pkmag', 'g_SNR', 'r_SNR', 'i_SNR', 'z_SNR']
+
+MALANCHEV_HEADERS = {
+    'snpcc_header': ['id', 'redshift', 'type', 'code', 'orig_sample', 'queryable', 'last_rmag',
+        'ganderson_darling_normal', 'ginter_percentile_range_5',
+        'gchi2', 'gstetson_K', 'gweighted_mean', 'gduration', 'gotsu_mean_diff', 'gotsu_std_lower', 'gotsu_std_upper',
+        'gotsu_lower_to_all_ratio', 'glinear_fit_slope', 'glinear_fit_slope_sigma', 'glinear_fit_reduced_chi2',
+        'randerson_darling_normal', 'rinter_percentile_range_5',
+        'rchi2', 'rstetson_K', 'rweighted_mean', 'rduration', 'rotsu_mean_diff', 'rotsu_std_lower', 'rotsu_std_upper',
+        'rotsu_lower_to_all_ratio', 'rlinear_fit_slope', 'rlinear_fit_slope_sigma', 'rlinear_fit_reduced_chi2',
+        'ianderson_darling_normal', 'iinter_percentile_range_5',
+        'ichi2', 'istetson_K', 'iweighted_mean', 'iduration', 'iotsu_mean_diff', 'iotsu_std_lower', 'iotsu_std_upper',
+        'iotsu_lower_to_all_ratio', 'ilinear_fit_slope', 'ilinear_fit_slope_sigma', 'ilinear_fit_reduced_chi2',
+        'zanderson_darling_normal', 'zinter_percentile_range_5',
+        'zchi2', 'zstetson_K', 'zweighted_mean', 'zduration', 'zotsu_mean_diff', 'zotsu_std_lower', 'zotsu_std_upper',
+        'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 'zlinear_fit_slope_sigma', 'zlinear_fit_reduced_chi2'],
+    'snpcc_header_with_cost': ['id', 'redshift', 'type', 'code', 'orig_sample', 'queryable', 'last_rmag',
+        'cost_4m', 'cost_8m',
+        'ganderson_darling_normal', 'ginter_percentile_range_5',
+        'gchi2', 'gstetson_K', 'gweighted_mean', 'gduration', 'gotsu_mean_diff', 'gotsu_std_lower', 'gotsu_std_upper',
+        'gotsu_lower_to_all_ratio', 'glinear_fit_slope', 'glinear_fit_slope_sigma', 'glinear_fit_reduced_chi2',
+        'randerson_darling_normal', 'rinter_percentile_range_5',
+        'rchi2', 'rstetson_K', 'rweighted_mean', 'rduration', 'rotsu_mean_diff', 'rotsu_std_lower', 'rotsu_std_upper',
+        'rotsu_lower_to_all_ratio', 'rlinear_fit_slope', 'rlinear_fit_slope_sigma', 'rlinear_fit_reduced_chi2',
+        'ianderson_darling_normal', 'iinter_percentile_range_5',
+        'ichi2', 'istetson_K', 'iweighted_mean', 'iduration', 'iotsu_mean_diff', 'iotsu_std_lower', 'iotsu_std_upper',
+        'iotsu_lower_to_all_ratio', 'ilinear_fit_slope', 'ilinear_fit_slope_sigma', 'ilinear_fit_reduced_chi2',
+        'zanderson_darling_normal', 'zinter_percentile_range_5',
+        'zchi2', 'zstetson_K', 'zweighted_mean', 'zduration', 'zotsu_mean_diff', 'zotsu_std_lower', 'zotsu_std_upper',
+        'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 'zlinear_fit_slope_sigma', 'zlinear_fit_reduced_chi2']
+}
 
 
 def read_file(file_path: str) -> list:
