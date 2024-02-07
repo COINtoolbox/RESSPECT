@@ -1,6 +1,20 @@
-"""
-    Fit light curves for different datasets
-"""
+# Copyright 2020 resspect software
+# Author: Rupesh Durgesh and Emille Ishida
+#
+# created on 14 April 2022
+#
+# Licensed GNU General Public License v3.0;
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.gnu.org/licenses/gpl-3.0.en.html
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import multiprocessing
 import logging
 import os
@@ -14,14 +28,13 @@ import pandas as pd
 
 from resspect.feature_extractors.bazin import BazinFeatureExtractor
 from resspect.feature_extractors.bump import BumpFeatureExtractor
-from resspect.lightcurves_utils import get_resspect_header_data
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
 from resspect.lightcurves_utils import SNPCC_FEATURES_HEADER
 from resspect.lightcurves_utils import find_available_key_name_in_header
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
 
-__all__ = ["fit_snpcc", "fit_resspect", "fit_plasticc"]
+__all__ = ["fit_snpcc", "fit_plasticc"]
 
 
 FEATURE_EXTRACTOR_MAPPING = {
@@ -68,7 +81,8 @@ def write_features_to_output_file(
 def _snpcc_sample_fit(
         file_name: str, path_to_data_dir: str, feature_extractor: str):
     """
-    Reads SNPCC file and performs fit
+    Reads SNPCC file and performs fit.
+    
     Parameters
     ----------
     file_name
@@ -84,6 +98,7 @@ def _snpcc_sample_fit(
     light_curve_data.load_snpcc_lc(
         os.path.join(path_to_data_dir, file_name))
     light_curve_data.fit_all()
+    
     return light_curve_data
 
 
@@ -116,7 +131,7 @@ def fit_snpcc(
     with open(features_file, 'w') as snpcc_features_file:
         # TODO: Current implementation uses bazin features header for
         #  all feature extraction
-        snpcc_features_file.write(' '.join(SNPCC_FEATURES_HEADER) + '\n')
+        snpcc_features_file.write(','.join(SNPCC_FEATURES_HEADER) + '\n')
         
         for light_curve_data in multi_process.starmap(
                 _snpcc_sample_fit, zip(
@@ -125,103 +140,6 @@ def fit_snpcc(
                 write_features_to_output_file(
                     light_curve_data, snpcc_features_file)
     logging.info("Features have been saved to: %s", features_file)
-
-
-def _resspect_sample_fit(
-        index: int, snid: int, path_photo_file: str,
-        sample: str, light_curve_data, meta_header: pd.DataFrame,
-        redshift_name: Union[str, None], sncode_name: Union[str, None],
-        sntype_name: Union[str, None]):
-    """
-    Performs fit for PLAsTiCC dataset with snid
-
-    Parameters
-    ----------
-    index
-        index of snid
-    snid
-        Identification number for the desired light curve.
-    path_photo_file: str
-        Complete path to light curve file.
-    sample: str
-        'train' or 'test'. Default is None.
-    light_curve_data
-        light curve class
-    meta_header
-        photometry meta header data
-    redshift_name
-        redshift meta header column name
-    sncode_name
-        sncode meta header column name
-    sntype_name
-        sntype meta header column name
-    """
-    light_curve_data.load_resspect_lc(path_photo_file, snid)
-    light_curve_data.fit_all()
-    light_curve_data.redshift = meta_header[redshift_name][index]
-    light_curve_data.sncode = meta_header[sncode_name][index]
-    light_curve_data.sntype = meta_header[sntype_name][index]
-    light_curve_data.sample = sample
-    light_curve_data_copy = copy(light_curve_data)
-    light_curve_data.clear_data()
-    return light_curve_data_copy
-
-
-def fit_resspect(path_photo_file: str, path_header_file: str,
-                 output_file: str, sample=None,
-                 number_of_processors: int = 1,
-                 feature_extractor: str = "bazin"):
-    """Perform fit to all objects in a given RESSPECT data file.
-
-    Parameters
-    ----------
-    path_photo_file: str
-        Complete path to light curve file.
-    path_header_file: str
-        Complete path to header file.
-    output_file: str
-        Output file where the features will be stored.
-    sample: str
-        'train' or 'test'. Default is None.
-    number_of_processors: int, default 1.
-        Number of cpu processes to use
-    feature_extractor: str, default bazin
-        feature extraction method
-    """
-    meta_header = get_resspect_header_data(path_header_file, path_photo_file)
-
-    meta_header_keys = meta_header.keys().tolist()
-    id_name = find_available_key_name_in_header(
-        meta_header_keys, ['SNID', 'snid', 'objid'])
-    z_name = find_available_key_name_in_header(
-        meta_header_keys, ['redshift', 'REDSHIFT_FINAL'])
-    type_name = find_available_key_name_in_header(
-        meta_header_keys, ['type', 'SIM_TYPE_NAME', 'TYPE'])
-    subtype_name = find_available_key_name_in_header(
-        meta_header_keys, ['code', 'SIM_TYPE_INDEX', 'SNTYPE_SUBCLASS'])
-
-    light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
-    snid_values = meta_header[id_name]
-    snid_values = np.array(list(snid_values.items()))
-    multi_process = multiprocessing.Pool(number_of_processors)
-    logging.info("Starting RESSPECT " + feature_extractor + " fit...")
-    with open(output_file, 'w') as ressepect_features_file:
-        # TODO: Current implementation uses bazin features header
-        #  for all feature extraction
-        ressepect_features_file.write(
-            ','.join(PLASTICC_RESSPECT_FEATURES_HEADER) + '\n')
-        iterator_list = zip(
-            snid_values[:, 0].tolist(), snid_values[:, 1].tolist(),
-            repeat(path_photo_file), repeat(sample), repeat(light_curve_data),
-            repeat(meta_header), repeat(z_name), repeat(subtype_name),
-            repeat(type_name))
-        for light_curve_data in multi_process.starmap(
-                _resspect_sample_fit, iterator_list):
-            if 'None' not in light_curve_data.features:
-                write_features_to_output_file(
-                    light_curve_data, ressepect_features_file)
-            light_curve_data.clear_data()
-    logging.info("Features have been saved to: %s", output_file)
 
 
 def _plasticc_sample_fit(

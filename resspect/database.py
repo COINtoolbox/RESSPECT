@@ -123,8 +123,10 @@ class DataBase:
         Load photometric light curves from file
     load_plasticc_mjd(path_to_data_dir: str)
         Get min and max mjds for PLAsTiCC data
-    load_features(path_to_file: str, method: str)
+    load_features_from_file(path_to_file: str, method: str)
         Load features according to the chosen feature extraction method.
+    load_features(path_to_file: str, method: str)
+        Load features or photometry according to the chosen feature extraction method.
     make_query(strategy: str, batch: int) -> list
         Identify new object to be added to the training sample.
     output_photo_Ia(threshold: float)
@@ -218,7 +220,7 @@ class DataBase:
         self.validation_metadata = pd.DataFrame()
         self.validation_prob = np.array([])
 
-    def load_features(self, path_to_features_file: str, screen=False,
+    def load_features_from_file(self, path_to_features_file: str, screen=False,
                       survey='DES', sample=None, feature_extractor='bazin'):
         """Load features from file.
 
@@ -254,8 +256,6 @@ class DataBase:
 
         else:
             data = pd.read_csv(path_to_features_file, index_col=False)
-            if 'redshift' not in data.keys():
-                data = pd.read_csv(path_to_features_file, index_col=False)
 
         # check if queryable is there
         if 'queryable' not in data.keys():
@@ -449,7 +449,7 @@ class DataBase:
             self.load_photometry_features(path_to_file, screen=screen,
                                           survey=survey, sample=sample)
         elif feature_extractor in FEATURE_EXTRACTOR_MAPPING:
-            self.load_features(
+            self.load_features_from_file(
                 path_to_file, screen=screen, survey=survey,
                 sample=sample, feature_extractor=feature_extractor)
         else:
@@ -780,7 +780,7 @@ class DataBase:
     def build_samples(self, initial_training='original', nclass=2,
                       screen=False, Ia_frac=0.5,
                       queryable=False, save_samples=False, sep_files=False,
-                      survey='DES', output_fname=' '):
+                      survey='DES', output_fname=None):
         """Separate train, test and validation samples.
 
         Populate properties: train_features, train_header, test_features,
@@ -841,7 +841,7 @@ class DataBase:
                 print('   From which queryable: ',
                       self.queryable_ids.shape[0], '\n')
 
-        if save_samples:
+        if isinstance(initial_training, int) and output_fname is not None:
 
             full_header = self.metadata_names + self.features_names
             wsample = open(output_fname, 'w')

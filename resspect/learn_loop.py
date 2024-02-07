@@ -32,7 +32,7 @@ def load_features(database_class: DataBase,
                   survey: str, features_method: str, number_of_classes: int,
                   training_method: str, is_queryable: bool,
                   separate_files: bool = False, 
-                  save_samples: bool = False) -> DataBase:
+                  initial_training_samples_file: str = None) -> DataBase:
     """
     Load features according to feature extraction method
 
@@ -65,9 +65,9 @@ def load_features(database_class: DataBase,
     separate_files: bool (optional)
         If True, consider train and test samples separately read
         from independent files. Default is False.
-    save_samples: bool (optional)
-        If True, save training and test samples to file.
-        Default is False.
+    initial_training_samples_file
+        File name to save initial training samples.
+        File will be saved if "training"!="original"
     """
     if isinstance(path_to_features, str):
         database_class.load_features(
@@ -87,7 +87,7 @@ def load_features(database_class: DataBase,
     database_class.build_samples(
         initial_training=training_method, nclass=number_of_classes,
         queryable=is_queryable, sep_files=separate_files, 
-        save_samples=save_samples)
+        output_fname=initial_training_samples_file)
     
     return database_class
 
@@ -328,7 +328,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                bool = False, sep_files=False, pred_dir: str = None,
                queryable: bool = False, metric_label: str = 'snpcc',
                save_alt_class: bool = False, SNANA_types: bool = False,
-               metadata_fname: str = None, bar: bool = True, **kwargs):
+               metadata_fname: str = None, bar: bool = True,
+               initial_training_samples_file: str = None, **kwargs):
     """
     Perform the active learning loop. All results are saved to file.
 
@@ -408,7 +409,10 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         ensuring that at least half are SN Ia
         Default is 'original'.
     bar: bool (optional)
-        If True, display progress bar.     
+        If True, display progress bar.
+    initial_training_samples_file
+        File name to save initial training samples.
+        File will be saved if "training"!="original"  
     kwargs: extra parameters
         All keywords required by the classifier function.
     """
@@ -421,7 +425,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     logging.info('Loading features')
     database_class = load_features(database_class, path_to_features, survey,
                                    features_method, nclass, training, queryable,
-                                   sep_files)
+                                   sep_files, initial_training_samples_file)
     
     logging.info('Running active learning loop')
     

@@ -79,6 +79,7 @@ class BazinFeatureExtractor(LightCurve):
 
         # fit Bazin function
         bazin_param = fit_scipy(time - time[0], flux, flux_error)
+        
         return bazin_param
 
     def fit_all(self):
@@ -137,7 +138,7 @@ class BazinFeatureExtractor(LightCurve):
         ncols = len(self.filters) / 2 + len(self.filters) % 2
         fsize = (figscale * 5 * ncols, figscale * 10)
 
-        plt.figure(figsize=fsize)
+        fig = plt.figure(figsize=fsize)
 
         for i in range(len(self.filters)):
             plt.subplot(2, int(ncols), i + 1)
@@ -215,7 +216,7 @@ class BazinFeatureExtractor(LightCurve):
                 plt.ylabel('mag')
 
             plt.xlabel('days since first observation')
-            plt.tight_layout()
+        fig.tight_layout()
 
         if save:
             plt.savefig(output_file)

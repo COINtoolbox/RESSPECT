@@ -47,14 +47,22 @@ You can perform the entire analysis for one day of the survey using the `SNPCCPh
    >>> day = 20
    >>> queryable_criteria = 2
    >>> get_cost = True
+   >>> feature_extractor = 'bazin'
+   >>> tel_sizes=[4, 8]
+   >>> tel_names = ['4m', '8m']
+   >>> spec_SNR = 10
+   >>> number_of_processors = 5
 
    >>> data = SNPCCPhotometry()
    >>> data.create_daily_file(output_dir=output_dir, day=day,
    >>>                        get_cost=get_cost)
    >>> data.build_one_epoch(raw_data_dir=path_to_data, 
    >>>                      day_of_survey=day, time_domain_dir=output_dir, 
+   >>>                      feature_extractor=feature_extractor,
    >>>                      queryable_criteria=queryable_criteria, 
-   >>>                      get_cost=get_cost)
+   >>>                      get_cost=get_cost, tel_sizes=tel_sizes, 
+   >>>                      tel_names=tel_names, spec_SNR=spec_SNR,  
+   >>>                      number_of_processors=number_of_processors)
 
 
 Alternatively you can use the command line to prepare a sequence of days in one batch:
@@ -62,7 +70,7 @@ Alternatively you can use the command line to prepare a sequence of days in one 
 .. code-block:: bash
 
    >>> build_time_domain_snpcc.py -d 20 21 22 23 -p <path to raw data dir> 
-   >>>        -o <path to output time domain dir> -q 2 -c True
+   >>>        -o <path to output time domain dir> -q 2 -c True -nc 5
 
 For PLASTiCC
 ^^^^^^^^^^^^

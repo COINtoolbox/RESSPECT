@@ -25,8 +25,9 @@ from .exposure_time_calculator import *
 from .fit_lightcurves import *
 from .learn_loop import *
 from .metrics import *
-from .query_strategies import *
 from .plot_results import *
+from .query_strategies import *
+from .samples_utils import *
 from .snana_fits_to_pd import *
 from .scripts.build_canonical import build_canonical as build_canonical
 from .scripts.build_time_domain_snpcc import build_time_domain_snpcc as build_time_domain_snpcc
@@ -42,6 +43,11 @@ from .time_domain_loop import *
 from .batch_functions import *
 from .query_budget_strategies import *
 from .bump import *
+
+import importlib.metadata
+
+__version__ = importlib.metadata.version("resspect")
+
 
 __all__ = ['accuracy',
            'assign_cosmo',
@@ -69,13 +75,11 @@ __all__ = ['accuracy',
            'fit_bump',
            'fit_scipy',
            'fit_snpcc',
-           'fit_plasticc_bazin',
-           'fit_resspect_bazin',
+           'fit_plasticc',
            'fom',
            'get_cosmo_metric',
            'get_snpcc_metric',
            'get_SNR_headers',
-           #'gradient_boosted_trees',
            'knn',
            'learn_loop',
            'load_dataset',
@@ -88,11 +92,13 @@ __all__ = ['accuracy',
            'protected_exponent',
            'protected_sig',
            'purity',
-           'random_forest',           
+           'random_forest',
            'random_sampling',
+           'read_features_fullLC_samples',
            'read_fits',
            'run_loop',
            'run_time_domain',
+           'sep_samples',
            'SNPCCPhotometry',
            'svm',
            'time_domain_loop',
