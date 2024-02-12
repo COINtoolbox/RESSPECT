@@ -28,7 +28,7 @@ You can load this data using:
 .. code-block:: python
    :linenos:
 
-   >>> rom resspect import BazinFeatureExtractor
+   >>> from resspect import BazinFeatureExtractor
 
    >>> path_to_lc = 'data/SIMGEN_PUBLIC_DES/DES_SN729076.DAT'
 
@@ -176,7 +176,7 @@ For SNPCC:
    >>> from resspect import fit_snpcc
 
    >>> path_to_data_dir = 'data/SIMGEN_PUBLIC_DES/'            # raw data directory
-   >>> features_file = 'results/Bazin.dat'                       # output file
+   >>> features_file = 'results/Bazin.csv'                       # output file
    >>> feature_extractor = 'bazin'
 
    >>> fit_snpcc(path_to_data_dir=path_to_data_dir, features_file=features_file)
