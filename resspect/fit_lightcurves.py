@@ -28,8 +28,11 @@ import pandas as pd
 
 from resspect.feature_extractors.bazin import BazinFeatureExtractor
 from resspect.feature_extractors.bump import BumpFeatureExtractor
+from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
+from resspect.lightcurves_utils import get_resspect_header_data
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
 from resspect.lightcurves_utils import SNPCC_FEATURES_HEADER
+from resspect.lightcurves_utils import SNPCC_MALANCHEV_FEATURES_HEADER
 from resspect.lightcurves_utils import find_available_key_name_in_header
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
@@ -39,7 +42,8 @@ __all__ = ["fit_snpcc", "fit_plasticc"]
 
 FEATURE_EXTRACTOR_MAPPING = {
     "bazin": BazinFeatureExtractor,
-    "bump": BumpFeatureExtractor
+    "bump": BumpFeatureExtractor,
+    "malanchev": MalanchevFeatureExtractor
 }
 
 
@@ -92,7 +96,7 @@ def _snpcc_sample_fit(
          one for each light curve.
     feature_extractor
         Function used for feature extraction.
-        Options are 'bazin' or 'bump'.
+        Options are 'bazin', 'bump', or 'malanchev'.
     """
     light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
     light_curve_data.load_snpcc_lc(
@@ -123,15 +127,18 @@ def fit_snpcc(
      feature_extractor: str, default bazin
         Function used for feature extraction.
     """
+    if feature_extractor == 'bazin':
+        header = SNPCC_FEATURES_HEADER
+    elif feature_extractor == 'malanchev':
+        header = SNPCC_MALANCHEV_FEATURES_HEADER
+
     files_list = os.listdir(path_to_data_dir)
     files_list = [each_file for each_file in files_list
                   if each_file.startswith(file_prefix)]
     multi_process = multiprocessing.Pool(number_of_processors)
     logging.info("Starting SNPCC " + feature_extractor + " fit...")
     with open(features_file, 'w') as snpcc_features_file:
-        # TODO: Current implementation uses bazin features header for
-        #  all feature extraction
-        snpcc_features_file.write(','.join(SNPCC_FEATURES_HEADER) + '\n')
+        snpcc_features_file.write(','.join(header) + '\n')
         
         for light_curve_data in multi_process.starmap(
                 _snpcc_sample_fit, zip(

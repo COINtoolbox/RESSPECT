@@ -23,6 +23,7 @@ import tarfile
 from resspect.classifiers import *
 from resspect.feature_extractors.bazin import BazinFeatureExtractor
 from resspect.feature_extractors.bump import BumpFeatureExtractor
+from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
 from resspect.query_strategies import *
 from resspect.query_budget_strategies import *
 from resspect.metrics import get_snpcc_metric
@@ -33,7 +34,8 @@ __all__ = ['DataBase']
 
 FEATURE_EXTRACTOR_MAPPING = {
     "bazin": BazinFeatureExtractor,
-    "bump": BumpFeatureExtractor
+    "bump": BumpFeatureExtractor,
+    "malanchev": MalanchevFeatureExtractor
 }
 
 
@@ -221,7 +223,8 @@ class DataBase:
         self.validation_prob = np.array([])
 
     def load_features_from_file(self, path_to_features_file: str, screen=False,
-                      survey='DES', sample=None, feature_extractor='bazin'):
+                      survey='DES', sample=None, feature_extractor: str='bazin'):
+
         """Load features from file.
 
         Populate properties: features, feature_names, metadata
@@ -242,8 +245,8 @@ class DataBase:
             else, read independent files for 'train' and 'test'.
             Default is None.
         feature_extractor: str (optional)
-            Function used for feature extraction. Options are "bazin" or 
-            "bump". Default is "bump".
+            Function used for feature extraction. Options are "bazin", 
+            "bump", or "malanchev". Default is "bump".
         """
 
         # read matrix with features
@@ -273,6 +276,28 @@ class DataBase:
                                        'rp1', 'rp2', 'rp3', 'rmax_flux', 
                                        'ip1', 'ip2', 'ip3', 'imax_flux', 
                                        'zp1', 'zp2', 'zp3', 'zmax_flux']
+                
+            elif feature_extractor == 'malanchev':
+                self.features_names = ['ganderson_darling_normal','ginter_percentile_range_5',
+                                       'gchi2','gstetson_K','gweighted_mean','gduration', 
+                                       'gotsu_mean_diff','gotsu_std_lower', 'gotsu_std_upper',
+                                       'gotsu_lower_to_all_ratio', 'glinear_fit_slope', 
+                                       'glinear_fit_slope_sigma','glinear_fit_reduced_chi2',
+                                       'randerson_darling_normal', 'rinter_percentile_range_5',
+                                       'rchi2', 'rstetson_K', 'rweighted_mean','rduration', 
+                                       'rotsu_mean_diff','rotsu_std_lower', 'rotsu_std_upper',
+                                       'rotsu_lower_to_all_ratio', 'rlinear_fit_slope', 
+                                       'rlinear_fit_slope_sigma','rlinear_fit_reduced_chi2',
+                                       'ianderson_darling_normal','iinter_percentile_range_5',
+                                       'ichi2', 'istetson_K', 'iweighted_mean','iduration', 
+                                       'iotsu_mean_diff','iotsu_std_lower', 'iotsu_std_upper',
+                                       'iotsu_lower_to_all_ratio', 'ilinear_fit_slope', 
+                                       'ilinear_fit_slope_sigma','ilinear_fit_reduced_chi2',
+                                       'zanderson_darling_normal','zinter_percentile_range_5',
+                                       'zchi2', 'zstetson_K', 'zweighted_mean','zduration', 
+                                       'zotsu_mean_diff','zotsu_std_lower', 'zotsu_std_upper',
+                                       'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 
+                                       'zlinear_fit_slope_sigma','zlinear_fit_reduced_chi2']
 
             self.metadata_names = ['id', 'redshift', 'type', 'code',
                                    'orig_sample', 'queryable']
@@ -431,7 +456,7 @@ class DataBase:
             Complete path to features file.
         feature_extractor: str (optional)
             Feature extraction method. The current implementation only
-            accepts =='bazin', 'bump' or 'photometry'.
+            accepts =='bazin', 'bump', 'malanchev', or 'photometry'.
             Default is 'bazin'.
         screen: bool (optional)
             If True, print on screen number of light curves processed.
@@ -453,7 +478,7 @@ class DataBase:
                 path_to_file, screen=screen, survey=survey,
                 sample=sample, feature_extractor=feature_extractor)
         else:
-            raise ValueError('Only bazin, bump or photometry features are implemented!'
+            raise ValueError('Only bazin, bump, malanchev, or photometry features are implemented!'
                              '\n Feel free to add other options.')
 
     def load_plasticc_mjd(self, path_to_data_dir):

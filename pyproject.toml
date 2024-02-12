@@ -23,6 +23,7 @@ dependencies = [
     "seaborn>=0.12.2",
     "xgboost>=1.7.3",
     "iminuit>=1.20.0",
+    "light_curve>=0.8.1"
 ]
 
 [project.urls]
