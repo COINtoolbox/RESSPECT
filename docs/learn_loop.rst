@@ -149,13 +149,15 @@ following the same algorithm described in `Ishida et al., 2019 <https://cosmosta
     >>> classifier = 'RandomForest'
     >>> n_estimators = 1000                             # number of trees in the forest
     
-    >>> feature_method = 'bazin'
+    >>> feature_extraction_method = 'bazin'
     >>> screen = False                                  # if True will print many things for debuging 
     >>> fname_pattern = ['day_', '.csv']                # pattern on filename where different days 
                                                         # are stored                              
 
     >>> queryable= True                                 # if True, check brightness before considering 
                                                         # an object queryable
+
+    >>> budgets = (6. * 3600, 6. * 3600)        # budget of 6 hours per night of observation
     
 
     >>> # run time domain loop
@@ -167,7 +169,8 @@ following the same algorithm described in `Ishida et al., 2019 <https://cosmosta
     >>>                  classifier=classifier,
     >>>                  sep_files=sep_files, budgets=budgets,
     >>>                  screen=screen, initial_training=training,
-    >>>                  survey=survey, queryable=queryable, n_estimators=n_estimators)
+    >>>                  survey=survey, queryable=queryable, n_estimators=n_estimators,
+    >>>                  feature_extraction_method=feature_extraction_method)
 
 
 Make sure you check the full documentation of the module to understand which variables are required depending on the case you wish to run.
