@@ -236,7 +236,7 @@ class LightCurve:
         return np.array(mag)
 
     def check_queryable(self, mjd: float, filter_lim: float, criteria: int =1,
-                        days_since_last_obs=2, feature_method='Bazin',
+                        days_since_last_obs=2, feature_method: str = 'Bazin',
                         filter_cut='r'):
         """Check if this object can be queried in a given day.
 
@@ -307,7 +307,7 @@ class LightCurve:
                 self.last_mag = self.conv_flux_mag([fitted_flux])[0]
 
             else:
-                raise ValueError('Only "Bazin" features are implemented!')
+                raise ValueError('Only "Bazin" and "malanchev" features are implemented!')
 
         elif sum(surv_flag):
             raise ValueError('Criteria needs to be "1" or "2". \n ' + \

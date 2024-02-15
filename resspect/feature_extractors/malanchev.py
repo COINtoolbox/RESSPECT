@@ -71,8 +71,6 @@ class MalanchevFeatureExtractor(LightCurve):
 
         # build filter flag
         band_indices = self.photometry['band'] == band
-        if not sum(band_indices) > (len(self.features_names) - 1):
-            return np.array([])
 
         extractor = licu.Extractor(licu.AndersonDarlingNormal(),
                                    licu.InterPercentileRange(0.05),

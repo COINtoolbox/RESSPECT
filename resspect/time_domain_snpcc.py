@@ -22,7 +22,9 @@ from itertools import repeat
 
 from resspect.feature_extractors.bazin import BazinFeatureExtractor
 from resspect.feature_extractors.bump import BumpFeatureExtractor
+from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
 from resspect.lightcurves_utils import BAZIN_HEADERS
+from resspect.lightcurves_utils import MALANCHEV_HEADERS
 from resspect.lightcurves_utils import get_files_list
 from resspect.lightcurves_utils import get_query_flags
 from resspect.lightcurves_utils import maybe_create_directory
@@ -34,12 +36,14 @@ __all__ = ['SNPCCPhotometry']
 
 FEATURE_EXTRACTOR_MAPPING = {
     "bazin": BazinFeatureExtractor,
-    "bump": BumpFeatureExtractor
+    "bump": BumpFeatureExtractor,
+    "malanchev": MalanchevFeatureExtractor
 }
 
 
 FEATURE_EXTRACTOR_HEADERS_MAPPING = {
-    "bazin": BAZIN_HEADERS
+    "bazin": BAZIN_HEADERS,
+    "malanchev": MALANCHEV_HEADERS
 }
 
 
@@ -47,7 +51,7 @@ class SNPCCPhotometry:
     """
     Handles photometric information for entire SNPCC data.
 
-    This class only works for Bazin feature extraction method.
+    This class only works for Bazin and Malanchev feature extraction methods.
 
     Attributes
     ----------
@@ -105,7 +109,7 @@ class SNPCCPhotometry:
             If True, calculate cost of taking a spectra in the last
             observed photometric point. Default is False.
         feature_extractor: str
-            Feature extraction method, only possibility is 'Bazin'.
+            Feature extraction method, only possibilities are 'Bazin' and 'malanchev'.
         """
         maybe_create_directory(output_dir)
         self._features_file_name = os.path.join(
@@ -113,7 +117,7 @@ class SNPCCPhotometry:
         logging.info('Creating features file')
         with open(self._features_file_name, 'w') as features_file:
             if feature_extractor not in FEATURE_EXTRACTOR_HEADERS_MAPPING:
-                raise ValueError('Only Bazin headers are supported')
+                raise ValueError('Only Bazin and Malanchev headers are supported')
             self._header = FEATURE_EXTRACTOR_HEADERS_MAPPING[
                 feature_extractor]['snpcc_header']
             if get_cost:
@@ -152,7 +156,7 @@ class SNPCCPhotometry:
         day_of_survey: int
             Day since the beginning of survey.
         feature_extractor: str
-            Feature extraction method, only possibility is 'Bazin'.
+            Feature extraction method, only possibilities are 'Bazin' and 'malanchev'.
         get_cost: bool
            if True, cost of taking a spectra is computed.
         """
@@ -171,13 +175,13 @@ class SNPCCPhotometry:
         dataset_name: str
             name of the dataset used
         feature_extractor: str
-            Feature extraction method, only possibility is 'Bazin'.
+            Feature extraction method, only possibilities are 'Bazin' and 'malanchev'.
         """
         if dataset_name != 'SNPCC':
             raise ValueError('This class supports only SNPCC dataset!')
         # TODO: Update when bump headers are available
-        if feature_extractor != 'bazin':
-            raise ValueError('Only bazin features are implemented!!')
+        if feature_extractor != 'bazin' and feature_extractor!='malanchev':
+            raise ValueError('Only bazin and malanchev features are implemented!!')
 
     def _check_queryable(self, light_curve_data,
                          queryable_criteria: int,
@@ -384,7 +388,7 @@ class SNPCCPhotometry:
         """
         Fit features for all objects with enough points in a given day.
 
-        Generate 1 file containing best-fit Bazin parameters for a given
+        Generate 1 file containing best-fit Bazin or malanchev parameters for a given
         day of the survey.
 
         Parameters
@@ -404,7 +408,7 @@ class SNPCCPhotometry:
             Only used if "queryable_criteria == 2". Default is 2.
         feature_extractor: str (optional)
             Feature extraction method.
-            Only possibility is 'Bazin'.
+            Only possibilities are 'Bazin' or 'malanchev'.
         get_cost: bool (optional)
             If True, calculate cost of taking a spectra in the last
             observed photometric point. Default is False.

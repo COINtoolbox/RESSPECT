@@ -70,7 +70,7 @@ def load_dataset(file_names_dict: dict, survey_name: str = 'DES',
         Currently only nclass == 2 is implemented.
     feature_extraction_method: str (optional)
         Feature extraction method. The current implementation only
-        accepts method=='bazin' or 'photometry'.
+        accepts method=='bazin', 'photometry', or 'malanchev'.
         Default is 'bazin'.
     is_save_samples: bool (optional)
         If True, save training and test samples to file.
@@ -137,10 +137,10 @@ def _load_first_loop_and_full_data(
     number_of_classes
         Number of classes to consider in the classification
         Currently only number_of_classes == 2 is implemented.
-    feature_extraction_method
-        Chosen classifier.
-        The current implementation accepts `RandomForest`,
-        'GradientBoostedTrees', 'KNN', 'MLP', 'SVM' and 'NB'.
+    feature_extraction_method: str (optional)
+        Feature extraction method. The current implementation only
+        accepts method=='bazin', 'photometry', or 'malanchev'.
+        Default is 'bazin'.
     is_save_samples
         If True, save training and test samples to file.
         Default is False.
@@ -151,14 +151,16 @@ def _load_first_loop_and_full_data(
             file_names_dict=first_loop_file_name,
             survey_name=survey_name, is_separate_files=is_separate_files,
             initial_training=0, ia_training_fraction=ia_training_fraction,
-            is_queryable=is_queryable)
+            is_queryable=is_queryable, 
+            feature_extraction_method=feature_extraction_method)
         light_curve_file_name = {None: initial_light_curve_file_name['train']}
         light_curve_data = load_dataset(
             file_names_dict=light_curve_file_name,
             survey_name=survey_name, is_separate_files=is_separate_files,
             initial_training=initial_training,
             ia_training_fraction=ia_training_fraction,
-            is_queryable=is_queryable)
+            is_queryable=is_queryable, 
+            feature_extraction_method=feature_extraction_method)
     else:
         first_loop_file_name = {'pool': first_loop_file_name}
         first_loop_data = load_dataset(
@@ -459,7 +461,7 @@ def _save_metrics_and_queried_sample(
 def _load_next_day_data(
         next_day_features_file_name: str, is_separate_files: bool,
         is_queryable: bool, survey_name: str, ia_training_fraction: float,
-        is_save_samples: bool):
+        is_save_samples: bool, feature_extraction_method: str='bazin'):
     """
     Loads features of next day
 
@@ -488,13 +490,14 @@ def _load_next_day_data(
         next_day_data = load_dataset(
             next_day_features_file_name, survey_name, samples_list=['pool'],
             is_separate_files=is_separate_files, is_queryable=is_queryable,
-            is_save_samples=is_save_samples
-        )
+            is_save_samples=is_save_samples,
+            feature_extraction_method=feature_extraction_method)
     else:
         next_day_features_file_name = {None: next_day_features_file_name}
         next_day_data = load_dataset(
             next_day_features_file_name, survey_name, is_queryable=is_queryable,
-            initial_training=0, ia_training_fraction=ia_training_fraction)
+            initial_training=0, ia_training_fraction=ia_training_fraction,
+            feature_extraction_method=feature_extraction_method)
     return next_day_data
 
 
@@ -724,7 +727,8 @@ def process_next_day_loop(
         is_separate_files: bool, is_queryable: bool, survey_name: str,
         ia_training_fraction: float, id_key_name: str,
         light_curve_train_ids: np.ndarray, is_save_samples: bool,
-        canonical_data: DataBase, strategy: str) -> DataBase:
+        canonical_data: DataBase, strategy: str, 
+        feature_extraction_method: str='bazin') -> DataBase:
     """
     Runs next day active learning loop
 
@@ -759,10 +763,15 @@ def process_next_day_loop(
         Query strategy. Options are (all can be run with budget):
         "UncSampling", "UncSamplingEntropy", "UncSamplingLeastConfident",
         "UncSamplingMargin", "QBDMI", "QBDEntropy", "RandomSampling"
+    feature_extraction_method: str (optional)
+        Feature extraction method. The current implementation only
+        accepts method=='bazin' or 'photometry'.
+        Default is 'bazin'.
     """
     next_day_data = _load_next_day_data(
         next_day_features_file_name, is_separate_files, is_queryable,
-        survey_name, ia_training_fraction, is_save_samples)
+        survey_name, ia_training_fraction, is_save_samples,
+        feature_extraction_method=feature_extraction_method)
     for metadata_value in light_curve_data.train_metadata[id_key_name].values:
         next_day_pool_metadata = next_day_data.pool_metadata[id_key_name].values
         if metadata_value in next_day_pool_metadata:
@@ -800,7 +809,7 @@ def run_time_domain_active_learning_loop(
         light_curve_train_ids: np.ndarray, canonical_data: DataBase,
         is_separate_files: bool, path_to_features_directory: str,
         fname_pattern: list, survey_name: str,  ia_training_fraction: float,
-        is_save_samples: bool, **kwargs: dict):
+        is_save_samples: bool, feature_extraction_method: str='bazin', **kwargs: dict):
     """
     Runs time domain active learning loop
 
@@ -861,6 +870,10 @@ def run_time_domain_active_learning_loop(
     is_save_samples
        If True, save training and test samples to file.
         Default is False.
+    feature_extraction_method: str (optional)
+        Feature extraction method. The current implementation only
+        accepts method=='bazin' or 'photometry'.
+        Default is 'bazin'.
     kwargs
        All keywords required by the classifier function.
 
@@ -900,7 +913,8 @@ def run_time_domain_active_learning_loop(
         light_curve_data = process_next_day_loop(
             light_curve_data, next_day_features_file_name, is_separate_files,
             is_queryable, survey_name,  ia_training_fraction, id_key_name,
-            light_curve_train_ids, is_save_samples, canonical_data, strategy)
+            light_curve_train_ids, is_save_samples, canonical_data, strategy,
+            feature_extraction_method=feature_extraction_method)
 
 
 # TODO: Too many arguments. Refactor and update docs
@@ -915,6 +929,7 @@ def time_domain_loop(days: list, output_metrics_file: str,
                      query_thre: float = 1.0, save_samples: bool = False,
                      sep_files: bool = False, survey: str = 'LSST',
                      initial_training: str = 'original',
+                     feature_extraction_method: str = 'bazin',
                      save_full_query: bool = False, **kwargs):
     """
     Perform the active learning loop. All results are saved to file.
@@ -992,6 +1007,10 @@ def time_domain_loop(days: list, output_metrics_file: str,
         If int: choose the required number of samples at random,
         ensuring that at least half are SN Ia
         Default is 'original'.
+    feature_extraction_method: str (optional)
+        Feature extraction method. The current implementation only
+        accepts method=='bazin' or 'photometry'.
+        Default is 'bazin'.
     """
 
     # load features for the first obs day
@@ -1001,8 +1020,8 @@ def time_domain_loop(days: list, output_metrics_file: str,
 
     first_loop_data, light_curve_data = _load_first_loop_and_full_data(
         first_loop_file_name, path_to_ini_files, survey, initial_training,
-        ia_frac, queryable, sep_files, nclass, is_save_samples=save_samples
-    )
+        ia_frac, queryable, sep_files, nclass, is_save_samples=save_samples,
+        feature_extraction_method = feature_extraction_method)
 
     # get keyword for obj identification
     id_key_name = light_curve_data.identify_keywords()
@@ -1024,7 +1043,8 @@ def time_domain_loop(days: list, output_metrics_file: str,
         strategy, budgets, queryable, query_thre, batch, output_metrics_file,
         output_queried_file, save_full_query, id_key_name,
         light_curve_train_ids, canonical_data, sep_files, path_to_features_dir,
-        fname_pattern, survey, ia_frac, save_samples, **kwargs)
+        fname_pattern, survey, ia_frac, save_samples,
+        feature_extraction_method=feature_extraction_method, **kwargs)
 
 def main():
     return None
