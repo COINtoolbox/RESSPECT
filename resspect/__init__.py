@@ -43,6 +43,7 @@ from .time_domain_loop import *
 from .batch_functions import *
 from .query_budget_strategies import *
 from .bump import *
+from .feature_extractors.malanchev import *
 
 import importlib.metadata
 
