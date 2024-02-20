@@ -146,7 +146,7 @@ Before deploying  large batches for pre-processing, you might want to visualize 
     >>> max_mjd = max(lc.photometry['mjd']) - min(lc.photometry['mjd'])
 
     >>> lc.plot_fit(save=False, show=True, extrapolate=True,
-                          time_flux_pred=[max_mjd+3, max_mjd+5, max_mjd+10])
+    >>>                   time_flux_pred=[max_mjd+3, max_mjd+5, max_mjd+10])
 
 
 .. figure:: images/SN729076_flux_extrap.png
@@ -231,7 +231,7 @@ Processing all light curves in the data set
 
 There are 2 way to perform the Bazin fits for all three data sets. Using a python interpreter,
 
-For SNPCC:
+For SNPCC using Bazin features:
 ^^^^^^^^^^
 
 .. code-block:: python
@@ -240,8 +240,22 @@ For SNPCC:
    >>> from resspect import fit_snpcc
 
    >>> path_to_data_dir = 'data/SIMGEN_PUBLIC_DES/'            # raw data directory
-   >>> features_file = 'results/Bazin.csv'                       # output file
+   >>> features_file = 'results/Bazin.csv'                     # output file
    >>> feature_extractor = 'bazin'
+
+   >>> fit_snpcc(path_to_data_dir=path_to_data_dir, features_file=features_file)
+
+For SNPCC using Malanchev features:
+^^^^^^^^^^
+
+.. code-block:: python
+   :linenos:
+
+   >>> from resspect import fit_snpcc
+
+   >>> path_to_data_dir = 'data/SIMGEN_PUBLIC_DES/'            # raw data directory
+   >>> features_file = 'results/Malanchev.csv'                 # output file
+   >>> feature_extractor = 'malanchev'
 
    >>> fit_snpcc(path_to_data_dir=path_to_data_dir, features_file=features_file)
 
@@ -262,10 +276,10 @@ For PLAsTiCC:
    >>> sample = 'train'
 
    >>> fit_plasticc(path_photo_file=path_photo_file,
-                    path_header_file=path_header_file,
-                    output_file=output_file,
-                    feature_extractor=feature_extractor,
-                    sample=sample)
+   >>>              path_header_file=path_header_file,
+   >>>              output_file=output_file,
+   >>>              feature_extractor=feature_extractor,
+   >>>              sample=sample)
 
 
 The same result can be achieved using the command line:
