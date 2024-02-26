@@ -4,9 +4,9 @@ on:
   pull_request:
   push:
   workflow_dispatch:
-  schedule:
-    # Run every Sunday at 04:53 UTC
-    - cron: 53 4 * * 0
+#  schedule:
+#    # Run every Sunday at 04:53 UTC
+#    - cron: 53 4 * * 0
 
 jobs:
   tests:
