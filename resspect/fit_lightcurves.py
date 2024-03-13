@@ -258,6 +258,11 @@ def _TOM_sample_fit(
     light_curve_data.photometry = pd.DataFrame(dic[id]['photometry'])
     light_curve_data.dataset_name = 'TOM'
     light_curve_data.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
+    light_curve_data.id = id
+    light_curve_data.redshift = -99
+    light_curve_data.sntype = 'unknown'
+    light_curve_data.sncode = -99
+    light_curve_data.sample = 'N/A'
 
     light_curve_data.fit_all()
     
