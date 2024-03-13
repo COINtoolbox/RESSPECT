@@ -79,6 +79,37 @@ SNPCC_MALANCHEV_FEATURES_HEADER = [
     'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 'zlinear_fit_slope_sigma','zlinear_fit_reduced_chi2'
 ]
 
+TOM_FEATURES_HEADER = [
+    'id', 'redshift', 'type', 'code', 'orig_sample',
+    'uA', 'uB', 'ut0', 'utfall', 'utrise',
+    'gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA', 'rB',
+    'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0', 'itfall',
+    'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztrise',
+    'YA', 'YB', 'Yt0', 'Ytfall', 'Ytrise'
+]
+
+TOM_MALANCHEV_FEATURES_HEADER = [
+    'id', 'redshift', 'type', 'code', 'orig_sample',
+    'uanderson_darling_normal','uinter_percentile_range_5',
+    'uchi2','ustetson_K','uweighted_mean','uduration', 'uotsu_mean_diff','uotsu_std_lower', 'uotsu_std_upper',
+    'uotsu_lower_to_all_ratio', 'ulinear_fit_slope', 'ulinear_fit_slope_sigma','ulinear_fit_reduced_chi2',
+    'ganderson_darling_normal','ginter_percentile_range_5',
+    'gchi2','gstetson_K','gweighted_mean','gduration', 'gotsu_mean_diff','gotsu_std_lower', 'gotsu_std_upper',
+    'gotsu_lower_to_all_ratio', 'glinear_fit_slope', 'glinear_fit_slope_sigma','glinear_fit_reduced_chi2',
+    'randerson_darling_normal', 'rinter_percentile_range_5',
+    'rchi2', 'rstetson_K', 'rweighted_mean','rduration', 'rotsu_mean_diff','rotsu_std_lower', 'rotsu_std_upper',
+    'rotsu_lower_to_all_ratio', 'rlinear_fit_slope', 'rlinear_fit_slope_sigma','rlinear_fit_reduced_chi2',
+    'ianderson_darling_normal','iinter_percentile_range_5',
+    'ichi2', 'istetson_K', 'iweighted_mean','iduration', 'iotsu_mean_diff','iotsu_std_lower', 'iotsu_std_upper',
+    'iotsu_lower_to_all_ratio', 'ilinear_fit_slope', 'ilinear_fit_slope_sigma','ilinear_fit_reduced_chi2',
+    'zanderson_darling_normal','zinter_percentile_range_5',
+    'zchi2', 'zstetson_K', 'zweighted_mean','zduration', 'zotsu_mean_diff','zotsu_std_lower', 'zotsu_std_upper',
+    'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 'zlinear_fit_slope_sigma','zlinear_fit_reduced_chi2',
+    'Yanderson_darling_normal','Yinter_percentile_range_5',
+    'Ychi2','Ystetson_K','Yweighted_mean','Yduration', 'Yotsu_mean_diff','Yotsu_std_lower', 'Yotsu_std_upper',
+    'Yotsu_lower_to_all_ratio', 'Ylinear_fit_slope', 'Ylinear_fit_slope_sigma','Ylinear_fit_reduced_chi2'
+]
+
 PLASTICC_RESSPECT_FEATURES_HEADER = [
     'id', 'redshift', 'type', 'code', 'orig_sample', 'uA', 'uB', 'ut0',
     'utfall', 'utrise', 'gA', 'gB', 'gt0', 'gtfall','gtrise', 'rA', 'rB',

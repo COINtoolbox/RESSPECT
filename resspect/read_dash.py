@@ -15,17 +15,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#import logging
-#import numpy as np
-#import pandas as pd
 import csv
 
 __all__ = ["get_id_type"]
 
-
-
-
-def get_id_type(file='/Users/arw/Desktop/spec_sims_binned_spaced/DASH_matches.txt'):
+def get_id_type(file: str):
     #read text file
     data = open(file, "r")
 

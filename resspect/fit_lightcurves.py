@@ -1,5 +1,5 @@
 # Copyright 2020 resspect software
-# Author: Rupesh Durgesh and Emille Ishida
+# Author: Rupesh Durgesh, Emille Ishida, and Amanda Wasserman
 #
 # created on 14 April 2022
 #
@@ -32,12 +32,14 @@ from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
 from resspect.lightcurves_utils import get_resspect_header_data
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
 from resspect.lightcurves_utils import SNPCC_FEATURES_HEADER
+from resspect.lightcurves_utils import TOM_FEATURES_HEADER
+from resspect.lightcurves_utils import TOM_MALANCHEV_FEATURES_HEADER
 from resspect.lightcurves_utils import SNPCC_MALANCHEV_FEATURES_HEADER
 from resspect.lightcurves_utils import find_available_key_name_in_header
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
 
-__all__ = ["fit_snpcc", "fit_plasticc"]
+__all__ = ["fit_snpcc", "fit_plasticc", "fit_TOM"]
 
 
 FEATURE_EXTRACTOR_MAPPING = {
@@ -237,6 +239,64 @@ def fit_plasticc(path_photo_file: str, path_header_file: str,
                 write_features_to_output_file(
                     light_curve_data, plasticc_features_file)
     logging.info("Features have been saved to: %s", output_file)
+
+def _TOM_sample_fit(
+        id: str, dic: dict, feature_extractor: str):
+    """
+    Reads SNPCC file and performs fit.
+    
+    Parameters
+    ----------
+    id
+        SNID
+    feature_extractor
+        Function used for feature extraction.
+        Options are 'bazin', 'bump', or 'malanchev'.
+    """
+    light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
+    light_curve_data.photometry = pd.DataFrame(dic[id]['photometry'])
+    light_curve_data.dataset_name = 'TOM'
+    light_curve_data.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
+
+    light_curve_data.fit_all()
+    
+    return light_curve_data
+
+def fit_TOM(data_dic: dict, features_file: str,
+            number_of_processors: int = 1,
+            feature_extractor: str = 'bazin'):
+    """
+    Perform fit to all objects from the TOM data.
+
+     Parameters
+     ----------
+     data_dic: str
+         Dictionary containing the photometry for all light curves.
+     features_file: str
+         Path to output file where results should be stored.
+     number_of_processors: int, default 1
+        Number of cpu processes to use.
+     feature_extractor: str, default bazin
+        Function used for feature extraction.
+    """
+    if feature_extractor == 'bazin':
+        header = TOM_FEATURES_HEADER
+    elif feature_extractor == 'malanchev':
+        header = TOM_MALANCHEV_FEATURES_HEADER
+    
+    multi_process = multiprocessing.Pool(number_of_processors)
+    logging.info("Starting TOM " + feature_extractor + " fit...")
+    with open(features_file, 'w') as snpcc_features_file:
+        snpcc_features_file.write(','.join(header) + '\n')
+        
+        for light_curve_data in multi_process.starmap(
+                _TOM_sample_fit, zip(
+                    data_dic, repeat(data_dic), repeat(feature_extractor))):
+            if 'None' not in light_curve_data.features:
+                write_features_to_output_file(
+                    light_curve_data, snpcc_features_file)
+    logging.info("Features have been saved to: %s", features_file)
+    
 
 
 def main():
