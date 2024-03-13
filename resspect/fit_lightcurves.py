@@ -38,8 +38,9 @@ from resspect.lightcurves_utils import SNPCC_MALANCHEV_FEATURES_HEADER
 from resspect.lightcurves_utils import find_available_key_name_in_header
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
+from resspect.tom_client import TomClient
 
-__all__ = ["fit_snpcc", "fit_plasticc", "fit_TOM"]
+__all__ = ["fit_snpcc", "fit_plasticc", "fit_TOM", "request_TOM_data"]
 
 
 FEATURE_EXTRACTOR_MAPPING = {
@@ -296,7 +297,14 @@ def fit_TOM(data_dic: dict, features_file: str,
                 write_features_to_output_file(
                     light_curve_data, snpcc_features_file)
     logging.info("Features have been saved to: %s", features_file)
-    
+
+def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = None, 
+                     passwordfile: str = None, password: str = None):
+    tom = TomClient(url = url, username = username, passwordfile = passwordfile, 
+                    password = password)
+    res = tom.request( 'POST', 'elasticc2/gethotsne/10/' )
+    data_dic = res.json()
+    return data_dic
 
 
 def main():
