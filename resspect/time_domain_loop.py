@@ -799,6 +799,19 @@ def process_next_day_loop(
     return light_curve_data
 
 
+def submit_queries_to_TOM(objectids: list, priorities: list, requester: str='resspect'):
+    req = { 'requester': requester,
+            'objectids': objectids,
+            'priorities': priorities}
+    res = TomClient.request( 'POST', 'elasticc2/askforspectrum', json=req )
+    dic = res.json()
+    if res.satus_code != 200:
+        raise ValueError('Request failed, ' + res.text + ". Status code: " + str(res.status_code))
+    
+    if dic['status'] == 'error':
+        raise ValueError('Request failed, ' + dic.json()['error'])
+
+
 # TODO: Too many arguments. Refactor and update docs
 def run_time_domain_active_learning_loop(
         light_curve_data: DataBase, learning_days: list,
