@@ -95,3 +95,16 @@ class TomClient:
 
         """
         return self._rqs.request( method=method, url=f"{self._url}/{page}", **kwargs )
+        
+    def post( self, page=None, **kwargs ):
+        """Shortand for TomClient.request( "POST", ... )"""
+        return self.request( "POST", page, **kwargs )
+
+    def get( self, page=None, **kwargs ):
+        """Shortand for TomClient.request( "GET", ... )"""
+        return self.request( "GET", page, **kwargs )
+
+    def put( self, page=None, **kwargs ):
+        """Shortand for TomClient.request( "PUT", ... )"""
+        return self.request( "PUT", page, **kwargs )
+

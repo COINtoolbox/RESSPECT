@@ -304,13 +304,30 @@ def fit_TOM(data_dic: dict, features_file: str,
     logging.info("Features have been saved to: %s", features_file)
 
 def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = None, 
-                     passwordfile: str = None, password: str = None):
+                     passwordfile: str = None, password: str = None, detected_since_mjd: float = None, 
+                     detected_in_last_days: float = None,):
     tom = TomClient(url = url, username = username, passwordfile = passwordfile, 
                     password = password)
-    res = tom.request( 'POST', 'elasticc2/gethotsne/10/' )
+    dic = {}
+    if detected_since_mjd is not None:
+        dic['detected_since_mjd'] = detected_since_mjd
+    if detected_in_last_days is not None:
+        dic['detected_in_last_days'] = detected_in_last_days
+    res = tom.post('elasticc2/gethotsne', dic)
     data_dic = res.json()
     return data_dic
 
+def submit_queries_to_TOM(objectids: list, priorities: list, requester: str='resspect'):
+    req = { 'requester': requester,
+            'objectids': objectids,
+            'priorities': priorities}
+    res = TomClient.request( 'POST', 'elasticc2/askforspectrum', json=req )
+    dic = res.json()
+    if res.satus_code != 200:
+        raise ValueError('Request failed, ' + res.text + ". Status code: " + str(res.status_code))
+    
+    if dic['status'] == 'error':
+        raise ValueError('Request failed, ' + dic.json()['error'])
 
 def main():
     return None
