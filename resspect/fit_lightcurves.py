@@ -242,7 +242,7 @@ def fit_plasticc(path_photo_file: str, path_header_file: str,
     logging.info("Features have been saved to: %s", output_file)
 
 def _TOM_sample_fit(
-        id: str, dic: dict, feature_extractor: str):
+        obj_dic: dict, feature_extractor: str):
     """
     Reads SNPCC file and performs fit.
     
@@ -255,20 +255,20 @@ def _TOM_sample_fit(
         Options are 'bazin', 'bump', or 'malanchev'.
     """
     light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
-    light_curve_data.photometry = pd.DataFrame(dic[id]['photometry'])
+    light_curve_data.photometry = pd.DataFrame(obj_dic['photometry'])
     light_curve_data.dataset_name = 'TOM'
     light_curve_data.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
-    light_curve_data.id = id
-    light_curve_data.redshift = dic[id]['redshift']
+    light_curve_data.id = obj_dic['objectid']
+    light_curve_data.redshift = obj_dic['redshift']
     light_curve_data.sntype = 'unknown'
-    light_curve_data.sncode = dic[id]['sncode']
+    light_curve_data.sncode = obj_dic['sncode']
     light_curve_data.sample = 'N/A'
 
     light_curve_data.fit_all()
     
     return light_curve_data
 
-def fit_TOM(data_dic: dict, features_file: str,
+def fit_TOM(data_dic: dict, output_features_file: str,
             number_of_processors: int = 1,
             feature_extractor: str = 'bazin'):
     """
@@ -278,7 +278,7 @@ def fit_TOM(data_dic: dict, features_file: str,
      ----------
      data_dic: str
          Dictionary containing the photometry for all light curves.
-     features_file: str
+     output_features_file: str
          Path to output file where results should be stored.
      number_of_processors: int, default 1
         Number of cpu processes to use.
@@ -289,23 +289,23 @@ def fit_TOM(data_dic: dict, features_file: str,
         header = TOM_FEATURES_HEADER
     elif feature_extractor == 'malanchev':
         header = TOM_MALANCHEV_FEATURES_HEADER
-    
+
     multi_process = multiprocessing.Pool(number_of_processors)
     logging.info("Starting TOM " + feature_extractor + " fit...")
-    with open(features_file, 'w') as snpcc_features_file:
-        snpcc_features_file.write(','.join(header) + '\n')
+    with open(output_features_file, 'w') as TOM_features_file:
+        TOM_features_file.write(','.join(header) + '\n')
         
         for light_curve_data in multi_process.starmap(
                 _TOM_sample_fit, zip(
-                    data_dic, repeat(data_dic), repeat(feature_extractor))):
+                    data_dic, repeat(feature_extractor))):
             if 'None' not in light_curve_data.features:
                 write_features_to_output_file(
-                    light_curve_data, snpcc_features_file)
-    logging.info("Features have been saved to: %s", features_file)
+                    light_curve_data, TOM_features_file)
+    logging.info("Features have been saved to: %s", output_features_file)
 
 def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = None, 
                      passwordfile: str = None, password: str = None, detected_since_mjd: float = None, 
-                     detected_in_last_days: float = None,):
+                     detected_in_last_days: float = None, mjdnow: float = None):
     tom = TomClient(url = url, username = username, passwordfile = passwordfile, 
                     password = password)
     dic = {}
@@ -313,21 +313,12 @@ def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = No
         dic['detected_since_mjd'] = detected_since_mjd
     if detected_in_last_days is not None:
         dic['detected_in_last_days'] = detected_in_last_days
-    res = tom.post('elasticc2/gethotsne', dic)
+    if mjdnow is not None:
+        dic['mjd_now'] = mjdnow
+    res = tom.post('elasticc2/gethottransients', json = dic)
     data_dic = res.json()
     return data_dic
 
-def submit_queries_to_TOM(objectids: list, priorities: list, requester: str='resspect'):
-    req = { 'requester': requester,
-            'objectids': objectids,
-            'priorities': priorities}
-    res = TomClient.request( 'POST', 'elasticc2/askforspectrum', json=req )
-    dic = res.json()
-    if res.satus_code != 200:
-        raise ValueError('Request failed, ' + res.text + ". Status code: " + str(res.status_code))
-    
-    if dic['status'] == 'error':
-        raise ValueError('Request failed, ' + dic.json()['error'])
 
 def main():
     return None
