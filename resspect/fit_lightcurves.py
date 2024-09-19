@@ -305,7 +305,7 @@ def fit_TOM(data_dic: dict, output_features_file: str,
 
 def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = None, 
                      passwordfile: str = None, password: str = None, detected_since_mjd: float = None, 
-                     detected_in_last_days: float = None, mjdnow: float = None):
+                     detected_in_last_days: float = None, mjdnow: float = None, cheat_gentypes: list = None):
     tom = TomClient(url = url, username = username, passwordfile = passwordfile, 
                     password = password)
     dic = {}
@@ -315,6 +315,8 @@ def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = No
         dic['detected_in_last_days'] = detected_in_last_days
     if mjdnow is not None:
         dic['mjd_now'] = mjdnow
+    if cheat_gentypes is not None:
+        dic['cheat_gentypes'] = cheat_gentypes
     res = tom.post('elasticc2/gethottransients', json = dic)
     data_dic = res.json()
     return data_dic
