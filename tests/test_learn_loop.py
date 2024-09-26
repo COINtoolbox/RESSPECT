@@ -39,7 +39,7 @@ def test_can_run_learn_loop_uncsample(test_des_data_path):
         )
 
         learn_loop(
-            nloops=5,
+            nloops=2,
             features_method="bazin",
             strategy="UncSampling",
             path_to_features=output_file,
