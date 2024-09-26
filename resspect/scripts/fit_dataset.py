@@ -117,10 +117,7 @@ def main():
 
     user_input = parser.parse_args()
 
-    try:
-        fit_dataset(user_input)
-    except Exception as e:
-        print(f"Error: {e}")
+    fit_dataset(user_input)
 
 if __name__ == '__main__':
     main()

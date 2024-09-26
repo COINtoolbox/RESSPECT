@@ -126,10 +126,7 @@ def main():
 
     from_user = parser.parse_args()
 
-    try:
-        run_loop(from_user)
-    except Exception as e:
-        print(f"Error: {e}")
+    run_loop(from_user)
 
 if __name__ == '__main__':
     main()
