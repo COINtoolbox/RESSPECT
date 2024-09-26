@@ -5,13 +5,13 @@ import tempfile
 from resspect import fit_snpcc
 from resspect.learn_loop import learn_loop
 
-def test_can_run_learn_loop(test_data_path):
+def test_can_run_learn_loop(test_des_data_path):
     """Test that learn_loop can load data and run."""
     with tempfile.TemporaryDirectory() as dir_name:
         # Create the feature files to use for the learning loop.
         output_file = os.path.join(dir_name, "output_file.dat")
         fit_snpcc(
-            path_to_data_dir=test_data_path,
+            path_to_data_dir=test_des_data_path,
             features_file=output_file,
         )
 
