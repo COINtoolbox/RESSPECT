@@ -23,3 +23,4 @@ __pycache__/
 
 auxiliary_files/cosmo
 auxiliary_files/cosmo.hpp
+.DS_Store

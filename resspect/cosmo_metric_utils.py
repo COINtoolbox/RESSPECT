@@ -83,10 +83,10 @@ def fish_deriv_m(redshift, model, step, screen=False):
          at given redshifts.
     """
     
-    Ob0=0.022
-    Om0=model[1]
-    Ode0 =model[2]
-    cosmo = w0waCDM(model[0], Ob0, Om0, Ode0, model[3],model[4], name="w0waCDM")
+    Ob0 = 0.022
+    Om0 = model[1]
+    Ode0 = model[2]
+    cosmo = w0waCDM(H0=model[0], Ob0=Ob0, Om0=Om0, Ode0=Ode0, w0=model[3], wa=model[4], name="w0waCDM")
 
     cosmo=assign_cosmo(cosmo, model)
 
