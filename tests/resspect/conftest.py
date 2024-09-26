@@ -12,6 +12,10 @@ from pathlib import Path
 def test_data_path():
     return Path(__file__).parent.parent / "data" / "tests"
 
+@pytest.fixture
+def test_des_data_path():
+    return Path(__file__).parent.parent / "data" / "tests" / "DES_data"
+
 
 @pytest.fixture(scope="session")
 def base_temp(tmp_path_factory):

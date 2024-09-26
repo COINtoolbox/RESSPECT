@@ -148,3 +148,5 @@ _html/
 
 # Project initialization script
 .initialize_new_project.sh
+auxiliary_files/cosmo
+auxiliary_files/cosmo.hpp
