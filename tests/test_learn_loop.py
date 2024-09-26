@@ -28,7 +28,7 @@ def test_can_run_learn_loop(test_des_data_path):
 def test_can_run_learn_loop_uncsample(test_des_data_path):
     """Test that learn_loop can load data and run.
     This instance is distinct from the previous because it uses `UncSample` strategy
-    and runs for 5 loops instead of 1.
+    and runs for 2 loops instead of 1.
     """
     with tempfile.TemporaryDirectory() as dir_name:
         # Create the feature files to use for the learning loop.
