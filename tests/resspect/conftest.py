@@ -10,11 +10,11 @@ from pathlib import Path
 
 @pytest.fixture
 def test_data_path():
-    return Path(__file__).parent.parent / "data" / "tests"
+    return Path(__file__).parent.parent.parent / "data" / "tests"
 
 @pytest.fixture
 def test_des_data_path():
-    return Path(__file__).parent.parent / "data" / "tests" / "DES_data"
+    return Path(__file__).parent.parent.parent / "data" / "tests" / "DES_data"
 
 
 @pytest.fixture(scope="session")
