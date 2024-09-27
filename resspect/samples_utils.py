@@ -46,6 +46,11 @@ def sep_samples(all_ids: np.array, n_test_val: int,
         keys are the sample names, values are the ids of
         objects in each sample.
     """
+    if n_train + 2 * n_test_val > len(all_ids):
+        raise ValueError(
+            f"Unable to draw samples of sizes {n_train}, {n_test_val}, and {n_test_val} "
+            f"from only {len(all_ids)} indices."
+        )
     samples = {}
     
     # separate ids for training
