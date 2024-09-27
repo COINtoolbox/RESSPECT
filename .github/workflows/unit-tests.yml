@@ -20,4 +20,4 @@ jobs:
           python-version: 3.9
 
       - name: Run Tox
-        run: pipx run tox -e py38 -v
+        run: pipx run tox -e py39 -v
