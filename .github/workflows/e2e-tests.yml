@@ -17,11 +17,11 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Install package inside virtual environment
         run: |
-          python3.8 -m venv venv
+          python3.9 -m venv venv
           source venv/bin/activate
           python -m pip install -U pip setuptools
           python -m pip install .
@@ -29,4 +29,4 @@ jobs:
       - name: Run pipeline for SNPCC
         run: |
           source venv/bin/activate
-          ./tests/run-snpcc-e2e.sh
+          ./tests/resspect/run-snpcc-e2e.sh
