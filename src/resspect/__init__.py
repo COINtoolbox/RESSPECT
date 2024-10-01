@@ -105,4 +105,3 @@ __all__ = ['accuracy',
            'time_domain_loop',
            'uncertainty_sampling',
            'update_matrix']
-

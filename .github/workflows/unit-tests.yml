@@ -17,7 +17,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.9
 
       - name: Run Tox
-        run: pipx run tox -e py38 -v
+        run: pipx run tox -e py39 -v
