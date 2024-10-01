@@ -1,9 +1,9 @@
-"""Tests related to bump.py module."""
+"""
+Tests related to bump.py module.
+"""
 
 import numpy as np
-import pytest
-
-from pandas import read_csv
+import os
 
 from resspect.bump import bump, fit_bump, protected_exponent, protected_sig
 
@@ -48,9 +48,11 @@ def test_bump():
     expected = [0.86683499, 0.87300292, 0.87822063, 0.88254351, 0.88601519, 0.88866704]
     np.testing.assert_allclose(res, expected)
 
-
+    
 def test_fit_bump(test_data_path):
-    """Test fit to Bump parametrization."""
+    """
+    Test fit to Bump parametrization.
+    """
     fname = test_data_path / 'lc_mjd_flux.csv'
     data = read_csv(fname)
     
