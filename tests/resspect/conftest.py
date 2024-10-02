@@ -4,7 +4,6 @@ this folder.
 """
 import os
 import pytest
-from contextlib import contextmanager
 from pathlib import Path
 
 
@@ -12,9 +11,15 @@ from pathlib import Path
 def test_data_path():
     return Path(__file__).parent.parent.parent / "data" / "tests"
 
+
 @pytest.fixture
-def test_des_data_path():
-    return Path(__file__).parent.parent.parent / "data" / "tests" / "DES_data"
+def test_des_data_path(test_data_path):
+    return test_data_path / "DES_data"
+
+
+@pytest.fixture
+def test_des_lc_file(test_des_data_path):
+    return test_des_data_path / "DES_SN848233.DAT"
 
 
 @pytest.fixture(scope="session")
