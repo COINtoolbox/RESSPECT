@@ -1,12 +1,13 @@
 # Changes here will be overwritten by Copier
-_commit: v2.0.2
+_commit: v2.0.3
 _src_path: gh:lincc-frameworks/python-project-template
 author_email: contact@cosmostatistics-initiative.org
 author_name: The RESSPECT team
 create_example_module: false
 custom_install: true
 enforce_style: []
-failure_notification: []
+failure_notification:
+- slack
 include_benchmarks: true
 include_docs: false
 mypy_type_checking: none
