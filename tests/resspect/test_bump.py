@@ -3,7 +3,7 @@ Tests related to bump.py module.
 """
 
 import numpy as np
-import os
+import pandas as pd
 
 from resspect.bump import bump, fit_bump, protected_exponent, protected_sig
 
@@ -54,7 +54,7 @@ def test_fit_bump(test_data_path):
     Test fit to Bump parametrization.
     """
     fname = test_data_path / 'lc_mjd_flux.csv'
-    data = read_csv(fname)
+    data = pd.read_csv(fname)
     
     time = data['mjd'].values
     flux = data['flux'].values
