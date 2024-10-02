@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ['learn_loop', 'run_loop']
+__all__ = ['run_loop']
 
 from resspect.learn_loop import learn_loop
 
@@ -63,23 +63,31 @@ def run_loop(args):
 
     """
 
-    # set training sample variable
-    if args.training == 'original':
-        train = 'original'
-    elif isinstance(int(args.training), int):
-        train = int(args.training)
-    else:
-        raise ValueError('-t or --training option must be '
-                         '"original" or integer!')
-
     # run active learning loop
-    learn_loop(nloops=args.nquery, features_method=args.method,
+    learn_loop(nloops=args.nquery,
+               features_method=args.method,
                classifier=args.classifier,
-               strategy=args.strategy, path_to_features=args.input,
+               strategy=args.strategy,
+               path_to_features=args.input,
                output_metrics_file=args.metrics,
                output_queried_file=args.queried,
-               training=train, batch=args.batch)
+               training=_parse_training(args.training),
+               batch=args.batch)
 
+def _parse_training(training:str):
+    """We don't check that `isinstance(training, str)` because `training` is defined
+    as a string in the argparse.ArgumentParser.
+    """
+    # set training sample variable
+    if training.lower() == 'original':
+        train = 'original'
+    else:
+        try:
+            train = int(training)
+        except ValueError:
+            raise ValueError('-t or --training option must be "original" or integer!')
+
+    return train
 
 def main():
 

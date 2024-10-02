@@ -69,20 +69,20 @@ def fit_dataset(user_choices):
     features_file = user_choices.output
     ncores = user_choices.ncores
 
-    if user_choices.sim_name in ['SNPCC', 'snpcc']:
+    if user_choices.sim_name.lower() == 'snpcc':
         # fit the entire sample
         fit_snpcc(path_to_data_dir=data_dir, features_file=features_file,
                   number_of_processors=ncores, feature_extractor=user_choices.function)
 
-    elif user_choices.sim_name in ['PLAsTiCC', 'PLASTICC', 'plasticc']:
+    elif user_choices.sim_name.lower() == 'plasticc':
         fit_plasticc(path_photo_file=user_choices.photo_file,
                     path_header_file=user_choices.header_file,
                     output_file=features_file,
                     sample=user_choices.sample,
                     number_of_processors=ncores)
 
-    return None
-
+    else:
+        raise ValueError("-s or --simulation not recognized. Options are 'SNPCC' or 'PLAsTiCC'.")
 
 def main():
 
