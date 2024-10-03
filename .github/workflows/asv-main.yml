@@ -61,9 +61,6 @@ jobs:
       run: |
         asv show
         asv publish
-    - name: Move the readme into the HTML directory.
-      run: |
-        cp ${{github.workspace}}/README.md ${{env.WORKING_DIR}}/_html/README.md
     - name: Deploy to Github pages
       uses: JamesIves/github-pages-deploy-action@v4
       with:
