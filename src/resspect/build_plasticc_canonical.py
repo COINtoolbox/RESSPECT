@@ -16,7 +16,6 @@
 # limitations under the License.
 
 import numpy as np
-import os
 import pandas as pd
 import matplotlib.pylab as plt
 import seaborn as sns

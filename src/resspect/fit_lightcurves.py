@@ -21,7 +21,6 @@ import os
 from copy import copy
 from itertools import repeat
 from typing import IO
-from typing import Union
 
 import numpy as np
 import pandas as pd

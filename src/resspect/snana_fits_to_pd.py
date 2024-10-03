@@ -17,7 +17,6 @@
 
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from astropy.table import Table
 
 __all__ = ['read_fits']

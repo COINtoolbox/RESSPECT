@@ -15,17 +15,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import astropy as ap
 import numpy as np
-import pandas as pd
 
-from astropy.cosmology import Planck15, Flatw0waCDM
 from astropy.cosmology import w0waCDM
 from astropy import constants as const
+
 
 __all__ = ['assign_cosmo', 'fish_deriv_m', 'fisher_results',
            'column_deriv_m', 'update_matrix', 'find_most_useful',
            'compare_two_fishers']
+
 
 def assign_cosmo(cosmo, model=[70, 0.3, 0.7, -0.9, 0.0]):
     """Define a new cosmology model.

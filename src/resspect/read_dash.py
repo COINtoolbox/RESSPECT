@@ -15,8 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import csv
-
 __all__ = ["get_id_type"]
 
 def get_id_type(file: str):
