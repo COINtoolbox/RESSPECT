@@ -582,10 +582,10 @@ def get_query_flags(light_curve_data, telescope_names: list,
     return query_flags
 
 
-def get_files_list(path_to_data_dir: str,
-                    file_prefix: str) -> list:
+def get_files_list(path_to_data_dir: str, file_prefix: str) -> list:
     """
-    loads file names available in the folder
+    Load the file names available in a directory.
+
     Parameters
     ----------
     path_to_data_dir
