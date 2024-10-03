@@ -1,4 +1,7 @@
 [![resspect](https://img.shields.io/badge/COIN--Focus-RESSPECT-red)](http://cosmostatistics-initiative.org/resspect/)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/LSSTDESC/RESSPECT/smoke-test.yml)](https://github.com/LSSTDESC/RESSPECT/actions/workflows/smoke-test.yml)
+[![Benchmarks](https://img.shields.io/github/actions/workflow/status/LSSTDESC/RESSPECT/asv-main.yml?label=benchmarks)](https://LSSTDESC.github.io/RESSPECT/benchmarks)
+
 
 # <img align="right" src="docs/images/logo_small.png" width="350"> RESSPECT
 
