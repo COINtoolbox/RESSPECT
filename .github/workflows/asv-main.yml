@@ -66,3 +66,4 @@ jobs:
       with:
         branch: gh-pages
         folder: ${{env.WORKING_DIR}}/_html
+        target-folder: benchmarks/_visualization
