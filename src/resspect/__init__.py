@@ -24,6 +24,7 @@ from .database import *
 from .exposure_time_calculator import *
 from .fit_lightcurves import *
 from .learn_loop import *
+from .loop_configuration import *
 from .metrics import *
 from .plot_results import *
 from .query_strategies import *
