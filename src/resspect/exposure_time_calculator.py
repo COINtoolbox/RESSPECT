@@ -28,7 +28,6 @@
 __all__ = ['ExpTimeCalc']
 
 import numpy as np
-import sys, getopt
 from scipy.interpolate import interp1d
 
 class ExpTimeCalc(object):
