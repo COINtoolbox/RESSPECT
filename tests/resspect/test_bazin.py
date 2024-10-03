@@ -3,7 +3,6 @@ Tests related to bazin.py module.
 """
 
 import numpy as np
-import os
 import pytest
 
 from pandas import read_csv
