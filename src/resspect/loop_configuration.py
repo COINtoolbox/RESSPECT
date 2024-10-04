@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, make_dataclass, asdict
+import json
 from os import path
 
 @dataclass
@@ -152,3 +153,24 @@ class LoopConfiguration:
             raise ValueError(f"{self.strategy} is not a valid strategy.")
         if "QBD" in self.strategy and not self.classifier_bootstrap:
             raise ValueError("Bootstrap must be true when using disagreement strategy")
+    
+    def to_dict(self):
+        """converts configurations elements into a dict."""
+        return asdict(self)
+    
+    @classmethod
+    def from_dict(cls, lc_dict):
+        """creates a `LoopConfiguration` instance from a dict."""
+        return cls(**lc_dict)
+    
+    def to_json(self, file_path):
+        """write out the `LoopConfiguration` as a json file."""
+        with open(file_path, 'w') as fp:
+            json.dump(self.to_dict(), fp)
+    
+    @classmethod
+    def from_json(cls, file_path):
+        """read a `LoopConfiguration` generated json file and instantiate."""
+        with open(file_path) as fp:
+            lc_dict = json.load(fp)
+            return cls(**lc_dict)

@@ -5,6 +5,7 @@ import tempfile
 from resspect import LoopConfiguration
 
 def test_create_loop_configuration():
+    """test file path checks and other validation steps."""
     with tempfile.TemporaryDirectory() as dir_name:
         real_file_path = os.path.join(dir_name, "test.txt")
         f = open(real_file_path, "w")
@@ -146,3 +147,47 @@ def test_create_loop_configuration():
                 output_metrics_file=os.path.join(dir_name, "blah.txt"),
                 output_queried_file=os.path.join(dir_name, "blah2.txt"),
             )
+
+def test_to_and_from_dict():
+    """dump `LoopConfiguration` to a dict and recreate."""
+    with tempfile.TemporaryDirectory() as dir_name:
+        real_file_path = os.path.join(dir_name, "test.txt")
+        f = open(real_file_path, "w")
+        f.write("out of all the files that exist, this is one of them.")
+        f.close()
+
+        lc1 = LoopConfiguration(
+            nloops=1,
+            strategy="RandomSampling",
+            path_to_features=real_file_path,
+            output_metrics_file=os.path.join(dir_name, "blah.txt"),
+            output_queried_file=os.path.join(dir_name, "blah2.txt"),
+        )
+        d = lc1.to_dict()
+
+        lc2 = LoopConfiguration.from_dict(d)
+
+        assert lc1 == lc2
+
+def test_to_and_from_json():
+    """dump `LoopConfiguration` to a json file and recreate."""
+    with tempfile.TemporaryDirectory() as dir_name:
+        real_file_path = os.path.join(dir_name, "test.txt")
+        f = open(real_file_path, "w")
+        f.write("out of all the files that exist, this is one of them.")
+        f.close()
+
+        lc1 = LoopConfiguration(
+            nloops=1,
+            strategy="RandomSampling",
+            path_to_features=real_file_path,
+            output_metrics_file=os.path.join(dir_name, "blah.txt"),
+            output_queried_file=os.path.join(dir_name, "blah2.txt"),
+        )
+
+        json_path = os.path.join(dir_name, "test.json")
+        lc1.to_json(json_path)
+
+        lc2 = LoopConfiguration.from_json(json_path)
+
+        assert lc1 == lc2
