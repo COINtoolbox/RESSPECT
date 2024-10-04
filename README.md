@@ -18,7 +18,7 @@ The active learning and telescope resources pipeline is described in [Kennamer e
 
 We kindly ask you to include the full citation for the above mentioned work if you use this material in your research.
 
-Full documentation can be found at [readthedocs](https://resspect.readthedocs.io/en/latest/).
+Full documentation can be found at [readthedocs](https://lsst-resspect.readthedocs.io/en/latest/).
 
 # Dependencies
 
