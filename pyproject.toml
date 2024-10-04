@@ -29,7 +29,8 @@ dependencies = [
     "xgboost>=1.7.3",
     "iminuit>=1.20.0",
     "light_curve>=0.8.1",
-    "requests"
+    "requests",
+    "pooch",
 ]
 
 [project.urls]
@@ -41,6 +42,7 @@ build_canonical = "resspect.scripts.build_canonical:main"
 build_time_domain_snpcc = "resspect.scripts.build_time_domain_snpcc:main"
 build_time_domain_plasticc = "resspect.scripts.build_time_domain_plasticc:main"
 calculate_cosmology_metric = "resspect.scripts.calculate_cosmology_metric:main"
+fetch_example_data = "resspect.scripts.fetch_example_data:fetch_example_data"
 fit_dataset = "resspect.scripts.fit_dataset:main"
 make_metrics_plots = "resspect.scripts.make_metrics_plots:main"
 run_loop = "resspect.scripts.run_loop:main"
