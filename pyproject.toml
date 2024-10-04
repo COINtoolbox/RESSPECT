@@ -33,7 +33,7 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/LSSTDESC/RESSPECT"
+Homepage = "https://lsst-resspect.readthedocs.io/en/latest/"
 Source = "https://github.com/LSSTDESC/RESSPECT"
 
 [project.scripts]
