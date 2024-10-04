@@ -10,6 +10,7 @@ import tempfile
 
 from resspect import fit_snpcc
 from resspect.learn_loop import  learn_loop
+from resspect.loop_configuration import LoopConfiguration
 
 
 _TEST_DATA_DIR = Path(__file__).parent.parent / "data" / "tests"
@@ -34,15 +35,17 @@ def time_learn_loop(ml_model, strategy):
         metrics_file = str(Path(dir_name) / "metrics.csv")
         output_queried_file = str(Path(dir_name) / "queried.csv")
         learn_loop(
-            nloops=25,
-            features_method="malanchev",
-            classifier=ml_model,
-            strategy=strategy,
-            path_to_features=features_file,
-            output_metrics_file=metrics_file,
-            output_queried_file=output_queried_file,
-            training="original",
-            batch=1,
+            LoopConfiguration(
+                nloops=25,
+                features_method="malanchev",
+                classifier=ml_model,
+                strategy=strategy,
+                path_to_features=features_file,
+                output_metrics_file=metrics_file,
+                output_queried_file=output_queried_file,
+                training="original",
+                batch=1,
+            )
         )  
 
 
