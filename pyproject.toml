@@ -22,7 +22,6 @@ dependencies = [
     "numpy>=1.24.2",
     "pandas>=1.5.3",
     "progressbar2>=4.2.0",
-    "pytest>=7.2.1",
     "scikit_learn>=1.2.1",
     "scipy>=1.10.0",
     "seaborn>=0.12.2",
@@ -34,8 +33,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/COINtoolbox/resspect"
-Source = "https://github.com/COINtoolbox/resspect"
+Homepage = "https://lsst-resspect.readthedocs.io/en/latest/"
+Source = "https://github.com/LSSTDESC/RESSPECT"
 
 [project.scripts]
 build_canonical = "resspect.scripts.build_canonical:main"

@@ -1,14 +1,16 @@
+
+
+<h1 align="center">
+<img align="center" src="https://raw.githubusercontent.com/lsstdesc/resspect/main/docs/images/logo_small.png" width="500">
+</h1><br>
+
+# Recommendation System for Spectroscopic follow-up
+
 [![resspect](https://img.shields.io/badge/COIN--Focus-RESSPECT-red)](http://cosmostatistics-initiative.org/resspect/)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/LSSTDESC/RESSPECT/smoke-test.yml)](https://github.com/LSSTDESC/RESSPECT/actions/workflows/smoke-test.yml)
 [![Benchmarks](https://img.shields.io/github/actions/workflow/status/LSSTDESC/RESSPECT/asv-main.yml?label=benchmarks)](https://LSSTDESC.github.io/RESSPECT/benchmarks)
 
-
-# <img align="right" src="docs/images/logo_small.png" width="350"> RESSPECT
-
-
-## Recommendation System for Spectroscopic follow-up 
-
-This repository holds the pipeline of the RESSPECT project, built as part of the inter-collaboration activities developed by the Cosmostatistics Initiative ([COIN](cosmostatistics-initiative.org)) and the LSST Dark Energy Science Collaboration ([DESC](https://lsstdesc.org/)).
+This repository holds the pipeline of the RESSPECT project, built as part of the inter-collaboration activities developed by the Cosmostatistics Initiative ([COIN](cosmostatistics-initiative.org)) and the LSST Dark Energy Science Collaboration ([DESC](https://lsstdesc.org/)). It was forked from the original RESSPECT repo that can be found here.
 
 This work grew from activities developed within the [COIN Residence Program #4](http://iaacoin.wix.com/crp2017), using as a starting point their [ActSNClass](https://github.com/COINtoolbox/ActSNClass) software. 
 
@@ -16,7 +18,7 @@ The active learning and telescope resources pipeline is described in [Kennamer e
 
 We kindly ask you to include the full citation for the above mentioned work if you use this material in your research.
 
-Full documentation can be found at [readthedocs](https://resspect.readthedocs.io/en/latest/).
+Full documentation can be found at [readthedocs](https://lsst-resspect.readthedocs.io/en/latest/).
 
 # Dependencies
 
@@ -28,7 +30,6 @@ Full documentation can be found at [readthedocs](https://resspect.readthedocs.io
  - numpy >= 1.24.2
  - pandas >= 1.5.3
  - progressbar2 >= 4.2.0
- - pytest >= 7.2.1
  - scikit_learn >= 1.2.1
  - scipy >= 1.10.0
  - seaborn >= 0.12.2
