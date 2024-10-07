@@ -1622,16 +1622,17 @@ class DataBase:
 
         # write to file)
         queried_sample = np.array(self.queried_sample)
-        flag = queried_sample[:,0].astype(int) == epoch
+        if len(queried_sample) > 0:
+            flag = queried_sample[:,0].astype(int) == epoch
 
-        if sum(flag) > 0:
-            with open(output_metrics_file, 'a') as metrics:
-                metrics.write(str(epoch) + ',')
-                for value in self.metrics_list_values:
-                    metrics.write(str(value) + ',')
-                for j in range(sum(flag) - 1):
-                    metrics.write(str(queried_sample[flag][j][1]) + ',')
-                metrics.write(str(queried_sample[flag][sum(flag) - 1][1]) + '\n')
+            if sum(flag) > 0:
+                with open(output_metrics_file, 'a') as metrics:
+                    metrics.write(str(epoch) + ',')
+                    for value in self.metrics_list_values:
+                        metrics.write(str(value) + ',')
+                    for j in range(sum(flag) - 1):
+                        metrics.write(str(queried_sample[flag][j][1]) + ',')
+                    metrics.write(str(queried_sample[flag][sum(flag) - 1][1]) + '\n')
 
 
     def save_queried_sample(self, queried_sample_file: str, loop: int,
@@ -1657,7 +1658,7 @@ class DataBase:
             query_sample = pd.DataFrame(self.queried_sample, columns=full_header)
             query_sample.sort_values(by='epoch').to_csv(queried_sample_file, index=False)
 
-        elif isinstance(loop, int):
+        elif isinstance(loop, int) and len(self.queried_sample) > 0:
             queried_sample = np.array(self.queried_sample)
             flag = queried_sample[:,0].astype(int) == epoch
             if sum(flag) > 0:
