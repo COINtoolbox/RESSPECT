@@ -27,6 +27,7 @@ def time_feature_creation():
             feature_extractor="malanchev"
         )
 
+
 def time_learn_loop(ml_model, strategy):
     """Benchmark how long it takes for a run of the learning loop."""
     # Use the precomputed features so we don't time their creation.
@@ -53,4 +54,30 @@ def time_learn_loop(ml_model, strategy):
 time_learn_loop.params = [
     ["RandomForest", "KNN"],            # The different ML methods
     ["RandomSampling", "UncSampling"],  # The different strategies.
+]
+
+
+def peakmem_learn_loop(ml_model):
+    """Benchmark how much memory it takes for a run of the learning loop."""
+    # Use the precomputed features so we don't time their creation.
+    features_file = str(_TEST_DATA_DIR / "test_features.csv")
+    with tempfile.TemporaryDirectory() as dir_name:
+        metrics_file = str(Path(dir_name) / "metrics.csv")
+        output_queried_file = str(Path(dir_name) / "queried.csv")
+        learn_loop(
+            nloops=25,
+            features_method="malanchev",
+            classifier=ml_model,
+            strategy="RandomSampling",
+            path_to_features=features_file,
+            output_metrics_file=metrics_file,
+            output_queried_file=output_queried_file,
+            training="original",
+            batch=1,
+        )  
+
+
+# Parameterize the ML models and strategies we benchmark.
+peakmem_learn_loop.params = [
+    ["RandomForest", "KNN"],            # The different ML methods
 ]
