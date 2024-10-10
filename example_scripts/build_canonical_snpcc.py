@@ -21,7 +21,7 @@
 # SNPCC data sample.                                                #
 #                                                                   #    
 #####################################################################
-
+from platformdirs import user_cache_dir
 time_domain = True
 
 if time_domain:
@@ -72,17 +72,17 @@ else:
     from resspect import build_snpcc_canonical
     from resspect import plot_snpcc_train_canonical
 
-    # define variables
-    data_dir = '~/data/SIMGEN_PUBLIC_DES/'         # raw data directory
-    features_file = '~/data/Bazin.dat'             # features file for full LC
-    
-    output_sample_file = 'Bazin_SNPCC_canonical.dat'         
+    # SIMGEN data is placed here after running `fetch_example_data` from the command line.
+    data_dir = user_cache_dir(appname="resspect/SIMGEN_PUBLIC_DES")
+    features_file = '~/data/Bazin.dat'  # features file for full LC
+
+    output_sample_file = 'Bazin_SNPCC_canonical.dat'
     output_metadata_file = 'Bazin_metadata.dat'
-    output_plot_file = 'compare_canonical_train.png'    
+    output_plot_file = 'compare_canonical_train.png'
 
     sample = build_snpcc_canonical(path_to_raw_data=data_dir, path_to_features=features_file,
                                    output_canonical_file=output_sample_file,
                                    output_info_file=output_metadata_file,
                                    compute=True, save=True)
-                               
+
     plot_snpcc_train_canonical(sample, output_plot_file=output_plot_file)

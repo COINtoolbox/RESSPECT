@@ -29,8 +29,11 @@ You can load this data using:
    :linenos:
 
    >>> from resspect import BazinFeatureExtractor
+   >>> from platformdirs import user_cache_path
 
-   >>> path_to_lc = 'data/SIMGEN_PUBLIC_DES/DES_SN729076.DAT'
+   >>> data_dir = user_cache_path(appname='resspect/SIMGEN_PUBLIC_DES')
+
+   >>> path_to_lc = str(data_dir / 'DES_SN729076.DAT')
 
    >>> lc = BazinFeatureExtractor()             # create light curve instance
    >>> lc.load_snpcc_lc(path_to_lc)             # read data
@@ -57,8 +60,11 @@ You can load the data using:
    :linenos:
 
    >>> from resspect import MalanchevFeatureExtractor
+   >>> from platformdirs import user_cache_path
 
-   >>> path_to_lc = 'data/SIMGEN_PUBLIC_DES/DES_SN729076.DAT'
+   >>> data_dir = user_cache_path(appname='resspect/SIMGEN_PUBLIC_DES')
+
+   >>> path_to_lc = str(data_dir / 'DES_SN729076.DAT')
 
    >>> lc = MalanchevFeatureExtractor()         # create light curve instance
    >>> lc.load_snpcc_lc(path_to_lc)             # read data
@@ -238,8 +244,9 @@ For SNPCC using Bazin features:
    :linenos:
 
    >>> from resspect import fit_snpcc
+   >>> from platformdirs import user_cache_dir
 
-   >>> path_to_data_dir = 'data/SIMGEN_PUBLIC_DES/'            # raw data directory
+   >>> path_to_data_dir = user_cache_dir(appname='resspect/SIMGEN_PUBLIC_DES') # raw data directory
    >>> features_file = 'results/Bazin.csv'                     # output file
    >>> feature_extractor = 'bazin'
 
@@ -252,8 +259,9 @@ For SNPCC using Malanchev features:
    :linenos:
 
    >>> from resspect import fit_snpcc
+   >>> from platformdirs import user_cache_dir
 
-   >>> path_to_data_dir = 'data/SIMGEN_PUBLIC_DES/'            # raw data directory
+   >>> path_to_data_dir = user_cache_dir(appname='resspect/SIMGEN_PUBLIC_DES') # raw data directory
    >>> features_file = 'results/Malanchev.csv'                 # output file
    >>> feature_extractor = 'malanchev'
 
