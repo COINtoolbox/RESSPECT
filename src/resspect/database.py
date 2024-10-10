@@ -950,11 +950,12 @@ class DataBase:
             self.predicted_class,  self.classprob, self.classifier = \
                    random_forest(self.train_features, self.train_labels,
                                  self.pool_features, **kwargs)
-
         elif method == 'GradientBoostedTrees':
-            self.predicted_class,  self.classprob, self.classifier = \
-                gradient_boosted_trees(self.train_features, self.train_labels,
-                                       self.pool_features, **kwargs)
+            raise ValueError("GradientBoostedTrees is currently unimplemented.")
+            # TODO: Restore once GradientBoostedTrees is fixed.
+            # self.predicted_class,  self.classprob, self.classifier = \
+            #     gradient_boosted_trees(self.train_features, self.train_labels,
+            #                            self.pool_features, **kwargs)
         elif method == 'KNN':
             self.predicted_class,  self.classprob, self.classifier = \
                 knn(self.train_features, self.train_labels,
@@ -972,10 +973,10 @@ class DataBase:
                 nbg(self.train_features, self.train_labels,
                           self.pool_features, **kwargs)
         else:
-            raise ValueError("The only classifiers implemented are" +
-                              "'RandomForest', 'GradientBoostedTrees'," +
-                              "'KNN', 'MLP' and NB'." +
-                             "\n Feel free to add other options.")
+            raise ValueError(
+                "The only classifiers implemented are 'RandomForest', 'KNN', 'MLP', "
+                "'SVM' and 'NB'.\nFeel free to add other options."
+            )
 
         # estimate classification for validation sample
         self.validation_class = \
@@ -1213,10 +1214,10 @@ class DataBase:
             Budgets for 4m and 8m respectively. 
         strategy: str (optional)
             Strategy used to choose the most informative object.
-            Current implementation accepts 'UncSampling' and
+            Current implementation accepts 'UncSampling'
             'RandomSampling', 'UncSamplingEntropy',
             'UncSamplingLeastConfident', 'UncSamplingMargin',
-            'QBDMI', 'QBDEntropy', . Default is `UncSampling`.
+            'QBDMI', and 'QBDEntropy'. Default is `UncSampling`.
         screen: bool (optional)
             If true, display on screen information about the
             displacement in order and classificaion probability due to
