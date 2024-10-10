@@ -65,16 +65,18 @@ def peakmem_learn_loop(ml_model):
         metrics_file = str(Path(dir_name) / "metrics.csv")
         output_queried_file = str(Path(dir_name) / "queried.csv")
         learn_loop(
-            nloops=25,
-            features_method="malanchev",
-            classifier=ml_model,
-            strategy="RandomSampling",
-            path_to_features=features_file,
-            output_metrics_file=metrics_file,
-            output_queried_file=output_queried_file,
-            training="original",
-            batch=1,
-        )  
+            LoopConfiguration(
+                nloops=25,
+                features_method="malanchev",
+                classifier=ml_model,
+                strategy="RandomSampling",
+                path_to_features=features_file,
+                output_metrics_file=metrics_file,
+                output_queried_file=output_queried_file,
+                training="original",
+                batch=1,
+            )
+        )
 
 
 # Parameterize the ML models and strategies we benchmark.
