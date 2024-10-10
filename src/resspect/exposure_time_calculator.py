@@ -157,7 +157,7 @@ class ExpTimeCalc(object):
     def SNR(self, mag: float, exptime: float, cwl_nm=500.0, bandpass_nm=1.0,
             band='r', airmass=1.25, skymode='ADU', skymag=22.0, nread=1,
             skyADU=120, fwhm=1.0):
-        """Computes SNR. 
+        """Computes SNR.
 
         Parameters
         ----------
@@ -180,7 +180,7 @@ class ExpTimeCalc(object):
             readout rates, this increases the noise. Default: 1.
         skyADU: float (optional)
             Sky brightness in ADU. Default is 120. 
-            Only used if 'skymode' \in ['ADU', 'ADU-FWHM']. 
+            Only used if 'skymode' in ['ADU', 'ADU-FWHM']. 
         skymag: float (optional)
             Sky brightness in magnitude. Default is 22.0. 
         skymode: str (optional)
@@ -326,7 +326,7 @@ class ExpTimeCalc(object):
             this increases the noise. Default: 1
         skyADU: float (optional)
             Sky brightness in ADU. Default is 120. 
-            Only used if 'skymode' \in ['ADU', 'ADU-FWHM'].
+            Only used if 'skymode' in ['ADU', 'ADU-FWHM'].
         skymag: float (optional)
             Sky brightness in magnitude. Default is 22.0. 
         skymode: str (optional)
@@ -396,7 +396,7 @@ class ExpTimeCalc(object):
             this increases the noise. Default: 1
         skyADU: float (optional)
             Sky brightness in ADU. Default is 120. 
-            Only used if 'skymode' \in ['ADU', 'ADU-FWHM'].
+            Only used if 'skymode' in ['ADU', 'ADU-FWHM'].
         skymag: float (optional)
             Sky brightness in magnitude. Default is 22.0. 
         skymode: str (optional)
