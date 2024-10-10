@@ -30,6 +30,7 @@ dependencies = [
     "light_curve>=0.8.1",
     "requests",
     "pooch",
+    "platformdirs",
 ]
 
 [project.urls]

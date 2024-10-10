@@ -1,5 +1,4 @@
 import pooch
-import os
 from pathlib import Path
 
 # Create a Pooch object to handle the data fetching
@@ -26,17 +25,6 @@ def fetch_example_data():
     # Note that index 0 is the tar file itself.
     original_directory = Path(unpacked_files[1]).resolve().parent
     print(f"Data unpacked into directory: {original_directory}")
-
-    # Create the target directory path for symlinking
-    this_dir = Path(os.path.dirname(os.path.abspath(__file__)))
-    target_dir = (this_dir.parent.parent.parent / "data/SIMGEN_PUBLIC_DES")
-
-    # Create the symlink if it doesn't already exist
-    try:
-        os.symlink(original_directory, target_dir, target_is_directory=True)
-        print(f"Created symlink to unpacked data here: {target_dir}")
-    except FileExistsError:
-        print(f"Symlink already exists at {target_dir}")
 
 
 if __name__ == "__main__":

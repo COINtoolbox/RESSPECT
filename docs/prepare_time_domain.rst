@@ -41,8 +41,9 @@ You can perform the entire analysis for one day of the survey using the `SNPCCPh
    :linenos:
 
    >>> from resspect.time_domain_snpcc import SNPCCPhotometry
+   >>> from platformdirs import user_cache_path
 
-   >>> path_to_data = 'data/SIMGEN_PUBLIC_DES/'
+   >>> path_to_data = user_cache_path(appname='resspect/SIMGEN_PUBLIC_DES')
    >>> output_dir = 'results/time_domain/'
    >>> day = 20
    >>> queryable_criteria = 2

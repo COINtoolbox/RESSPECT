@@ -29,9 +29,10 @@ but composed of different objects.
    :linenos:
 
    >>> from resspect import build_snpcc_canonical
+   >>> from platformdirs import user_cache_dir
 
    >>> # define variables
-   >>> data_dir = 'data/SIMGEN_PUBLIC_DES/'
+   >>> data_dir = user_cache_dir(appname='resspect/SIMGEN_PUBLIC_DES')
    >>> output_sample_file = 'results/Bazin_SNPCC_canonical.csv'
    >>> output_metadata_file = 'results/Bazin_metadata.csv'
    >>> features_file = 'results/Bazin.csv'

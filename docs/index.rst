@@ -68,14 +68,15 @@ In a your choosing, create the following directory structure:
 
 The outputs of ``resspect`` will be stored in these directories.
 
-In order to set things properly, navigate to the repository you just cloned and move the data directory to your
-chosen working directory and unpack the data.
+In order to set things properly, you'll need to download a copy of the example data.
+The following script will download the data and unpack it into your local cache
+directory. (`/Users/<username>/Library/Caches/resspect/SIMGEN_PUBLIC_DES` in MacOS
+and Linux, `C:\Users\<username>\AppData\Local\resspect\SIMGEN_PUBLIC_DES` in Windows)
 
 .. code-block:: bash
 
-    >>> mv -f resspect/data/ work_dir/
-    >>> cd work_dir/data
-    >>> tar -xzvf SIMGEN_PUBLIC_DES.tar.gz
+    >>> fetch_example_data
+
 
 This data was provided by Rick Kessler, after the publication of results from the
 `SuperNova Photometric Classification Challenge <https://arxiv.org/abs/1008.1024>`_ (SNPCC).
