@@ -37,6 +37,7 @@ from resspect.lightcurves_utils import SNPCC_MALANCHEV_FEATURES_HEADER
 from resspect.lightcurves_utils import find_available_key_name_in_header
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
+from resspect.lightcurves_utils import BUMP_HEADERS
 from resspect.tom_client import TomClient
 
 __all__ = ["fit_snpcc", "fit_plasticc", "fit_TOM", "request_TOM_data"]
@@ -133,6 +134,8 @@ def fit_snpcc(
         header = SNPCC_FEATURES_HEADER
     elif feature_extractor == 'malanchev':
         header = SNPCC_MALANCHEV_FEATURES_HEADER
+    elif feature_extractor == 'bump':
+        header = BUMP_HEADERS["snpcc_header"]
 
     files_list = os.listdir(path_to_data_dir)
     files_list = [each_file for each_file in files_list
