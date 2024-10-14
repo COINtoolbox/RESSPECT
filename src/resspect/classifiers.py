@@ -17,7 +17,6 @@
 
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-#from xgboost.sklearn import XGBClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
@@ -25,11 +24,64 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.utils import resample
 from sklearn.utils.validation import check_is_fitted
 
-__all__ = ['random_forest',#'gradient_boosted_trees',
-           'knn',
-           'mlp','svm','nbg', 'bootstrap_clf'
-          ]
+__all__ = ['random_forest','knn','mlp','svm','nbg', 'bootstrap_clf']
 
+class ResspectClassifer():
+    def __init__(self, train_features, train_labels, test_features, **kwargs):
+
+        self.train_features = train_features
+        self.train_labels = train_labels
+        self.test_features = test_features
+        self.kwargs = kwargs
+
+        self.n_labels = np.unique(self.train_labels).size
+
+        #! Rename this after answering "Is shape[0] the number of objects or number of features/object?""
+        self.num_test_data = self.test_features.shape[0]
+        self._n_ensembles = 10
+        self.ensemble_probs = np.zeros((self.num_test_data, self.n_ensembles, self.n_labels))
+
+    @property
+    def n_ensembles(self):
+        return self._n_ensembles
+
+    @n_ensembles.setter
+    def n_ensembles(self, value):
+        self._n_ensembles = value
+        self.ensemble_probs = np.zeros((self.num_test_data, self._n_ensembles, self.n_labels))
+
+    def bootstrap_ensemble(self, clf_function):
+        classifier_list = list()
+        for i in range(self.n_ensembles):
+            x_train, y_train = resample(self.train_features, self.train_labels)
+            _, class_prob, clf = clf_function(x_train, y_train, self.test_features, **self.kwargs)
+
+            classifier_list.append((str(i), clf))
+            self.ensemble_probs[:, i, :] = class_prob
+
+        ensemble_clf = PreFitVotingClassifier(classifier_list)
+        class_prob = self.ensemble_probs.mean(axis=1)
+        predictions = np.argmax(class_prob, axis=1)
+
+        return predictions, class_prob, self.ensemble_probs, ensemble_clf
+
+
+class RandomForest(ResspectClassifer):
+    name = 'RandomForest'
+    def __init__(self, train_features, train_labels, test_features, **kwargs):
+        super().__init__(train_features, train_labels, test_features, **kwargs)
+        self.n_estimators = kwargs.get('n_estimators', 100)
+
+    def __call__(self, **kwargs):
+        clf = RandomForestClassifier(n_estimators=self.n_estimators, **self.kwargs)
+        clf.fit(self.train_features, self.train_labels)
+        predictions = clf.predict(self.test_features)
+        prob = clf.predict_proba(self.test_features)
+
+        return predictions, prob, clf
+
+    def bootstrap(self, **kwargs):
+        return self.bootstrap_ensemble(self.__call__)
 
 def bootstrap_clf(clf_function, n_ensembles, train_features,
                   train_labels, test_features, **kwargs):
@@ -79,7 +131,7 @@ def bootstrap_clf(clf_function, n_ensembles, train_features,
         classifier_list.append((str(i), clf))
         ensemble_probs[:, i, :] = class_prob
 
-    ensemble_clf = PreFitVotingClassifier(classifier_list, voting='soft')  #Must use soft voting
+    ensemble_clf = PreFitVotingClassifier(classifier_list)
     class_prob = ensemble_probs.mean(axis=1)
     predictions = np.argmax(class_prob, axis=1)
     
@@ -294,7 +346,7 @@ def nbg(train_features: np.array, train_labels: np.array,
 
 class PreFitVotingClassifier(object):
     """Stripped-down version of VotingClassifier that uses prefit estimators"""
-    def __init__(self, estimators, voting='hard', weights=None):
+    def __init__(self, estimators, voting='soft', weights=None):
         self.estimators = [e[1] for e in estimators]
         self.named_estimators = dict(estimators)
         self.voting = voting
