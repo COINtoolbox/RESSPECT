@@ -111,7 +111,7 @@ def _snpcc_sample_fit(
 
 def fit_snpcc(
         path_to_data_dir: str, features_file: str,
-        file_prefix: str = "DES_SN", number_of_processors: int = 1,
+        file_prefix: str = "DES_SN", number_of_processors: int = 8,
         feature_extractor: str = 'bazin'):
     """
     Perform fit to all objects in the SNPCC data.

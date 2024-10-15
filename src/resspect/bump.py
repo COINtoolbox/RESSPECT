@@ -28,7 +28,8 @@ def protected_exponent(x):
     """
     Exponential function : cannot exceed e**10
     """
-    return np.where(np.abs(x) < 10, np.exp(x), np.exp(10))
+    y = np.where(np.abs(x) < 10, np.exp(x), np.exp(10))
+    return y
 
 
 @njit
