@@ -161,6 +161,38 @@ MALANCHEV_HEADERS = {
         'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 'zlinear_fit_slope_sigma', 'zlinear_fit_reduced_chi2']
 }
 
+def make_features_header(filters: list, features: list, with_cost: bool = False) -> list:
+    """
+    This function returns header list for given filters and features
+
+    Parameters
+    ----------  
+    filters
+        filter values 
+    features
+        feature values
+    with_cost
+        flag for adding cost values
+    
+    Returns
+    -------
+    header
+        header list
+    """
+
+    header = []
+    header.extend(['id', 'redshift', 'type', 'code', 'orig_sample', 
+                   #'queryable','last_rmag'
+                   ]
+                    )  # do we include queryable/last_rmag? headers sometimes have them sometimes don't
+                      # also find where the 'with_cost' flag is used to make sure we apply there
+    if with_cost:
+        header.append('cost_4m', 'cost_8m')
+    for each_filter in filters:
+        for each_feature in features:
+            header.append(each_filter + each_feature)
+    return header
+
 
 def read_file(file_path: str) -> list:
     """
