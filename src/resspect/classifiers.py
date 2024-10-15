@@ -24,22 +24,44 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.utils import resample
 from sklearn.utils.validation import check_is_fitted
 
-__all__ = ['random_forest','knn','mlp','svm','nbg', 'bootstrap_clf']
+__all__ = [
+    'random_forest',
+    'knn',
+    'mlp',
+    'svm',
+    'nbg',
+    'bootstrap_clf',
+    'ResspectClassifer',
+    'RandomForest',
+    ]
 
 class ResspectClassifer():
-    def __init__(self, train_features, train_labels, test_features, **kwargs):
+    """Base class that all built-in RESSPECT classifiers will inherit from."""
 
+    def __init__(self, train_features, train_labels, test_features, **kwargs):
+        """Base initializer for all RESSPECT classifiers.
+
+        Parameters
+        ----------
+        train_features : array-like
+            _description_
+        train_labels : array-like
+            _description_
+        test_features : array-like
+            _description_
+        """
         self.train_features = train_features
         self.train_labels = train_labels
         self.test_features = test_features
         self.kwargs = kwargs
 
-        self.n_labels = np.unique(self.train_labels).size
-
         #! Rename this after answering "Is shape[0] the number of objects or number of features/object?""
         self.num_test_data = self.test_features.shape[0]
         self._n_ensembles = 10
-        self.ensemble_probs = np.zeros((self.num_test_data, self.n_ensembles, self.n_labels))
+        self.n_labels = np.unique(self.train_labels).size
+        self.ensemble_probs = np.zeros((self.num_test_data, self._n_ensembles, self.n_labels))
+
+        self.classifier = None
 
     @property
     def n_ensembles(self):
@@ -50,11 +72,73 @@ class ResspectClassifer():
         self._n_ensembles = value
         self.ensemble_probs = np.zeros((self.num_test_data, self._n_ensembles, self.n_labels))
 
+    def __call__(self):
+        """Allows the user to call the class instance as a function.
+        e.g. clf = SomeClassifier()
+             predictions, _, _ = clf()
+        """
+        return self.predict(self.train_features, self.train_labels, self.test_features)
+
+    def predict(self, train_features, train_labels, test_features):
+        """Train and predict using the classifier.
+
+        Parameters
+        ----------
+        train_features : array-like
+            The features used for training, [n_samples, m_features].
+        train_labels : array-like
+            The training labels, [n_samples].
+        test_features : array-like
+            The features used for testing, [n_samples, m_features].
+
+        Returns
+        -------
+        tuple(predictions, prob, classifier_instance)
+            The classes and probabilities for the test sample.
+        """
+        self.classifier.fit(train_features, train_labels)
+        predictions = self.classifier.predict(test_features)
+        prob = self.classifier.predict_proba(test_features)
+
+        return predictions, prob, self.classifier
+
+    def bootstrap(self):
+        """Convenience method that can be overridden by subclasses. Calls the
+        bootstrap_ensemble method with the predict method as an argument.
+
+        Returns
+        -------
+        tuple(predictions, prob, ensemble_probs, ensemble_clf)
+            The classes and probabilities for the test sample.
+        """
+        return self.bootstrap_ensemble(self.predict)
+
     def bootstrap_ensemble(self, clf_function):
+        """Create an ensemble of predictions by resampling the training data used
+        to instantiate the classifier. Define the ensemble size by specifying the
+        value for `n_ensembles`.
+
+        e.g.:
+        ```
+        clf = SomeClassifier()
+        clf.n_ensembles = 10
+        clf.bootstrap_ensemble(clf.predict)
+        ```
+
+        Parameters
+        ----------
+        clf_function : Callable
+            The function used to and predict with the classifier.
+
+        Returns
+        -------
+        tuple(predictions, prob, ensemble_probs, ensemble_clf)
+            The classes and probabilities for the test sample.
+        """
         classifier_list = list()
         for i in range(self.n_ensembles):
             x_train, y_train = resample(self.train_features, self.train_labels)
-            _, class_prob, clf = clf_function(x_train, y_train, self.test_features, **self.kwargs)
+            _, class_prob, clf = clf_function(x_train, y_train, self.test_features)
 
             classifier_list.append((str(i), clf))
             self.ensemble_probs[:, i, :] = class_prob
@@ -67,21 +151,14 @@ class ResspectClassifer():
 
 
 class RandomForest(ResspectClassifer):
-    name = 'RandomForest'
+    """RESSPECT-specific version of the sklearn RandomForestClassifier."""
+
     def __init__(self, train_features, train_labels, test_features, **kwargs):
         super().__init__(train_features, train_labels, test_features, **kwargs)
+
         self.n_estimators = kwargs.get('n_estimators', 100)
+        self.classifier = RandomForestClassifier(n_estimators=self.n_estimators, **self.kwargs)
 
-    def __call__(self, **kwargs):
-        clf = RandomForestClassifier(n_estimators=self.n_estimators, **self.kwargs)
-        clf.fit(self.train_features, self.train_labels)
-        predictions = clf.predict(self.test_features)
-        prob = clf.predict_proba(self.test_features)
-
-        return predictions, prob, clf
-
-    def bootstrap(self, **kwargs):
-        return self.bootstrap_ensemble(self.__call__)
 
 def bootstrap_clf(clf_function, n_ensembles, train_features,
                   train_labels, test_features, **kwargs):
@@ -171,43 +248,6 @@ def random_forest(train_features:  np.array, train_labels: np.array,
     prob = clf.predict_proba(test_features)       # get probabilities
 
     return predictions, prob, clf
-  
-#######################################################################
-######  we need to find a non-bugged version of xgboost ##############
-
-#def gradient_boosted_trees(train_features: np.array,
-#                           train_labels: np.array,
-#                           test_features: np.array, **kwargs):
-    """Gradient Boosted Trees classifier.
-
-    Parameters
-    ----------
-    train_features : np.array
-        Training sample features.
-    train_labels: np.array
-        Training sample classes.
-    test_features: np.array
-        Test sample features.
-    kwargs: extra parameters
-        All parameters allowed by sklearn.XGBClassifier
-
-    Returns
-    -------
-    predictions: np.array
-        Predicted classes.
-    prob: np.array
-        Classification probability for all objects, [pIa, pnon-Ia].
-    """
-
-    #create classifier instance
-#    clf = XGBClassifier(**kwargs)
-
-#    clf.fit(train_features, train_labels)             # train
-#    predictions = clf.predict(test_features)          # predict
-#    prob = clf.predict_proba(test_features)           # get probabilities
-
-#    return predictions, prob, clf
-#########################################################################
 
 def knn(train_features: np.array, train_labels: np.array,
         test_features: np.array, **kwargs):

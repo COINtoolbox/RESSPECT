@@ -45,6 +45,7 @@ from .batch_functions import *
 from .query_budget_strategies import *
 from .bump import *
 from .feature_extractors.malanchev import *
+from .classifier_registry import *
 
 import importlib.metadata
 
@@ -106,3 +107,5 @@ __all__ = ['accuracy',
            'time_domain_loop',
            'uncertainty_sampling',
            'update_matrix']
+
+classifier_registry.register_builtin_classifiers()
