@@ -170,6 +170,43 @@ class RandomForest(ResspectClassifer):
         self.classifier = RandomForestClassifier(n_estimators=self.n_estimators, **self.kwargs)
 
 
+class KNN(ResspectClassifer):
+    """RESSPECT-specific version of the sklearn KNeighborsClassifier."""
+
+    def __init__(self, train_features, train_labels, test_features, **kwargs):
+        super().__init__(train_features, train_labels, test_features, **kwargs)
+
+        self.classifier = KNeighborsClassifier(**self.kwargs)
+
+
+class MLP(ResspectClassifer):
+    """RESSPECT-specific version of the sklearn MLPClassifier."""
+
+    def __init__(self, train_features, train_labels, test_features, **kwargs):
+        super().__init__(train_features, train_labels, test_features, **kwargs)
+
+        self.classifier = MLPClassifier(**self.kwargs)
+
+
+class SVM(ResspectClassifer):
+    """RESSPECT-specific version of the sklearn SVC."""
+
+    def __init__(self, train_features, train_labels, test_features, **kwargs):
+        super().__init__(train_features, train_labels, test_features, **kwargs)
+
+        self.probability = kwargs.get('probability', True)
+        self.classifier = SVC(probability=self.probability, **self.kwargs)
+
+
+class NBG(ResspectClassifer):
+    """RESSPECT-specific version of the sklearn GaussianNB."""
+
+    def __init__(self, train_features, train_labels, test_features, **kwargs):
+        super().__init__(train_features, train_labels, test_features, **kwargs)
+
+        self.classifier = GaussianNB(**self.kwargs)
+
+
 def bootstrap_clf(clf_function, n_ensembles, train_features,
                   train_labels, test_features, **kwargs):
     """
@@ -358,7 +395,7 @@ def svm(train_features: np.array, train_labels: np.array,
     prob = clf.predict_proba(test_features)        # get probabilities
 
     return predictions, prob, clf
-  
+
 
 def nbg(train_features: np.array, train_labels: np.array,
                   test_features: np.array, **kwargs):
