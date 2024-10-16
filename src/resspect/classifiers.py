@@ -33,7 +33,10 @@ __all__ = [
     'bootstrap_clf',
     'ResspectClassifer',
     'RandomForest',
+    'CLASSIFIER_REGISTRY',
     ]
+
+CLASSIFIER_REGISTRY = {}
 
 class ResspectClassifer():
     """Base class that all built-in RESSPECT classifiers will inherit from."""
@@ -62,6 +65,13 @@ class ResspectClassifer():
         self.ensemble_probs = np.zeros((self.num_test_data, self._n_ensembles, self.n_labels))
 
         self.classifier = None
+
+    def __init_subclass__(cls):
+        """Register all subclasses of ResspectClassifer in the CLASSIFIER_REGISTRY."""
+        if cls.__name__ in CLASSIFIER_REGISTRY:
+            raise ValueError(f"Duplicate classifier name: {cls.__name__}")
+
+        CLASSIFIER_REGISTRY[cls.__name__] = cls
 
     @property
     def n_ensembles(self):

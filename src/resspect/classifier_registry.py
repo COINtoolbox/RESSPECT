@@ -1,15 +1,7 @@
 from resspect.plugin_utils import get_or_load_class
-from resspect.classifiers import ResspectClassifer
+from resspect.classifiers import CLASSIFIER_REGISTRY
 
-__all__ = ["CLASSIFIER_REGISTRY", "register_builtin_classifiers", "fetch_classifier_class"]
-
-CLASSIFIER_REGISTRY = {}
-
-def register_builtin_classifiers():
-    """Add all built-in classifiers to the registry."""
-    subclasses = ResspectClassifer.__subclasses__()
-    for subclass in subclasses:
-        CLASSIFIER_REGISTRY[subclass.__name__] = subclass
+__all__ = ["fetch_classifier_class"]
 
 
 def fetch_classifier_class(classifier_name: str) -> type:
