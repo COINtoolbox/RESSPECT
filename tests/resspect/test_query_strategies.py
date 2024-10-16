@@ -5,6 +5,8 @@ import numpy as np
 import pytest
 
 from resspect.query_strategies import (
+    qbd_entropy,
+    qbd_mi,
     random_sampling,
     uncertainty_sampling,
     uncertainty_sampling_entropy,
@@ -146,6 +148,46 @@ def test_uncertainty_sampling_margin():
     queryable_ids = np.array([0, 1, 2, 3, 4, 6, 7])
     sample = uncertainty_sampling_margin(class_prob, test_ids, queryable_ids, batch=3)
     assert np.array_equal(sample, [3, 1, 2])
+
+
+def test_qbd_entropy():
+    """Test the ensemble average prediction entropy sampling."""
+    test_ids = np.arange(0, 5)
+    queryable_ids = np.arange(0, 5)
+
+    # Probabilities coming out of the ensembles are 3-d matrices with dimensions:
+    # number of points (5), the number of ensemble members (3), and the number of events (2).
+    ensemble_probs = np.array(
+        [
+            [[1.00, 0.00], [0.95, 0.05], [0.99, 0.01]],  # very low entropy (high agreement)
+            [[0.80, 0.20], [0.60, 0.40], [0.20, 0.80]],  # high entropy (low agreement)
+            [[0.10, 0.90], [0.10, 0.90], [0.05, 0.95]],  # low entropy (high agreement)
+            [[0.75, 0.25], [0.80, 0.20], [0.78, 0.22]],  # medium entropy (high agreement)
+            [[0.50, 0.50], [0.50, 0.50], [0.49, 0.51]],  # high entropy (high agreement)
+        ]
+    )
+    sample = qbd_entropy(ensemble_probs, test_ids, queryable_ids, batch=5)
+    assert np.array_equal(sample, [4, 1, 3, 2, 0])
+
+
+def test_qbd_mi():
+    """Test the ensemble qbd_mi sampling."""
+    test_ids = np.arange(0, 5)
+    queryable_ids = np.arange(0, 5)
+
+    # Probabilities coming out of the ensembles are 3-d matrices with dimensions:
+    # number of points (5), the number of ensemble members (3), and the number of events (2).
+    ensemble_probs = np.array(
+        [
+            [[1.00, 0.00], [0.95, 0.05], [0.80, 0.20]],
+            [[0.80, 0.20], [0.60, 0.40], [0.20, 0.80]],
+            [[0.10, 0.90], [0.10, 0.90], [0.05, 0.95]],
+            [[0.75, 0.25], [0.80, 0.20], [0.78, 0.22]],
+            [[0.50, 0.50], [0.50, 0.50], [0.49, 0.51]],
+        ]
+    )
+    sample = qbd_mi(ensemble_probs, test_ids, queryable_ids, batch=5)
+    assert np.array_equal(sample, [1, 0, 2, 3, 4])
 
 
 if __name__ == '__main__':

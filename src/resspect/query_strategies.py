@@ -47,7 +47,7 @@ def compute_entropy(ps: np.array):
 
 def compute_qbd_mi_entropy(ensemble_probs: np.array):
     """
-    Calcualte the entropy of the average distribution from an ensemble of
+    Calculate the entropy of the average distribution from an ensemble of
     distributions. Calculate the mutual information between the members in the
     ensemble and the average distribution.
 
@@ -55,7 +55,7 @@ def compute_qbd_mi_entropy(ensemble_probs: np.array):
     ----------
     ensemble_probs: np.array
         Probability from ensembles where the first dimension is number of unique
-        point, the second dimension is the number of ensemble members and the
+        points, the second dimension is the number of ensemble members and the
         third dimension is the number of events.
 
     Returns
@@ -452,9 +452,9 @@ def qbd_mi(ensemble_probs: np.array, test_ids: np.array,
                          'from number of objects in the test sample!')
 
     # calculate distance to the decision boundary - only binary classification
-    entropies, mis = compute_qbd_mi_entropy(ensemble_probs)
+    _, mis = compute_qbd_mi_entropy(ensemble_probs)
 
-    # get indexes in increasing order
+    # get indexes in decreasing order
     order = mis.argsort()[::-1]
 
     # only allow objects in the query sample to be chosen
@@ -483,7 +483,9 @@ def qbd_mi(ensemble_probs: np.array, test_ids: np.array,
 def qbd_entropy(ensemble_probs: np.array, test_ids: np.array,
                 queryable_ids: np.array, batch=1,
                 screen=False, query_thre=1.0) -> list:
-    """Search for the sample with highest uncertainty in predicted class.
+    """Search for the sample with highest entropy from the average predictions
+    of the ensembled classifiers. These can be instances where the classifiers
+    agree (but are uncertain about the class) or disagree.
 
     Parameters
     ----------
@@ -519,9 +521,9 @@ def qbd_entropy(ensemble_probs: np.array, test_ids: np.array,
                          'from number of objects in the test sample!')
 
     # calculate distance to the decision boundary - only binary classification
-    entropies, mis = compute_qbd_mi_entropy(ensemble_probs)
+    entropies, _ = compute_qbd_mi_entropy(ensemble_probs)
 
-    # get indexes in increasing order
+    # get indexes in decreasing order
     order = entropies.argsort()[::-1]
 
     # only allow objects in the query sample to be chosen
