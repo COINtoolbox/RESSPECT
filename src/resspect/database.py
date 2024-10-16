@@ -27,7 +27,7 @@ from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
 from resspect.query_strategies import *
 from resspect.query_budget_strategies import *
 from resspect.metrics import get_snpcc_metric
-from resspect.classifier_registry import fetch_classifier_class
+from resspect.plugin_utils import fetch_classifier_class
 
 __all__ = ['DataBase']
 
