@@ -304,7 +304,8 @@ def fit_TOM(data_dic: dict, output_features_file: str,
     logging.info("Features have been saved to: %s", output_features_file)
 
 def _sample_fit(
-        obj_dic: dict, feature_extractor: str, filters: list, type: str, Ia_code: list):
+        obj_dic: dict, feature_extractor: str, filters: list, type: str, Ia_code: list,
+        additional_info: list):
     """
     Reads general file and performs fit.
     
@@ -327,6 +328,7 @@ def _sample_fit(
     else:
         light_curve_data.sntype = 'other'
     light_curve_data.sample = type
+    light_curve_data.additional_info = additional_info
 
     light_curve_data.fit_all()
     
@@ -335,7 +337,8 @@ def _sample_fit(
 def fit(data_dic: dict, output_features_file: str,
             number_of_processors: int = 1,
             feature_extractor: str = 'bazin', filters: list = ['SNPCC'], 
-            features: list = None, type: str = 'unspecified', Ia_code: list = [10]):
+            features: list = [], type: str = 'unspecified', Ia_code: list = [10],
+            additional_info: list = []):
     """
     Perform fit to all objects from a generalized dataset.
 
@@ -358,6 +361,9 @@ def fit(data_dic: dict, output_features_file: str,
         Type of data: train, test, validation, pool
     Ia_code: list
         List of Ia codes to be used. Default is 10 from ELAsTiCC.
+    additional_info: list
+        List of additional header information to be used in other classifiers.
+        For example, RA and dec for GHOST feature extraction
 
     """
     if feature_extractor == 'bazin':
@@ -398,7 +404,7 @@ def fit(data_dic: dict, output_features_file: str,
             for light_curve_data in multi_process.starmap(
                     _sample_fit, zip(
                         data_dic, repeat(feature_extractor), repeat(filters), repeat(type), 
-                        repeat(Ia_code))):
+                        repeat(Ia_code), repeat(additional_info))):
                 if 'None' not in light_curve_data.features:
                     write_features_to_output_file(
                         light_curve_data, features_file)
