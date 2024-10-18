@@ -954,10 +954,11 @@ class DataBase:
 
         # Fit the classifier and predict with it
         clf_instance.fit(self.train_features, self.train_labels)
-        self.predicted_class, self.classprob = clf_instance.predict(self.pool_features)
+        self.classprob = clf_instance.predict_probabilities(self.pool_features)
 
         # estimate classification for validation sample
-        self.validation_class, self.validation_prob = clf_instance.predict(self.validation_features)
+        self.validation_class = clf_instance.predict_class(self.validation_features)
+        self.validation_prob = clf_instance.predict_probabilities(self.validation_features)
 
         if save_predictions:
             id_name = self.identify_keywords()

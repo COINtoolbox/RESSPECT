@@ -100,6 +100,36 @@ class ResspectClassifier():
 
         return predictions, prob
 
+    def predict_class(self, test_features):
+        """Predict the class of the test sample using the trained classifier.
+
+        Parameters
+        ----------
+        test_features : array-like
+            The features used for testing, [n_samples, m_features].
+
+        Returns
+        -------
+        np.array
+            The predicted classes for the test sample. [n_samples]
+        """
+        return self.classifier.predict(test_features)
+
+
+    def predict_probabilities(self, test_features):
+        """Predict the probabilities of the test sample using the trained classifier.
+
+        Parameters
+        ----------
+        test_features : array-like
+            The features used for testing, [n_samples, m_features].
+
+        Returns
+        -------
+        np.array
+            The predicted probabilities for the test sample. [n_samples, m_classes]
+        """
+        return self.classifier.predict_proba(test_features)
 
 class RandomForest(ResspectClassifier):
     """RESSPECT-specific version of the sklearn RandomForestClassifier."""
@@ -187,7 +217,7 @@ def bootstrap_clf(clf_class, n_ensembles, train_features,
         x_train, y_train = resample(train_features, train_labels)
         clf = clf_class(**kwargs)
         clf.fit(x_train, y_train)
-        _, class_prob = clf.predict(test_features)
+        class_prob = clf.predict_probabilities(test_features)
 
         classifiers.append(clf)
         ensemble_probs[:, i, :] = class_prob
