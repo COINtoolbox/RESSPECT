@@ -950,20 +950,14 @@ class DataBase:
         if clf_class is None:
             raise ValueError(f'Classifier, {method} not recognized!')
 
-        clf_instance = clf_class(
-            self.train_features,
-            self.train_labels,
-            self.pool_features,
-            **kwargs
-        )
+        clf_instance = clf_class(**kwargs)
 
-        self.predicted_class, self.classprob, self.classifier = clf_instance()
+        # Fit the classifier and predict with it
+        clf_instance.fit(self.train_features, self.train_labels)
+        self.predicted_class, self.classprob = clf_instance.predict(self.pool_features)
 
         # estimate classification for validation sample
-        self.validation_class = \
-            self.classifier.predict(self.validation_features)
-        self.validation_prob = \
-            self.classifier.predict_proba(self.validation_features)
+        self.validation_class, self.validation_prob = clf_instance.predict(self.validation_features)
 
         if save_predictions:
             id_name = self.identify_keywords()
@@ -1013,23 +1007,20 @@ class DataBase:
         if clf_class is None:
             raise ValueError(f'Classifier, {method} not recognized!')
 
-        clf_instance = clf_class(
-            self.train_features,
-            self.train_labels,
-            self.pool_features,
-            **kwargs
-        )
-
-        clf_instance.n_ensembles = n_ensembles
-
-        self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = clf_instance.bootstrap()
+        # Fit an ensemble of classifiers and predict with all of them
+        self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
+            bootstrap_clf(
+                clf_class,
+                n_ensembles,
+                self.train_features,
+                self.train_labels,
+                self.pool_features
+            )
 
         self.validation_class = \
             self.classifier.predict(self.validation_features)
         self.validation_prob = \
             self.classifier.predict_proba(self.validation_features)
-
-        
 
         if save_predictions:
             id_name = self.identify_keywords()
