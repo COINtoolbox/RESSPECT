@@ -38,9 +38,10 @@ from resspect.lightcurves_utils import find_available_key_name_in_header
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
 from resspect.lightcurves_utils import BUMP_HEADERS
+from resspect.lightcurves_utils import make_features_header
 from resspect.tom_client import TomClient
 
-__all__ = ["fit_snpcc", "fit_plasticc", "fit_TOM", "request_TOM_data"]
+__all__ = ["fit_snpcc", "fit_plasticc", "fit_TOM", "request_TOM_data", "fit"]
 
 
 FEATURE_EXTRACTOR_MAPPING = {
@@ -246,7 +247,7 @@ def fit_plasticc(path_photo_file: str, path_header_file: str,
 def _TOM_sample_fit(
         obj_dic: dict, feature_extractor: str):
     """
-    Reads SNPCC file and performs fit.
+    Reads TOM file and performs fit.
     
     Parameters
     ----------
@@ -303,6 +304,113 @@ def fit_TOM(data_dic: dict, output_features_file: str,
             if 'None' not in light_curve_data.features:
                 write_features_to_output_file(
                     light_curve_data, TOM_features_file)
+    logging.info("Features have been saved to: %s", output_features_file)
+
+def _sample_fit(
+        obj_dic: dict, feature_extractor: str, filters: list, type: str, Ia_code: list,
+        additional_info: list):
+    """
+    Reads general file and performs fit.
+    
+    Parameters
+    ----------
+    id
+        SNID
+    feature_extractor
+        Function used for feature extraction.
+        Options are 'bazin', 'bump', or 'malanchev'.
+    """
+    light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
+    light_curve_data.photometry = pd.DataFrame(obj_dic['photometry'])
+    light_curve_data.filters = filters
+    light_curve_data.id = obj_dic['objectid']
+    light_curve_data.redshift = obj_dic['redshift']
+    light_curve_data.sncode = obj_dic['sncode']
+    if light_curve_data.sncode in Ia_code:
+        light_curve_data.sntype = 'Ia'
+    else:
+        light_curve_data.sntype = 'other'
+    light_curve_data.sample = type
+    light_curve_data.additional_info = additional_info
+
+    light_curve_data.fit_all()
+    
+    return light_curve_data
+
+def fit(data_dic: dict, output_features_file: str,
+            number_of_processors: int = 1,
+            feature_extractor: str = 'bazin', filters: list = ['SNPCC'], 
+            features: list = [], type: str = 'unspecified', Ia_code: list = [10],
+            additional_info: list = []):
+    """
+    Perform fit to all objects from a generalized dataset.
+
+     Parameters
+     ----------
+     data_dic: str
+         Dictionary containing the photometry for all light curves.
+     output_features_file: str
+         Path to output file where results should be stored.
+     number_of_processors: int, default 1
+        Number of cpu processes to use.
+     feature_extractor: str, default bazin
+        Function used for feature extraction.
+    filters: list
+        List of filters to be used. Or SNPCC/LSST.
+    features: list
+        List of features to be used. Or default features with respect to
+        the feature extractor.
+    type: str
+        Type of data: train, test, validation, pool
+    Ia_code: list
+        List of Ia codes to be used. Default is 10 from ELAsTiCC.
+    additional_info: list
+        List of additional header information to be used in other classifiers.
+        For example, RA and dec for GHOST feature extraction
+
+    """
+    if feature_extractor == 'bazin':
+        header = TOM_FEATURES_HEADER
+    elif feature_extractor == 'malanchev':
+        header = TOM_MALANCHEV_FEATURES_HEADER
+    
+    if 'SNPCC' in filters:
+        filters = ['g', 'r', 'i', 'z']
+    elif 'LSST' in filters:
+        filters = ['u', 'g', 'r', 'i', 'z', 'Y']
+
+    if feature_extractor == 'bazin':
+        features = ['A', 'B', 't0', 'tfall', 'trise']
+    elif feature_extractor == 'malanchev':
+        features = ['anderson_darling_normal',
+                                'inter_percentile_range_5',
+                                'chi2',
+                                'stetson_K',
+                                'weighted_mean',
+                                'duration',
+                                'otsu_mean_diff',
+                                'otsu_std_lower',
+                                'otsu_std_upper',
+                                'otsu_lower_to_all_ratio',
+                                'linear_fit_slope',
+                                'linear_fit_slope_sigma',
+                                'linear_fit_reduced_chi2']
+    
+    header = make_features_header(filters, features)
+
+    multi_process = multiprocessing.Pool(number_of_processors)
+    if feature_extractor != None:
+        logging.info("Starting " + feature_extractor + " fit...")
+        with open(output_features_file, 'w') as features_file:
+            features_file.write(','.join(header) + '\n')
+            
+            for light_curve_data in multi_process.starmap(
+                    _sample_fit, zip(
+                        data_dic, repeat(feature_extractor), repeat(filters), repeat(type), 
+                        repeat(Ia_code), repeat(additional_info))):
+                if 'None' not in light_curve_data.features:
+                    write_features_to_output_file(
+                        light_curve_data, features_file)
     logging.info("Features have been saved to: %s", output_features_file)
 
 def request_TOM_data(url: str = "https://desc-tom-2.lbl.gov", username: str = None, 

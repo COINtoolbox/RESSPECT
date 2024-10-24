@@ -27,7 +27,7 @@ from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
 from resspect.query_strategies import *
 from resspect.query_budget_strategies import *
 from resspect.metrics import get_snpcc_metric
-
+from resspect.plugin_utils import fetch_classifier_class
 
 __all__ = ['DataBase']
 
@@ -946,43 +946,19 @@ class DataBase:
             print('   ... train_labels: ', self.train_labels.shape)
             print('   ... pool_features: ', self.pool_features.shape)
 
-        if method == 'RandomForest':
-            self.predicted_class,  self.classprob, self.classifier = \
-                   random_forest(self.train_features, self.train_labels,
-                                 self.pool_features, **kwargs)
-        elif method == 'GradientBoostedTrees':
-            raise ValueError("GradientBoostedTrees is currently unimplemented.")
-            # TODO: Restore once GradientBoostedTrees is fixed.
-            # self.predicted_class,  self.classprob, self.classifier = \
-            #     gradient_boosted_trees(self.train_features, self.train_labels,
-            #                            self.pool_features, **kwargs)
-        elif method == 'KNN':
-            self.predicted_class,  self.classprob, self.classifier = \
-                knn(self.train_features, self.train_labels,
-                               self.pool_features, **kwargs)
-        elif method == 'MLP':
-            self.predicted_class,  self.classprob, self.classifier = \
-                mlp(self.train_features, self.train_labels,
-                               self.pool_features, **kwargs)
-        elif method == 'SVM':
-            self.predicted_class, self.classprob, self.classifier = \
-                svm(self.train_features, self.train_labels,
-                               self.pool_features, **kwargs)
-        elif method == 'NB':
-            self.predicted_class, self.classprob, self.classifier = \
-                nbg(self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
-        else:
-            raise ValueError(
-                "The only classifiers implemented are 'RandomForest', 'KNN', 'MLP', "
-                "'SVM' and 'NB'.\nFeel free to add other options."
-            )
+        clf_class = fetch_classifier_class(method)
+        if clf_class is None:
+            raise ValueError(f'Classifier, {method} not recognized!')
+
+        clf_instance = clf_class(**kwargs)
+
+        # Fit the classifier and predict with it
+        clf_instance.fit(self.train_features, self.train_labels)
+        self.classprob = clf_instance.predict_probabilities(self.pool_features)
 
         # estimate classification for validation sample
-        self.validation_class = \
-            self.classifier.predict(self.validation_features)
-        self.validation_prob = \
-            self.classifier.predict_proba(self.validation_features)
+        self.validation_class = clf_instance.predict_class(self.validation_features)
+        self.validation_prob = clf_instance.predict_probabilities(self.validation_features)
 
         if save_predictions:
             id_name = self.identify_keywords()
@@ -1028,46 +1004,24 @@ class DataBase:
             print('   ... train_labels: ', self.train_labels.shape)
             print('   ... pool_features: ', self.pool_features.shape)
 
-        if method == 'RandomForest':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(random_forest, n_ensembles,
-                          self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
+        clf_class = fetch_classifier_class(method)
+        if clf_class is None:
+            raise ValueError(f'Classifier, {method} not recognized!')
 
-        elif method == 'GradientBoostedTrees':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(gradient_boosted_trees, n_ensembles,
-                          self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
-        elif method == 'KNN':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(knn, n_ensembles,
-                          self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
-        elif method == 'MLP':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(mlp, n_ensembles,
-                          self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
-        elif method == 'SVM':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(svm, n_ensembles,
-                          self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
-        elif method == 'NB':
-            self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
-            bootstrap_clf(nbg, n_ensembles,
-                          self.train_features, self.train_labels,
-                          self.pool_features, **kwargs)
-        else:
-            raise ValueError('Classifier not recognized!')
+        # Fit an ensemble of classifiers and predict with all of them
+        self.predicted_class, self.classprob, self.ensemble_probs, self.classifier = \
+            bootstrap_clf(
+                clf_class,
+                n_ensembles,
+                self.train_features,
+                self.train_labels,
+                self.pool_features
+            )
 
         self.validation_class = \
             self.classifier.predict(self.validation_features)
         self.validation_prob = \
             self.classifier.predict_proba(self.validation_features)
-
-        
 
         if save_predictions:
             id_name = self.identify_keywords()

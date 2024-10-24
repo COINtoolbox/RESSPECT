@@ -15,9 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-#from xgboost.sklearn import XGBClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
@@ -25,23 +25,170 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.utils import resample
 from sklearn.utils.validation import check_is_fitted
 
-__all__ = ['random_forest',#'gradient_boosted_trees',
-           'knn',
-           'mlp','svm','nbg', 'bootstrap_clf'
-          ]
+__all__ = [
+    'random_forest',
+    'knn',
+    'mlp',
+    'svm',
+    'nbg',
+    'bootstrap_clf',
+    'ResspectClassifier',
+    'RandomForest',
+    'CLASSIFIER_REGISTRY',
+    ]
+
+CLASSIFIER_REGISTRY = {}
+
+class ResspectClassifier():
+    """Base class that all built-in RESSPECT classifiers will inherit from."""
+
+    def __init__(self, **kwargs):
+        """Base initializer for all RESSPECT classifiers.
+
+        Parameters
+        ----------
+        kwargs : dict
+            All keyword arguments required by the classifier.
+        """
+        self.kwargs = kwargs
+        self.classifier = None
+
+    def __init_subclass__(cls):
+        """Register all subclasses of ResspectClassifer in the CLASSIFIER_REGISTRY."""
+        if cls.__name__ in CLASSIFIER_REGISTRY:
+            raise ValueError(f"Duplicate classifier name: {cls.__name__}")
+
+        CLASSIFIER_REGISTRY[cls.__name__] = cls
+
+    def load_classifier(self, pretrained_classifier):
+        """Load a pretrained classifier.
+
+        Parameters
+        ----------
+        pretrained_classifier : object
+            A pretrained classifier instance.
+        """
+        self.classifier = pretrained_classifier
+
+    def fit(self, train_features, train_labels):
+        """Fit the classifier to the training data.
+
+        Parameters
+        ----------
+        train_features : array-like
+            The features used for training, [n_samples, m_features].
+        train_labels : array-like
+            The training labels, [n_samples].
+        """
+        self.classifier.fit(train_features, train_labels)
+
+    def predict(self, test_features):
+        """Predict using a trained classifier.
+
+        Parameters
+        ----------
+        test_features : array-like
+            The features used for testing, [n_samples, m_features].
+
+        Returns
+        -------
+        tuple(predictions, prob, classifier_instance)
+            The classes and probabilities for the test sample.
+        """
+        predictions = self.classifier.predict(test_features)
+        prob = self.classifier.predict_proba(test_features)
+
+        return predictions, prob
+
+    def predict_class(self, test_features):
+        """Predict the class of the test sample using the trained classifier.
+
+        Parameters
+        ----------
+        test_features : array-like
+            The features used for testing, [n_samples, m_features].
+
+        Returns
+        -------
+        np.array
+            The predicted classes for the test sample. [n_samples]
+        """
+        return self.classifier.predict(test_features)
 
 
-def bootstrap_clf(clf_function, n_ensembles, train_features,
+    def predict_probabilities(self, test_features):
+        """Predict the probabilities of the test sample using the trained classifier.
+
+        Parameters
+        ----------
+        test_features : array-like
+            The features used for testing, [n_samples, m_features].
+
+        Returns
+        -------
+        np.array
+            The predicted probabilities for the test sample. [n_samples, m_classes]
+        """
+        return self.classifier.predict_proba(test_features)
+
+class RandomForest(ResspectClassifier):
+    """RESSPECT-specific version of the sklearn RandomForestClassifier."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.n_estimators = kwargs.get('n_estimators', 100)
+        self.classifier = RandomForestClassifier(n_estimators=self.n_estimators, **self.kwargs)
+
+
+class KNN(ResspectClassifier):
+    """RESSPECT-specific version of the sklearn KNeighborsClassifier."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.classifier = KNeighborsClassifier(**self.kwargs)
+
+
+class MLP(ResspectClassifier):
+    """RESSPECT-specific version of the sklearn MLPClassifier."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.classifier = MLPClassifier(**self.kwargs)
+
+
+class SVM(ResspectClassifier):
+    """RESSPECT-specific version of the sklearn SVC."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.probability = kwargs.get('probability', True)
+        self.classifier = SVC(probability=self.probability, **self.kwargs)
+
+
+class NBG(ResspectClassifier):
+    """RESSPECT-specific version of the sklearn GaussianNB."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.classifier = GaussianNB(**self.kwargs)
+
+
+def bootstrap_clf(clf_class, n_ensembles, train_features,
                   train_labels, test_features, **kwargs):
     """
     Train an ensemble of classifiers using bootstrap.
 
     Parameters
     ----------
-    clf_function: function
-        function to train classifier
+    clf_class: ResspectClassifier
+        Classifier class to be used in the ensemble.
     n_ensembles: int
-        number of classifiers in the ensemble
+        number of classifiers in the ensemble.
     train_features: np.array
         Training sample features.
     train_labels: np.array
@@ -49,8 +196,7 @@ def bootstrap_clf(clf_function, n_ensembles, train_features,
     test_features: np.array
         Test sample features.
     kwargs: extra parameters
-        All keywords required by
-        sklearn.ensemble.RandomForestClassifier function.
+        All keywords required by the classifier class.
 
     Returns
     -------
@@ -60,26 +206,23 @@ def bootstrap_clf(clf_function, n_ensembles, train_features,
         Average distribution of ensemble members
     ensemble_probs: np.array
         Probability output of each member of the ensemble
+    ensemble_clf: PreFitVotingClassifier
+        Ensemble VotingClassifier instance
     """
     n_labels = np.unique(train_labels).size
-    num_test_data = test_features.shape[0]
-    ensemble_probs = np.zeros((num_test_data, n_ensembles, n_labels))
-    classifier_list = list()
+    n_test_data = test_features.shape[0]
+    ensemble_probs = np.zeros((n_test_data, n_ensembles, n_labels))
+    classifiers = list()
     for i in range(n_ensembles):
         x_train, y_train = resample(train_features, train_labels)
-        predicted_class, class_prob, clf = clf_function(x_train,
-                                                        y_train,
-                                                        test_features,
-                                                        **kwargs)
-        #clf = clf_function(**kwargs)
-        #clf.fit(x_train, y_train)
-        #predicted_class = clf.predict(test_features)
-        #class_prob = clf.predict_proba(test_features)
-        
-        classifier_list.append((str(i), clf))
+        clf = clf_class(**kwargs)
+        clf.fit(x_train, y_train)
+        class_prob = clf.predict_probabilities(test_features)
+
+        classifiers.append(clf)
         ensemble_probs[:, i, :] = class_prob
 
-    ensemble_clf = PreFitVotingClassifier(classifier_list, voting='soft')  #Must use soft voting
+    ensemble_clf = PreFitVotingClassifier(classifiers)
     class_prob = ensemble_probs.mean(axis=1)
     predictions = np.argmax(class_prob, axis=1)
     
@@ -119,43 +262,6 @@ def random_forest(train_features:  np.array, train_labels: np.array,
     prob = clf.predict_proba(test_features)       # get probabilities
 
     return predictions, prob, clf
-  
-#######################################################################
-######  we need to find a non-bugged version of xgboost ##############
-
-#def gradient_boosted_trees(train_features: np.array,
-#                           train_labels: np.array,
-#                           test_features: np.array, **kwargs):
-    """Gradient Boosted Trees classifier.
-
-    Parameters
-    ----------
-    train_features : np.array
-        Training sample features.
-    train_labels: np.array
-        Training sample classes.
-    test_features: np.array
-        Test sample features.
-    kwargs: extra parameters
-        All parameters allowed by sklearn.XGBClassifier
-
-    Returns
-    -------
-    predictions: np.array
-        Predicted classes.
-    prob: np.array
-        Classification probability for all objects, [pIa, pnon-Ia].
-    """
-
-    #create classifier instance
-#    clf = XGBClassifier(**kwargs)
-
-#    clf.fit(train_features, train_labels)             # train
-#    predictions = clf.predict(test_features)          # predict
-#    prob = clf.predict_proba(test_features)           # get probabilities
-
-#    return predictions, prob, clf
-#########################################################################
 
 def knn(train_features: np.array, train_labels: np.array,
         test_features: np.array, **kwargs):
@@ -256,7 +362,7 @@ def svm(train_features: np.array, train_labels: np.array,
     prob = clf.predict_proba(test_features)        # get probabilities
 
     return predictions, prob, clf
-  
+
 
 def nbg(train_features: np.array, train_labels: np.array,
                   test_features: np.array, **kwargs):
@@ -294,9 +400,8 @@ def nbg(train_features: np.array, train_labels: np.array,
 
 class PreFitVotingClassifier(object):
     """Stripped-down version of VotingClassifier that uses prefit estimators"""
-    def __init__(self, estimators, voting='hard', weights=None):
-        self.estimators = [e[1] for e in estimators]
-        self.named_estimators = dict(estimators)
+    def __init__(self, estimators, voting='soft', weights=None):
+        self.estimators = estimators
         self.voting = voting
         self.weights = weights
 
@@ -331,7 +436,11 @@ class PreFitVotingClassifier(object):
 
     def _collect_probas(self, X):
         """Collect results from clf.predict calls. """
-        return np.asarray([clf.predict_proba(X) for clf in self.estimators])
+        results = []
+        for clf in self.estimators:
+            _, proba = clf.predict(X)
+            results.append(proba)
+        return np.asarray(results)
 
     def _predict_proba(self, X):
         """Predict class probabilities for X in 'soft' voting """
@@ -381,7 +490,11 @@ class PreFitVotingClassifier(object):
 
     def _predict(self, X):
         """Collect results from clf.predict calls. """
-        return np.asarray([clf.predict(X) for clf in self.estimators]).T
+        results = []
+        for clf in self.estimators:
+            predictions, _ = clf.predict(X)
+            results.append(predictions)
+        return np.asarray(results).T
 
 def main():
     return None
