@@ -174,7 +174,6 @@ def test_evaluate_bazin(input_bazin_lc):
     res = np.array(res)
     
     assert not np.isnan(res).any()
-        
 
 if __name__ == '__main__':
     pytest.main()
