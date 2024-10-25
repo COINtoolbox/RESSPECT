@@ -16,20 +16,23 @@
 # limitations under the License.
 """
 
+from numba import njit
 import numpy as np
 from iminuit import Minuit
 from iminuit.cost import LeastSquares
 
 __all__ = ['protected_exponent', 'protected_sig', 'bump', 'fit_bump']
 
+@njit
 def protected_exponent(x):
     """
     Exponential function : cannot exceed e**10
     """
-    with np.errstate(over='ignore'):
-        return np.where(np.abs(x) < 10, np.exp(x), np.exp(10))
+    y = np.where(np.abs(x) < 10, np.exp(x), np.exp(10))
+    return y
 
 
+@njit
 def protected_sig(x):
     """
     Sigmoid function using the protected exponential function
@@ -37,6 +40,7 @@ def protected_sig(x):
     return 1/(1+protected_exponent(-x))
 
 
+@njit
 def bump(x, p1, p2, p3):
     """ Parametric function, fit transient behavior
         Need to fit normalised light curves (divided by maximum flux)

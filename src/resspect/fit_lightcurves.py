@@ -37,6 +37,7 @@ from resspect.lightcurves_utils import SNPCC_MALANCHEV_FEATURES_HEADER
 from resspect.lightcurves_utils import find_available_key_name_in_header
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
+from resspect.lightcurves_utils import BUMP_HEADERS
 from resspect.lightcurves_utils import make_features_header
 from resspect.tom_client import TomClient
 
@@ -48,6 +49,8 @@ FEATURE_EXTRACTOR_MAPPING = {
     "bump": BumpFeatureExtractor,
     "malanchev": MalanchevFeatureExtractor
 }
+
+MAX_NUMBER_OF_PROCESSES = 8
 
 
 def _get_features_to_write(light_curve_data) -> list:
@@ -111,7 +114,7 @@ def _snpcc_sample_fit(
 
 def fit_snpcc(
         path_to_data_dir: str, features_file: str,
-        file_prefix: str = "DES_SN", number_of_processors: int = 1,
+        file_prefix: str = "DES_SN", number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
         feature_extractor: str = 'bazin'):
     """
     Perform fit to all objects in the SNPCC data.
@@ -134,6 +137,8 @@ def fit_snpcc(
         header = SNPCC_FEATURES_HEADER
     elif feature_extractor == 'malanchev':
         header = SNPCC_MALANCHEV_FEATURES_HEADER
+    elif feature_extractor == 'bump':
+        header = BUMP_HEADERS["snpcc_header"]
 
     files_list = os.listdir(path_to_data_dir)
     files_list = [each_file for each_file in files_list
@@ -189,7 +194,7 @@ def _plasticc_sample_fit(
 def fit_plasticc(path_photo_file: str, path_header_file: str,
                  output_file: str, sample='train',
                  feature_extractor: str = "bazin",
-                 number_of_processors: int = 1):
+                 number_of_processors: int = MAX_NUMBER_OF_PROCESSES):
     """
     Perform fit to all objects in a given PLAsTiCC data file.
     Parameters
@@ -269,7 +274,7 @@ def _TOM_sample_fit(
     return light_curve_data
 
 def fit_TOM(data_dic: dict, output_features_file: str,
-            number_of_processors: int = 1,
+            number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
             feature_extractor: str = 'bazin'):
     """
     Perform fit to all objects from the TOM data.
@@ -335,7 +340,7 @@ def _sample_fit(
     return light_curve_data
 
 def fit(data_dic: dict, output_features_file: str,
-            number_of_processors: int = 1,
+            number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
             feature_extractor: str = 'bazin', filters: list = ['SNPCC'], 
             features: list = [], type: str = 'unspecified', Ia_code: list = [10],
             additional_info: list = []):
