@@ -80,6 +80,6 @@ Navigate to the repository folder and do
 
 You can now install this package with:  
 
-    (RESSPECT) >>> python setup.py install
+    (RESSPECT) >>> pip install -e .
 
 > You may choose to create your virtual environment within the folder of the repository. If you choose to do this, you must remember to exclude the virtual environment directory from version control using e.g., ``.gitignore``.   
