@@ -107,6 +107,7 @@ def run_classification(
             pred_dir=config.pred_dir,
             loop=iteration_step,
             save_predictions=config.save_predictions,
+            pretrained_model_path=config.pretrained_model_path,
             **kwargs
         )
     return database_class

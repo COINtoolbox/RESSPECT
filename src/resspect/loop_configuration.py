@@ -87,6 +87,9 @@ class LoopConfiguration:
     initial_training_samples_file
         File name to save initial training samples.
         File will be saved if "training"!="original".
+    pretrained_model_path: str (optional)
+        Filepath to a pretrained model. If provided, the model will be loaded
+        and used to predict the queried samples.
     """
     nloops: int
     strategy: str
@@ -113,6 +116,7 @@ class LoopConfiguration:
     metadata_fname: str = None
     bar: bool = True
     initial_training_samples_file: str = None
+    pretrained_model_path: str = None
 
     def __post_init__(self):
         # file checking

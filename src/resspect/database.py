@@ -914,7 +914,7 @@ class DataBase:
             wsample.close()
 
     def classify(self, method: str, save_predictions=False, pred_dir=None,
-                 loop=None, screen=False, **kwargs):
+                 loop=None, screen=False, pretrained_model_path=None, **kwargs):
         """Apply a machine learning classifier.
 
         Populate properties: predicted_class and class_prob
@@ -936,6 +936,8 @@ class DataBase:
         pred_dir: str (optional)
             Output directory to store class predictions.
             Only used if `save_predictions == True`. Default is None.
+        pretrained_model_path: str (optional)
+            Path to a pretrained model. Default is None.
         kwargs: extra parameters
             Parameters required by the chosen classifier.
         """
@@ -952,8 +954,13 @@ class DataBase:
 
         clf_instance = clf_class(**kwargs)
 
-        # Fit the classifier and predict with it
-        clf_instance.fit(self.train_features, self.train_labels)
+        # if a pretrained model is available, load it, otherwise fit the model
+        if pretrained_model_path is not None:
+            clf_instance.load(pretrained_model_path)
+        else:
+            clf_instance.fit(self.train_features, self.train_labels)
+
+        # estimate classification for pool sample
         self.classprob = clf_instance.predict_probabilities(self.pool_features)
 
         # estimate classification for validation sample

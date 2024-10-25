@@ -15,8 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
+import pickle
 import numpy as np
+from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
@@ -60,15 +61,24 @@ class ResspectClassifier():
 
         CLASSIFIER_REGISTRY[cls.__name__] = cls
 
-    def load_classifier(self, pretrained_classifier):
+    def load_classifier(self, pretrained_classifier_filepath):
         """Load a pretrained classifier.
 
         Parameters
         ----------
-        pretrained_classifier : object
-            A pretrained classifier instance.
+        pretrained_classifier_filepath : str
+            The filepath of a pickled, pretrained classifier instance.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the pretrained classifier pickle file does not exist.
         """
-        self.classifier = pretrained_classifier
+        if not Path(pretrained_classifier_filepath).is_file():
+            raise FileNotFoundError(f"File {pretrained_classifier_filepath} not found.")
+
+        with open(pretrained_classifier_filepath, 'rb') as f:
+            self.classifier = pickle.load(f)
 
     def fit(self, train_features, train_labels):
         """Fit the classifier to the training data.
