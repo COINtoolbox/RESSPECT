@@ -1,6 +1,9 @@
 FROM ubuntu
 
 ENV RESSPECT_DIR=/resspect
+
+# Note that this is where we copy resspect source at build time
+# and also where docker-compose mounts the curent source directory in this container.
 ENV RESSPECT_SRC=${RESSPECT_DIR}/resspect-src
 ENV RESSPECT_VENV=${RESSPECT_DIR}/resspect-venv
 ENV RESSPECT_VENV_BIN=${RESSPECT_VENV}/bin
@@ -8,9 +11,7 @@ ENV RESSPECT_WORK=${RESSPECT_DIR}/resspect-work
 
 WORKDIR ${RESSPECT_DIR}
 
-#ENV HOME=/
-
-RUN echo "entering resspect Dockerfile"
+RUN echo "Entering resspect Dockerfile"
 
 RUN apt-get update && \
    apt-get -y upgrade && \
@@ -20,7 +21,10 @@ RUN apt-get update && \
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-# Copy over resspect source from local checkout
+# Copy over resspect source from local checkout so we can install dependencies
+# and so the container will have a version of RESSPECT packaged when run standalone.
+#
+# If this line is changed, pleas refer to the bind mount in the compose file to ensure consistency.
 COPY . ${RESSPECT_SRC}
 
 # Create a venv for resspect

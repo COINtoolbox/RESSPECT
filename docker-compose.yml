@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   resspect:
     tty: true
@@ -11,11 +9,13 @@ services:
       - "db"
     volumes:
       - type: bind
-        source: ./resspect
-        target: /resspect
+        source: ./
+        target: /resspect/resspect-src
       - type: bind
         source: ./secrets
         target: /secrets
+        bind:
+          create_host_path: true
     environment:
       - DB_USER=admin
       - DB_PASS=verysecurepassword
@@ -35,11 +35,17 @@ services:
       - POSTGRES_DB=resspectdb
       - POSTGRES_DATA_DIR=/docker-entrypoint-initdb.d
     volumes:
-      - ./resspectdb.sql:/docker-entrypoint-initdb.d/resspectdb.sql
       - type: bind
-        source: ./resspect
+        source: ./resspectdb.sql
+        target: /docker-entrypoint-initdb.d/resspectdb.sql
+      - type: bind
+        source: ./src/resspect
         target: /resspect
-
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d resspectdb"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
 
 networks:
   tom_desc_default:
