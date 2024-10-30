@@ -1,5 +1,5 @@
 import pytest
-from resspect.plugin_utils import import_module_from_string, fetch_classifier_class
+from resspect.plugin_utils import import_module_from_string, fetch_classifier_class, fetch_query_strategy_class
 
 
 def test_import_module_from_string():
@@ -66,3 +66,22 @@ def test_fetch_classifier_class_not_in_registry():
 
     assert "Error fetching class: Nonexistent" in str(excinfo.value)
 
+
+def test_fetch_query_strategy_class():
+    """Test the fetch_query_strategy_class function."""
+    requested_class = "builtins.BaseException"
+
+    returned_cls = fetch_query_strategy_class(requested_class)
+
+    assert returned_cls.__name__ == "BaseException"
+
+
+def test_fetch_query_strategy_class_not_in_registry():
+    """Test that an exception is raised when a model is requested that is not in the registry."""
+
+    requested_class = "Nonexistent"
+
+    with pytest.raises(ValueError) as excinfo:
+        fetch_query_strategy_class(requested_class)
+
+    assert "Error fetching class: Nonexistent" in str(excinfo.value)

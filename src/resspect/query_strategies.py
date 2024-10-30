@@ -26,6 +26,353 @@ __all__ = ['uncertainty_sampling',
 import numpy as np
 import pandas as pd
 
+QUERY_STRATEGY_REGISTRY = {}
+
+class QueryStrategy:
+    """Base class that all built-in query strategies inherit from.
+    """
+    def __init__(self,
+                 queryable_ids: np.array,
+                 test_ids: np.array,
+                 batch: int = 1,
+                 query_threshold: float = 1.0,
+                 screen: bool = False,
+                 **kwargs):
+        """Base initializer for all query strategies.
+
+        Parameters
+        ----------
+        queryable_ids : np.array
+            Set of ids for objects available for querying.
+        test_ids : np.array
+            Set of ids for objects in the test sample.
+        batch : int, optional
+            Number of objects to be chosen in each batch query, by default 1
+        query_threshold : float, optional
+            Threshold where a query is considered worth it, by default 1.0 (no limit)
+        screen : bool, optional
+            If True display on screen the shift in index and
+            the difference in estimated probabilities of being Ia
+            caused by constraints on the sample available for querying, by default False
+        """
+
+        self.queryable_ids = queryable_ids
+        self.test_ids = test_ids
+        self.batch = batch
+        self.query_threshold = query_threshold
+        self.screen = screen
+        self.requires_ensemble = False
+
+    def __init_subclass__(cls):
+        """Register all subclasses of QueryStrategy in the QUERY_STRATEGY_REGISTRY."""
+        if cls.__name__ in QUERY_STRATEGY_REGISTRY:
+            raise ValueError(f"Duplicate classifier name: {cls.__name__}")
+
+        QUERY_STRATEGY_REGISTRY[cls.__name__] = cls
+
+    def sample(self, probability: np.array) -> list:
+        """Abstract method that all subclasses must implement.
+
+        Parameters
+        ----------
+        probability : np.array
+            Classification probability. The shape of the input probability depends
+            on the query strategy implementation. See the subclasses implementation
+            of this method for more details.
+
+        Returns
+        -------
+        list
+            List of indexes identifying the objects from the test sample
+            to be queried. If there are less queryable objects than the
+            required batch it will return only the available objects
+            -- so the list of objects to query can be smaller than 'self.batch'.
+
+        Raises
+        ------
+        NotImplementedError
+            Subclasses must implement this method.
+        """
+        raise NotImplementedError
+
+
+class UncSampling(QueryStrategy):
+    """RESSPECT-specific implementation of uncertainty sampling."""
+    def __init__(self,
+                 queryable_ids: np.array,
+                 test_ids: np.array,
+                 batch: int,
+                 query_threshold: float,
+                 screen: bool,
+                 **kwargs):
+        super().__init__(queryable_ids, test_ids, batch, query_threshold, screen, **kwargs)
+
+    def sample(self, probability: np.array) -> list:
+        """Search for the sample with highest uncertainty in predicted class.
+
+        Parameters
+        ----------
+        probability : np.array
+            Classification probability. One value per class per object.
+
+        Returns
+        -------
+        list
+            List of indexes identifying the objects from the test sample
+            to be queried in decreasing order of importance.
+            If there are less queryable objects than the required batch
+            it will return only the available objects -- so the list of
+            objects to query can be smaller than 'batch'.
+        """
+        return uncertainty_sampling(probability,
+                                    test_ids=self.test_ids,
+                                    queryable_ids=self.queryable_ids,
+                                    batch=self.batch,
+                                    screen=self.screen,
+                                    query_thre=self.query_threshold)
+
+
+class UncSampleEntropy(QueryStrategy):
+    """RESSPECT-specific implementation of uncertainty sampling defined by entropy."""
+    def __init__(self,
+                 queryable_ids: np.array,
+                 test_ids: np.array,
+                 batch: int,
+                 query_threshold: float,
+                 screen: bool,
+                 **kwargs):
+        super().__init__(queryable_ids, test_ids, batch, query_threshold, screen, **kwargs)
+
+    def sample(self, probability: np.array) -> list:
+        """Search for the sample with highest uncertainty, defined by entropy,
+        in predicted class.
+
+        Parameters
+        ----------
+        probability : np.array
+            Classification probability. One value per class per object.
+
+        Returns
+        -------
+        list
+            List of indexes identifying the objects from the test sample
+            to be queried in decreasing order of importance.
+            If there are less queryable objects than the required batch
+            it will return only the available objects -- so the list of
+            objects to query can be smaller than 'batch'.
+        """
+        return uncertainty_sampling_entropy(probability,
+                                            test_ids=self.test_ids,
+                                            queryable_ids=self.queryable_ids,
+                                            batch=self.batch,
+                                            screen=self.screen,
+                                            query_thre=self.query_threshold)
+
+
+class UncSampleLeastConfident(QueryStrategy):
+    """RESSPECT-specific implementation of uncertainty sampling defined by least confident."""
+    def __init__(self,
+                 queryable_ids: np.array,
+                 test_ids: np.array,
+                 batch: int,
+                 query_threshold: float,
+                 screen: bool,
+                 **kwargs):
+        super().__init__(queryable_ids, test_ids, batch, query_threshold, screen, **kwargs)
+
+    def sample(self, probability: np.array) -> list:
+        """Search for the sample with highest uncertainty, defined by least
+        confident, in predicted class.
+
+        Parameters
+        ----------
+        probability : np.array
+            Classification probability. One value per class per object.
+
+        Returns
+        -------
+        list
+            List of indexes identifying the objects from the test sample
+            to be queried in decreasing order of importance.
+            If there are less queryable objects than the required batch
+            it will return only the available objects -- so the list of
+            objects to query can be smaller than 'batch'.
+        """
+        return uncertainty_sampling_least_confident(probability,
+                                                    test_ids=self.test_ids,
+                                                    queryable_ids=self.queryable_ids,
+                                                    batch=self.batch,
+                                                    screen=self.screen,
+                                                    query_thre=self.query_threshold)
+
+
+class UncSampleMargin(QueryStrategy):
+    """RESSPECT-specific implementation of uncertainty sampling defined by least confident."""
+    def __init__(self,
+                 queryable_ids: np.array,
+                 test_ids: np.array,
+                 batch: int,
+                 query_threshold: float,
+                 screen: bool,
+                 **kwargs):
+        super().__init__(queryable_ids, test_ids, batch, query_threshold, screen, **kwargs)
+
+    def sample(self, probability: np.array) -> list:
+        """Search for the sample with highest uncertainty, defined by max margin,
+        in predicted class.
+
+        Parameters
+        ----------
+        probability : np.array
+            Classification probability. One value per class per object.
+
+        Returns
+        -------
+        list
+            List of indexes identifying the objects from the test sample
+            to be queried in decreasing order of importance.
+            If there are less queryable objects than the required batch
+            it will return only the available objects -- so the list of
+            objects to query can be smaller than 'batch'.
+        """
+        return uncertainty_sampling_margin(probability,
+                                           test_ids=self.test_ids,
+                                           queryable_ids=self.queryable_ids,
+                                           batch=self.batch,
+                                           screen=self.screen,
+                                           query_thre=self.query_threshold)
+
+
+class RandomSampling(QueryStrategy):
+    """RESSPECT-specific implementation of random sampling."""
+    def __init__(self,
+                 queryable_ids: np.array,
+                 test_ids: np.array,
+                 batch: int,
+                 query_threshold: float,
+                 screen: bool,
+                 queryable: bool = False,
+                 **kwargs):
+        """Randomly choose an object from the test sample.
+
+        Parameters
+        ----------
+        queryable_ids : np.array
+            Set of ids for objects available for querying.
+        test_ids : np.array
+            Set of ids for objects in the test sample.
+        batch : int, optional
+            Number of objects to be chosen in each batch query, by default 1
+        query_threshold : float, optional
+            Threshold where a query is considered worth it, by default 1.0 (no limit)
+        screen : bool, optional
+            If True display on screen the shift in index and
+            the difference in estimated probabilities of being Ia
+            caused by constraints on the sample available for querying, by default False
+        queryable : bool, optional
+            If True, check if randomly chosen object is queryable, by default False.
+        """
+        super().__init__(queryable_ids, test_ids, batch, query_threshold, screen, **kwargs)
+        self.queryable = queryable
+
+    def sample(self, probability: np.array = None) -> list:
+        """Randomly choose an object from the test sample.
+
+        Parameters
+        ----------
+        probability : np.array
+            Unused in this implementation.
+
+        Returns
+        -------
+        list
+            List of indexes identifying the objects from the test sample
+            to be queried. If there are less queryable objects than the
+            required batch it will return only the available objects
+            -- so the list of objects to query can be smaller than 'batch'.
+        """
+        return random_sampling(test_ids=self.test_ids,
+                               queryable_ids=self.queryable_ids,
+                               batch=self.batch,
+                               queryable=self.queryable,
+                               query_thre=self.query_threshold,
+                               screen=self.screen)
+
+
+class QBDMI(QueryStrategy):
+    """RESSPECT-specific implementation of QBDMI Strategy."""
+    def __init__(self,
+                 queryable_ids: np.array,
+                 test_ids: np.array,
+                 batch: int,
+                 query_threshold: float,
+                 screen: bool,
+                 **kwargs):
+        super().__init__(queryable_ids, test_ids, batch, query_threshold, screen, **kwargs)
+        self.requires_ensemble = True
+
+    def sample(self, probability: np.array) -> list:
+        """Search for the sample with highest uncertainty in predicted class.
+
+        Parameters
+        ----------
+        probability : np.array
+            Classification probability from each model in the ensemble.
+
+        Returns
+        -------
+        list
+            List of indexes identifying the objects from the test sample
+            to be queried in decreasing order of importance.
+            If there are less queryable objects than the required batch
+            it will return only the available objects -- so the list of
+            objects to query can be smaller than 'batch'.
+        """
+        return qbd_mi(probability,
+                      test_ids=self.test_ids,
+                      queryable_ids=self.queryable_ids,
+                      batch=self.batch,
+                      screen=self.screen,
+                      query_thre=self.query_threshold)
+
+
+class QBDEntropy(QueryStrategy):
+    """RESSPECT-specific implementation of QBDEntropy Strategy."""
+    def __init__(self,
+                 queryable_ids: np.array,
+                 test_ids: np.array,
+                 batch: int,
+                 query_threshold: float,
+                 screen: bool,
+                 **kwargs):
+        super().__init__(queryable_ids, test_ids, batch, query_threshold, screen, **kwargs)
+        self.requires_ensemble = True
+
+    def sample(self, probability: np.array) -> list:
+        """Search for the sample with highest entropy from the average predictions
+        of the classifier ensemble. These can be instances where the classifiers
+        agree (but are uncertain about the class) or disagree.
+
+        Parameters
+        ----------
+        probability : np.array
+            Classification probability from each model in the ensemble.
+
+        Returns
+        -------
+        list
+            List of indexes identifying the objects from the test sample
+            to be queried in decreasing order of importance.
+            If there are less queryable objects than the required batch
+            it will return only the available objects -- so the list of
+            objects to query can be smaller than 'batch'.
+        """
+        return qbd_entropy(probability,
+                           test_ids=self.test_ids,
+                           queryable_ids=self.queryable_ids,
+                           batch=self.batch,
+                           screen=self.screen,
+                           query_thre=self.query_threshold)
 
 def compute_entropy(ps: np.array):
     """

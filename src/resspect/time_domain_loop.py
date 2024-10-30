@@ -396,7 +396,7 @@ def _get_indices_of_objects_to_be_queried(
     else:
         object_indices = database_class.make_query(
             strategy=strategy, batch=batch, queryable=is_queryable,
-            query_thre=query_threshold)
+            query_threshold=query_threshold)
     return list(object_indices)
 
 
