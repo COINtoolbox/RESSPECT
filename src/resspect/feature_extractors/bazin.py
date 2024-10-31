@@ -15,7 +15,7 @@ __all__ = ['BazinFeatureExtractor']
 class BazinFeatureExtractor(LightCurve):
     def __init__(self):
         super().__init__()
-        self.features_names = ['a', 'b', 't0', 'tfall', 'trise']
+        self.features_names = ['A', 'B', 't0', 'tfall', 'trise']
 
     def evaluate(self, time: np.array) -> dict:
         """
