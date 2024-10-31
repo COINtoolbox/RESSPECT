@@ -127,6 +127,28 @@ class LightCurve:
 
         FEATURE_EXTRACTOR_REGISTRY[cls.__name__] = cls
 
+    def fit(self, band: str) -> np.ndarray:
+        """
+        Extract features for one filter.
+
+        Parameters
+        ----------
+        band: str
+            Choice of broad band filter
+
+        Returns
+        -------
+        np.ndarray
+        """
+        raise NotImplementedError()
+
+    def fit_all(self):
+        """
+        Performs feature extraction for all filters independently and concatenate results.
+        Populates self.features.
+        """
+        raise NotImplementedError()
+
     def _get_snpcc_photometry_raw_and_header(
             self, lc_data: np.ndarray,
             sntype_test_value: str = "-9") -> Tuple[np.ndarray, list]:
