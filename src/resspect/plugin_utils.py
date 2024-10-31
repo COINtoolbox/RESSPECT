@@ -1,6 +1,10 @@
 import importlib
+import logging
 from resspect.classifiers import CLASSIFIER_REGISTRY, ResspectClassifier
 from resspect.query_strategies import QUERY_STRATEGY_REGISTRY, QueryStrategy
+from resspect.feature_extractors.light_curve import FEATURE_EXTRACTOR_REGISTRY, LightCurve
+
+logger = logging.getLogger(__name__)
 
 def get_or_load_class(class_name: str, registry: dict) -> type:
     """Given the name of a class and a registry dictionary, attempt to return
@@ -138,3 +142,46 @@ def fetch_query_strategy_class(query_strategy_name: str) -> QueryStrategy:
     """
 
     return get_or_load_class(query_strategy_name, QUERY_STRATEGY_REGISTRY)
+
+
+def fetch_feature_extractor_class(feature_extractor_name: str) -> LightCurve:
+    """Fetch the feature extractor class from the registry.
+
+    Note: For a period of time, the feature extractor class names were not capitalized.
+    We will try to be accommodating to users who have not updated their scripts.
+
+    This function will attempt to load the class using the provided string
+    as is. If we cannot load a class that way, we will attempt to capitalize the
+    first letter and try again. If the second attempt is successful, we'll emit
+    a warning, prompting the user to update their script.
+
+    Parameters
+    ----------
+    feature_extract_name : str
+        The name of the feature extractor class to retrieve. This should either be the
+    name of the class or the import specification for the class.
+
+    Returns
+    -------
+    LightCurve
+        The subclass of LightCurve.
+
+    Raises
+    ------
+    ValueError
+        If a built-in query strategy was requested, but not found in the registry.
+    ValueError
+        If no query strategy was specified in the runtime configuration.
+    """
+
+    # TODO: In a future release, remove the try/except block and only use the
+    # `get_or_load_class` function in the same way other fetch_*_class functions do.
+
+    try:
+        return get_or_load_class(feature_extractor_name, FEATURE_EXTRACTOR_REGISTRY)
+    except ValueError:
+        # Check to see if we can load the class with the first letter capitalized
+        uppercase_feature_extractor_name = feature_extractor_name[0].upper() + feature_extractor_name[1:]
+        returned_class = get_or_load_class(uppercase_feature_extractor_name, FEATURE_EXTRACTOR_REGISTRY)
+        logger.warning(f"Feature extractor '{feature_extractor_name}' is deprecated. Please use '{uppercase_feature_extractor_name}' instead.")
+        return returned_class

@@ -48,7 +48,7 @@ You can perform the entire analysis for one day of the survey using the `SNPCCPh
    >>> day = 20
    >>> queryable_criteria = 2
    >>> get_cost = True
-   >>> feature_extractor = 'bazin'
+   >>> feature_extractor = 'Bazin'
    >>> tel_sizes=[4, 8]
    >>> tel_names = ['4m', '8m']
    >>> spec_SNR = 10

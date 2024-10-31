@@ -28,22 +28,16 @@ import numpy as np
 import pandas as pd
 import progressbar
 
-from resspect.feature_extractors.bazin import BazinFeatureExtractor
-from resspect.feature_extractors.bump import BumpFeatureExtractor
 from resspect.lightcurves_utils import BAZIN_HEADERS
 from resspect.lightcurves_utils import get_query_flags
 from resspect.lightcurves_utils import maybe_create_directory
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
+from resspect.plugin_utils import fetch_feature_extractor_class
 
 
 FEATURE_EXTRACTOR_HEADERS_MAPPING = {
-    "bazin": BAZIN_HEADERS
-}
-
-FEATURE_EXTRACTOR_MAPPING = {
-    "bazin": BazinFeatureExtractor,
-    "bump": BumpFeatureExtractor
+    "Bazin": BAZIN_HEADERS
 }
 
 
@@ -122,7 +116,7 @@ class PLAsTiCCPhotometry:
         else:
             self._file_list_dict[sample] = [photo_file]
 
-    def _set_header(self, get_cost: bool = False, feature_extractor: str = 'bazin'):
+    def _set_header(self, get_cost: bool = False, feature_extractor: str = 'Bazin'):
         """
         Initializes header
 
@@ -137,7 +131,7 @@ class PLAsTiCCPhotometry:
             Default option uses header for Bazin features file.
         """
         if feature_extractor not in FEATURE_EXTRACTOR_HEADERS_MAPPING:
-            raise ValueError('Only bazin headers are supported')
+            raise ValueError('Only Bazin headers are supported')
         self._header = FEATURE_EXTRACTOR_HEADERS_MAPPING[
                 feature_extractor]['plasticc_header']
         if get_cost:
@@ -145,7 +139,7 @@ class PLAsTiCCPhotometry:
                 feature_extractor]['plasticc_header_with_cost']
 
     def create_daily_file(self, output_dir: str, day: int,
-                          feature_extractor: str = 'bazin', get_cost: bool = False):
+                          feature_extractor: str = 'Bazin', get_cost: bool = False):
         """
         Create one file for a given day of the survey.
 
@@ -247,7 +241,7 @@ class PLAsTiCCPhotometry:
             raise ValueError('Unknown or not supported telescope names')
 
     def _load_plasticc_data(self, raw_data_dir: str, volume: int,
-                            snid: int, sample='test', feature_extractor: str = 'bazin'):
+                            snid: int, sample='test', feature_extractor: str = 'Bazin'):
         """
         Loads PLAsTiCC dataset files to LightCurve class
 
@@ -263,7 +257,8 @@ class PLAsTiCCPhotometry:
         sample: str (optional)
             Sample to load, 'train' or 'test'. Default is 'test'.
         """
-        light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
+        feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+        light_curve_data = feature_extractor_class()
         if sample == 'test':
             file_name = os.path.join(
                     raw_data_dir, self._file_list_dict['test'][volume - 1])
@@ -303,7 +298,9 @@ class PLAsTiCCPhotometry:
         feature_method
             Feature extraction method, only possibility is 'Bazin'.
         """
-        if feature_extractor not in FEATURE_EXTRACTOR_MAPPING:
+        try:
+            fetch_feature_extractor_class(feature_extractor)
+        except ValueError:
             raise ValueError(
                 'Provided feature extractor method has not been implemented!!')
 
@@ -494,7 +491,7 @@ class PLAsTiCCPhotometry:
     def fit_one_lc(self, raw_data_dir: str, snid: int, output_dir: str,
                    vol=None, day=None, queryable_criteria=1,
                    days_since_last_obs=2, get_cost=False, tel_sizes=[4, 8],
-                   tel_names=['4m', '8m'], feature_extractor='bazin', spec_SNR=10,
+                   tel_names=['4m', '8m'], feature_extractor='Bazin', spec_SNR=10,
                    time_window=[0, 1095], sample='test', bar=False,
                    **kwargs):
         """
@@ -664,7 +661,7 @@ class PLAsTiCCPhotometry:
             vol: int = None, queryable_criteria: int = 1,
             days_since_last_obs: int = 2, get_cost: bool = False,
             tel_sizes: list = [4, 8], tel_names: list = ['4m', '8m'],
-            feature_extractor: str = 'bazin', spec_SNR: int = 10,
+            feature_extractor: str = 'Bazin', spec_SNR: int = 10,
             time_window: list = [0, 1095], sample: str = 'test',
             number_of_processors: int = 1, create_daily_files: bool = False,
             ask_user: bool = True, **kwargs):

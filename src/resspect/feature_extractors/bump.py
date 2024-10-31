@@ -10,7 +10,7 @@ from resspect.bump import fit_bump
 from resspect.feature_extractors.light_curve import LightCurve
 
 
-class BumpFeatureExtractor(LightCurve):
+class Bump(LightCurve):
     def __init__(self):
         super().__init__()
         self.features_names = ['p1', 'p2', 'p3', 'time_shift', 'max_flux']

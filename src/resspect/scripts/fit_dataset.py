@@ -48,8 +48,8 @@ def fit_dataset(user_choices):
         Number of cores to be used. If None all cores are used. 
         Default is 1.
     -f: str (optional)
-        Function used for feature extraction. Options are "bazin" and "bump".
-        Default is "bazin". Only used for SNPCC for now.
+        Function used for feature extraction. Options are "Bazin" and "Bump".
+        Default is "Bazin". Only used for SNPCC for now.
         
     Examples
     --------
@@ -113,7 +113,7 @@ def main():
                        required=False, default=1)
     parser.add_argument('-f', '--function', dest='function', 
                        help='Function used for feature extraction.',
-                       required=False, default="bazin")
+                       required=False, default="Bazin")
 
     user_input = parser.parse_args()
 

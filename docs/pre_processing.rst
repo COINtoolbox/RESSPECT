@@ -248,7 +248,7 @@ For SNPCC using Bazin features:
 
    >>> path_to_data_dir = user_cache_dir(appname='resspect/SIMGEN_PUBLIC_DES') # raw data directory
    >>> features_file = 'results/Bazin.csv'                     # output file
-   >>> feature_extractor = 'bazin'
+   >>> feature_extractor = 'Bazin'
 
    >>> fit_snpcc(path_to_data_dir=path_to_data_dir, features_file=features_file)
 
@@ -263,7 +263,7 @@ For SNPCC using Malanchev features:
 
    >>> path_to_data_dir = user_cache_dir(appname='resspect/SIMGEN_PUBLIC_DES') # raw data directory
    >>> features_file = 'results/Malanchev.csv'                 # output file
-   >>> feature_extractor = 'malanchev'
+   >>> feature_extractor = 'Malanchev'
 
    >>> fit_snpcc(path_to_data_dir=path_to_data_dir, features_file=features_file)
 
@@ -279,7 +279,7 @@ For PLAsTiCC:
    >>> path_photo_file = '~/plasticc_train_lightcurves.csv'
    >>> path_header_file = '~/plasticc_train_metadata.csv.gz'
    >>> output_file = 'results/PLAsTiCC_Bazin_train.dat'
-   >>> feature_extractor = 'bazin'
+   >>> feature_extractor = 'Bazin'
 
    >>> sample = 'train'
 

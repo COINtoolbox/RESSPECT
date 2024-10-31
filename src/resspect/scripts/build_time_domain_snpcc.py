@@ -106,8 +106,8 @@ def main():
     parser.add_argument('-c', '--calculate-cost', dest='get_cost', default=False, 
                         help='Calculate cost of spectra in each day.')
     parser.add_argument('-f', '--feature-method', dest='feature_method', type=str,
-                        required=False, default='bazin', help='Feature extraction method. ' + \
-                        'Only "bazin" is accepted at the moment.')
+                        required=False, default='Bazin', help='Feature extraction method. ' + \
+                        'Only "Bazin" is accepted at the moment.')
     parser.add_argument('-g', '--days-since-obs', dest='days_since_obs', required=False,
                         type=int, default=2, help='Gap in days since last observation ' + \
                         'when the measured magnitude can be used for spectroscopic ' + \

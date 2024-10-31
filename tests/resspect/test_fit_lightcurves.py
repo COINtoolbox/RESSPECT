@@ -19,7 +19,7 @@ import numpy as np
 import pytest
 
 from resspect.feature_extractors.light_curve import LightCurve
-from resspect.feature_extractors.bazin import BazinFeatureExtractor
+from resspect.feature_extractors.bazin import Bazin
 
 
 @pytest.fixture(scope='function')
@@ -38,7 +38,7 @@ def input_bazin_lc(test_data_path):
     """ Read an SNPCC light curve. """
 
     path_to_lc = test_data_path / "DES_SN848233.DAT"
-    lc = BazinFeatureExtractor()
+    lc = Bazin()
     lc.load_snpcc_lc(str(path_to_lc))
 
     return lc

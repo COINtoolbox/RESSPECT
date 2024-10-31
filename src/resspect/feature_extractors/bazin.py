@@ -9,10 +9,8 @@ from resspect import bazin
 from resspect.bazin import fit_scipy
 from resspect.feature_extractors.light_curve import LightCurve
 
-__all__ = ['BazinFeatureExtractor']
 
-
-class BazinFeatureExtractor(LightCurve):
+class Bazin(LightCurve):
     def __init__(self):
         super().__init__()
         self.features_names = ['A', 'B', 't0', 'tfall', 'trise']

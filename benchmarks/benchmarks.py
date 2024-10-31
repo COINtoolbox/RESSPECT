@@ -24,7 +24,7 @@ def time_feature_creation():
         fit_snpcc(
             path_to_data_dir=input_file_path,
             features_file=str(features_file),
-            feature_extractor="malanchev"
+            feature_extractor="Malanchev"
         )
 
 
@@ -38,7 +38,7 @@ def time_learn_loop(ml_model, strategy):
         learn_loop(
             LoopConfiguration(
                 nloops=25,
-                features_method="malanchev",
+                features_method="Malanchev",
                 classifier=ml_model,
                 strategy=strategy,
                 path_to_features=features_file,
@@ -67,7 +67,7 @@ def peakmem_learn_loop(ml_model):
         learn_loop(
             LoopConfiguration(
                 nloops=25,
-                features_method="malanchev",
+                features_method="Malanchev",
                 classifier=ml_model,
                 strategy="RandomSampling",
                 path_to_features=features_file,

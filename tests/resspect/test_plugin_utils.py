@@ -1,6 +1,10 @@
 import pytest
-from resspect.plugin_utils import import_module_from_string, fetch_classifier_class, fetch_query_strategy_class
-
+from resspect.plugin_utils import (
+    import_module_from_string,
+    fetch_classifier_class,
+    fetch_query_strategy_class,
+    fetch_feature_extractor_class
+)
 
 def test_import_module_from_string():
     """Test the import_module_from_string function."""
@@ -57,7 +61,8 @@ def test_fetch_classifier_class():
 
 
 def test_fetch_classifier_class_not_in_registry():
-    """Test that an exception is raised when a model is requested that is not in the registry."""
+    """Test that an exception is raised when a classifier is requested that is
+    not in the registry."""
 
     requested_class = "Nonexistent"
 
@@ -77,11 +82,45 @@ def test_fetch_query_strategy_class():
 
 
 def test_fetch_query_strategy_class_not_in_registry():
-    """Test that an exception is raised when a model is requested that is not in the registry."""
+    """Test that an exception is raised when a query strategy is requested that
+    is not in the registry."""
 
     requested_class = "Nonexistent"
 
     with pytest.raises(ValueError) as excinfo:
         fetch_query_strategy_class(requested_class)
+
+    assert "Error fetching class: Nonexistent" in str(excinfo.value)
+
+
+def test_fetch_feature_extractor_class():
+    """Test the fetch_feature_extractor_class function."""
+    requested_class = "Malanchev"
+
+    returned_cls = fetch_feature_extractor_class(requested_class)
+
+    assert returned_cls.__name__ == "Malanchev"
+
+
+def test_fetch_feature_extractor_class_with_lowercase(caplog):
+    """Test the fetch_feature_extractor_class function with a lowercase class
+    name to confirm that it will auto capitalize the first letter and log a warning."""
+    requested_class = "malanchev"
+    import logging
+
+    with caplog.at_level(logging.WARNING):
+        returned_cls = fetch_feature_extractor_class(requested_class)
+
+    assert returned_cls.__name__ == "Malanchev"
+    assert "Feature extractor 'malanchev' is deprecated." in caplog.text
+
+def test_fetch_feature_extractor_class_not_in_registry():
+    """Test that an exception is raised when a feature extractor is requested
+    that is not in the registry."""
+
+    requested_class = "Nonexistent"
+
+    with pytest.raises(ValueError) as excinfo:
+        fetch_feature_extractor_class(requested_class)
 
     assert "Error fetching class: Nonexistent" in str(excinfo.value)

@@ -19,7 +19,7 @@ For start, we can load the feature information:
    >>> path_to_features_file = 'results/Bazin.csv'
 
    >>> data = DataBase()
-   >>> data.load_features(path_to_features_file, feature_extractor='bazin', screen=True)
+   >>> data.load_features(path_to_features_file, feature_extractor='Bazin', screen=True)
    Loaded  21284  samples!
 
 Notice that this data has some pre-determine separation between training and test sample:
@@ -84,7 +84,7 @@ In interactive mode, you must define the required variables and use the :py:mod:
    >>> from resspect.learn_loop import  learn_loop
 
    >>> nloops = 1000                                  # number of iterations
-   >>> method = 'bazin'                               # only option in v1.0
+   >>> method = 'Bazin'                               # only option in v1.0
    >>> ml = 'RandomForest'                            # classifier
    >>> strategy = 'RandomSampling'                    # learning strategy
    >>> input_file = 'results/Bazin.csv'               # input features file
@@ -149,7 +149,7 @@ following the same algorithm described in `Ishida et al., 2019 <https://cosmosta
     >>> classifier = 'RandomForest'
     >>> n_estimators = 1000                             # number of trees in the forest
     
-    >>> feature_extraction_method = 'bazin'
+    >>> feature_extraction_method = 'Bazin'
     >>> screen = False                                  # if True will print many things for debuging 
     >>> fname_pattern = ['day_', '.csv']                # pattern on filename where different days 
                                                         # are stored                              

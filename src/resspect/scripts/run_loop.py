@@ -44,7 +44,7 @@ def run_loop(args):
         Currently 'RandomForest','GradientBoostedTrees','KNN' 
         and 'MLPclassifier' are implemented.
     -mt: str (optional)
-        Feature extraction method. Currently only 'bazin' is implemented.
+        Feature extraction method. Currently only 'Bazin' is implemented.
     -t: str or int (optional)
        Choice of initial training sample.
        If 'original': begin from the train sample flagged in the file
@@ -110,8 +110,8 @@ def main():
                         help='Path to features file.', required=True, type=str)
     parser.add_argument('-mt', '--method', dest='method',
                         help='Feature extraction method. '
-                             'Only "bazin" is implemented.', required=False,
-                        default='bazin', type=str)
+                             'Only "Bazin" is implemented.', required=False,
+                        default='Bazin', type=str)
     parser.add_argument('-n', '--nquery', dest='nquery', required=True,
                         help='Number of query loops to run.', type=int)
     parser.add_argument('-q', '--queried', dest='queried', type=str,

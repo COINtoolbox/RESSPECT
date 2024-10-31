@@ -19,7 +19,7 @@ def test_can_run_learn_loop(test_des_data_path):
         learn_loop(
             LoopConfiguration(
                 nloops=1,
-                features_method="bazin",
+                features_method="Bazin",
                 strategy="RandomSampling",
                 path_to_features=output_file,
                 output_metrics_file=os.path.join(dir_name,"just_a_name.csv"),
@@ -44,7 +44,7 @@ def test_can_run_learn_loop_uncsample(test_des_data_path):
         learn_loop(
             LoopConfiguration(
                 nloops=2,
-                features_method="bazin",
+                features_method="Bazin",
                 strategy="UncSampling",
                 path_to_features=output_file,
                 output_metrics_file=os.path.join(dir_name,"just_a_name.csv"),
@@ -66,7 +66,7 @@ def test_can_run_learn_loop_and_save_photo_ids(test_des_data_path):
         learn_loop(
             LoopConfiguration(
                 nloops=2,
-                features_method="bazin",
+                features_method="Bazin",
                 strategy="RandomSampling",
                 path_to_features=output_file,
                 output_metrics_file=os.path.join(dir_name,"just_a_name.csv"),
@@ -92,7 +92,7 @@ def test_can_run_learn_loop_and_update_alternative_label(test_des_data_path):
         learn_loop(
             LoopConfiguration(
                 nloops=1,
-                features_method="bazin",
+                features_method="Bazin",
                 strategy="RandomSampling",
                 path_to_features=output_file,
                 output_metrics_file=os.path.join(dir_name,"just_a_name.csv"),

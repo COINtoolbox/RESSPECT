@@ -21,9 +21,8 @@ import numpy as np
 import light_curve as licu
 from resspect.feature_extractors.light_curve import LightCurve
 
-__all__ = ['MalanchevFeatureExtractor']
 
-class MalanchevFeatureExtractor(LightCurve):
+class Malanchev(LightCurve):
     def __init__(self):
         super().__init__()
         self.features_names = ['anderson_darling_normal',

@@ -25,9 +25,6 @@ from typing import IO
 import numpy as np
 import pandas as pd
 
-from resspect.feature_extractors.bazin import BazinFeatureExtractor
-from resspect.feature_extractors.bump import BumpFeatureExtractor
-from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
 from resspect.lightcurves_utils import get_resspect_header_data
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
 from resspect.lightcurves_utils import SNPCC_FEATURES_HEADER
@@ -39,16 +36,11 @@ from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
 from resspect.lightcurves_utils import BUMP_HEADERS
 from resspect.lightcurves_utils import make_features_header
+from resspect.plugin_utils import fetch_feature_extractor_class
 from resspect.tom_client import TomClient
 
 __all__ = ["fit_snpcc", "fit_plasticc", "fit_TOM", "request_TOM_data", "fit"]
 
-
-FEATURE_EXTRACTOR_MAPPING = {
-    "bazin": BazinFeatureExtractor,
-    "bump": BumpFeatureExtractor,
-    "malanchev": MalanchevFeatureExtractor
-}
 
 MAX_NUMBER_OF_PROCESSES = 8
 
@@ -102,9 +94,9 @@ def _snpcc_sample_fit(
          one for each light curve.
     feature_extractor
         Function used for feature extraction.
-        Options are 'bazin', 'bump', or 'malanchev'.
     """
-    light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
+    feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+    light_curve_data = feature_extractor_class()
     light_curve_data.load_snpcc_lc(
         os.path.join(path_to_data_dir, file_name))
     light_curve_data.fit_all()
@@ -115,7 +107,7 @@ def _snpcc_sample_fit(
 def fit_snpcc(
         path_to_data_dir: str, features_file: str,
         file_prefix: str = "DES_SN", number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
-        feature_extractor: str = 'bazin'):
+        feature_extractor: str = 'Bazin'):
     """
     Perform fit to all objects in the SNPCC data.
 
@@ -130,14 +122,14 @@ def fit_snpcc(
         File names prefix
      number_of_processors: int, default 1
         Number of cpu processes to use.
-     feature_extractor: str, default bazin
+     feature_extractor: str, default Bazin
         Function used for feature extraction.
     """
-    if feature_extractor == 'bazin':
+    if feature_extractor == 'Bazin':
         header = SNPCC_FEATURES_HEADER
-    elif feature_extractor == 'malanchev':
+    elif feature_extractor == 'Malanchev':
         header = SNPCC_MALANCHEV_FEATURES_HEADER
-    elif feature_extractor == 'bump':
+    elif feature_extractor == 'Bump':
         header = BUMP_HEADERS["snpcc_header"]
 
     files_list = os.listdir(path_to_data_dir)
@@ -193,7 +185,7 @@ def _plasticc_sample_fit(
 
 def fit_plasticc(path_photo_file: str, path_header_file: str,
                  output_file: str, sample='train',
-                 feature_extractor: str = "bazin",
+                 feature_extractor: str = "Bazin",
                  number_of_processors: int = MAX_NUMBER_OF_PROCESSES):
     """
     Perform fit to all objects in a given PLAsTiCC data file.
@@ -209,7 +201,7 @@ def fit_plasticc(path_photo_file: str, path_header_file: str,
         'train' or 'test'. Default is 'train'.
     number_of_processors: int, default 1
         Number of cpu processes to use.
-    feature_extractor: str, default bazin
+    feature_extractor: str, default Bazin
         feature extraction method
     """
 
@@ -218,7 +210,8 @@ def fit_plasticc(path_photo_file: str, path_header_file: str,
     meta_header_keys = meta_header.keys().tolist()
     id_name = find_available_key_name_in_header(
         meta_header_keys, name_list)
-    light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
+    feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+    light_curve_data = feature_extractor_class()
 
     if sample == 'train':
         snid_values = meta_header[id_name]
@@ -257,9 +250,9 @@ def _TOM_sample_fit(
         SNID
     feature_extractor
         Function used for feature extraction.
-        Options are 'bazin', 'bump', or 'malanchev'.
     """
-    light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
+    feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+    light_curve_data = feature_extractor_class()
     light_curve_data.photometry = pd.DataFrame(obj_dic['photometry'])
     light_curve_data.dataset_name = 'TOM'
     light_curve_data.filters = ['u', 'g', 'r', 'i', 'z', 'Y']
@@ -320,9 +313,9 @@ def _sample_fit(
         SNID
     feature_extractor
         Function used for feature extraction.
-        Options are 'bazin', 'bump', or 'malanchev'.
     """
-    light_curve_data = FEATURE_EXTRACTOR_MAPPING[feature_extractor]()
+    feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+    light_curve_data = feature_extractor_class()
     light_curve_data.photometry = pd.DataFrame(obj_dic['photometry'])
     light_curve_data.filters = filters
     light_curve_data.id = obj_dic['objectid']

@@ -34,8 +34,9 @@ from resspect.lightcurves_utils import get_snpcc_sntype
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 logging.basicConfig(level=logging.INFO)
 
-__all__ = ['LightCurve']
+__all__ = ['LightCurve', 'FEATURE_EXTRACTOR_REGISTRY']
 
+FEATURE_EXTRACTOR_REGISTRY = {}
 
 class LightCurve:
     """ Light Curve object, holding meta and photometric data.
@@ -89,8 +90,6 @@ class LightCurve:
         Check if this light can be queried in a given day.
     conv_flux_mag(flux: np.array)
         Convert positive flux into magnitude.
-    evaluate_bazin(param: list, time: np.array) -> np.array
-        Evaluate the Bazin function given parameter values.
     load_snpcc_lc(path_to_data: str)
         Reads header and photometric information for 1 light curve.
     load_plasticc_lc(photo_file: str, snid: int)
@@ -120,6 +119,13 @@ class LightCurve:
         self.sim_pkmjd = None
         self.sncode = 0
         self.sntype = ' '
+
+    def __init_subclass__(cls):
+        """Register all subclasses of LightCurve in the FEATURE_EXTRACTOR_REGISTRY."""
+        if cls.__name__ in FEATURE_EXTRACTOR_REGISTRY:
+            raise ValueError(f"Duplicate feature extractor name: {cls.__name__}")
+
+        FEATURE_EXTRACTOR_REGISTRY[cls.__name__] = cls
 
     def _get_snpcc_photometry_raw_and_header(
             self, lc_data: np.ndarray,
@@ -307,7 +313,7 @@ class LightCurve:
                 self.last_mag = self.conv_flux_mag([fitted_flux])[0]
 
             else:
-                raise ValueError('Only "Bazin" and "malanchev" features are implemented!')
+                raise ValueError('Only "Bazin" and "Malanchev" features are implemented!')
 
         elif sum(surv_flag):
             raise ValueError('Criteria needs to be "1" or "2". \n ' + \

@@ -21,22 +21,13 @@ import pandas as pd
 import tarfile
 
 from resspect.classifiers import *
-from resspect.feature_extractors.bazin import BazinFeatureExtractor
-from resspect.feature_extractors.bump import BumpFeatureExtractor
-from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
+from resspect.feature_extractors.light_curve import FEATURE_EXTRACTOR_REGISTRY
 from resspect.query_strategies import *
 from resspect.query_budget_strategies import *
 from resspect.metrics import get_snpcc_metric
 from resspect.plugin_utils import fetch_classifier_class, fetch_query_strategy_class
 
 __all__ = ['DataBase']
-
-
-FEATURE_EXTRACTOR_MAPPING = {
-    "bazin": BazinFeatureExtractor,
-    "bump": BumpFeatureExtractor,
-    "malanchev": MalanchevFeatureExtractor
-}
 
 
 class DataBase:
@@ -152,7 +143,7 @@ class DataBase:
 
     Initiate the DataBase object and load the data.
     >>> data = DataBase()
-    >>> data.load_features(path_to_bazin_file, method='bazin')
+    >>> data.load_features(path_to_bazin_file, method='Bazin')
 
     Separate training and test samples and classify
 
@@ -223,7 +214,7 @@ class DataBase:
         self.validation_prob = np.array([])
 
     def load_features_from_file(self, path_to_features_file: str, screen=False,
-                      survey='DES', sample=None, feature_extractor: str='bazin'):
+                      survey='DES', sample=None, feature_extractor: str='Bazin'):
 
         """Load features from file.
 
@@ -245,8 +236,8 @@ class DataBase:
             else, read independent files for 'train' and 'test'.
             Default is None.
         feature_extractor: str (optional)
-            Function used for feature extraction. Options are "bazin", 
-            "bump", or "malanchev". Default is "bump".
+            Function used for feature extraction. Options are "Bazin",
+            "Bump", or "Malanchev". Default is "Bazin".
         """
 
         # read matrix with features
@@ -264,19 +255,21 @@ class DataBase:
         if 'queryable' not in data.keys():
             data['queryable'] = [True for i in range(data.shape[0])]
 
+
+        #! Make this part work better with the different feature extractors
         # list of features to use
         if survey == 'DES':
-            if feature_extractor == "bazin":
+            if feature_extractor == "Bazin":
                 self.features_names = ['gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA',
                                        'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB',
                                        'it0', 'itfall', 'itrise', 'zA', 'zB', 'zt0',
                                        'ztfall', 'ztrise']
-            elif feature_extractor == 'bump':
+            elif feature_extractor == 'Bump':
                 self.features_names = ['gp1', 'gp2', 'gp3', 'gmax_flux', 
                                        'rp1', 'rp2', 'rp3', 'rmax_flux', 
                                        'ip1', 'ip2', 'ip3', 'imax_flux', 
                                        'zp1', 'zp2', 'zp3', 'zmax_flux']
-            elif feature_extractor == 'malanchev':
+            elif feature_extractor == 'Malanchev':
                 self.features_names = ['ganderson_darling_normal','ginter_percentile_range_5',
                                        'gchi2','gstetson_K','gweighted_mean','gduration', 
                                        'gotsu_mean_diff','gotsu_std_lower', 'gotsu_std_upper',
@@ -309,14 +302,14 @@ class DataBase:
                     self.metadata_names = self.metadata_names + ['cost_' + name]
 
         elif survey == 'LSST':
-            if feature_extractor == "bazin":
+            if feature_extractor == "Bazin":
                 self.features_names = ['uA', 'uB', 'ut0', 'utfall', 'utrise',
                                        'gA', 'gB', 'gt0', 'gtfall', 'gtrise',
                                        'rA', 'rB', 'rt0', 'rtfall', 'rtrise',
                                        'iA', 'iB', 'it0', 'itfall', 'itrise',
                                        'zA', 'zB', 'zt0', 'ztfall', 'ztrise',
                                        'YA', 'YB', 'Yt0', 'Ytfall', 'Ytrise']
-            elif feature_extractor == "malanchev":
+            elif feature_extractor == "Malanchev":
                 self.features_names = ['uanderson_darling_normal','uinter_percentile_range_5',
                                        'uchi2','ustetson_K','uweighted_mean','uduration', 
                                        'uotsu_mean_diff','uotsu_std_lower', 'uotsu_std_upper',
@@ -474,7 +467,7 @@ class DataBase:
                 print('\n Loaded ', self.test_metadata.shape[0],
                       ' samples! \n')
 
-    def load_features(self, path_to_file: str, feature_extractor: str ='bazin',
+    def load_features(self, path_to_file: str, feature_extractor: str ='Bazin',
                       screen=False, survey='DES', sample=None ):
         """Load features according to the chosen feature extraction method.
 
@@ -487,8 +480,8 @@ class DataBase:
             Complete path to features file.
         feature_extractor: str (optional)
             Feature extraction method. The current implementation only
-            accepts =='bazin', 'bump', 'malanchev', or 'photometry'.
-            Default is 'bazin'.
+            accepts =='Bazin', 'Bump', 'Malanchev', or 'photometry'.
+            Default is 'Bazin'.
         screen: bool (optional)
             If True, print on screen number of light curves processed.
             Default is False.
@@ -504,12 +497,13 @@ class DataBase:
         if feature_extractor == "photometry":
             self.load_photometry_features(path_to_file, screen=screen,
                                           survey=survey, sample=sample)
-        elif feature_extractor in FEATURE_EXTRACTOR_MAPPING:
+        elif feature_extractor in FEATURE_EXTRACTOR_REGISTRY:
             self.load_features_from_file(
                 path_to_file, screen=screen, survey=survey,
                 sample=sample, feature_extractor=feature_extractor)
         else:
-            raise ValueError('Only bazin, bump, malanchev, or photometry features are implemented!'
+            feature_extractors = ', '.join(FEATURE_EXTRACTOR_REGISTRY.keys())
+            raise ValueError(f'Only {feature_extractors} or photometry features are implemented!'
                              '\n Feel free to add other options.')
 
     def load_plasticc_mjd(self, path_to_data_dir):

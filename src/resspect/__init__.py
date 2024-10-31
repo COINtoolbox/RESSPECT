@@ -45,6 +45,8 @@ from .batch_functions import *
 from .query_budget_strategies import *
 from .bump import *
 from .feature_extractors.malanchev import *
+from .feature_extractors.bazin import *
+from .feature_extractors.bump import *
 from .plugin_utils import *
 
 import importlib.metadata

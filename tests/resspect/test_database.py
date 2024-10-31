@@ -29,7 +29,7 @@ def test_load_bazin_features(test_data_path):
     
     data1 = DataBase()
     data1.load_features(path_to_file=fname1,
-                        screen=True, survey='DES', sample=None, feature_extractor='bazin')
+                        screen=True, survey='DES', sample=None, feature_extractor='Bazin')
     
     # read data independently
     data_temp1 = pd.read_csv(fname1)        
@@ -44,7 +44,7 @@ def test_load_bazin_features(test_data_path):
     
     data2 = DataBase()
     data2.load_features(path_to_file=fname2, screen=True,
-                        survey='DES', sample=None, feature_extractor='bazin')
+                        survey='DES', sample=None, feature_extractor='Bazin')
                               
     data_temp2 = pd.read_csv(fname2)
     

@@ -33,7 +33,7 @@ def load_dataset(file_names_dict: dict, survey_name: str = 'DES',
                  is_separate_files: bool = False, samples_list: list = [None],
                  is_load_build_samples: bool = True,
                  number_of_classes: int = 2,
-                 feature_extraction_method: str = 'bazin',
+                 feature_extraction_method: str = 'Bazin',
                  is_save_samples: bool = False) -> DataBase:
     """
     Reads a data sample from file.
@@ -71,8 +71,8 @@ def load_dataset(file_names_dict: dict, survey_name: str = 'DES',
         Currently only nclass == 2 is implemented.
     feature_extraction_method: str (optional)
         Feature extraction method. The current implementation only
-        accepts method=='bazin', 'photometry', or 'malanchev'.
-        Default is 'bazin'.
+        accepts method=='Bazin', 'photometry', or 'Malanchev'.
+        Default is 'Bazin'.
     is_save_samples: bool (optional)
         If True, save training and test samples to file.
         Default is False.
@@ -101,7 +101,7 @@ def _load_first_loop_and_full_data(
         initial_training: Union[str, int] = 'original',
         ia_training_fraction: float = 0.5, is_queryable: bool = False,
         is_separate_files: bool = False, number_of_classes: int = 2,
-        feature_extraction_method: str = 'bazin',
+        feature_extraction_method: str = 'Bazin',
         is_save_samples: bool = False) -> Tuple[DataBase, DataBase]:
     """
     Loads first loop and initial light curve training data
@@ -140,8 +140,8 @@ def _load_first_loop_and_full_data(
         Currently only number_of_classes == 2 is implemented.
     feature_extraction_method: str (optional)
         Feature extraction method. The current implementation only
-        accepts method=='bazin', 'photometry', or 'malanchev'.
-        Default is 'bazin'.
+        accepts method=='Bazin', 'photometry', or 'Malanchev'.
+        Default is 'Bazin'.
     is_save_samples
         If True, save training and test samples to file.
         Default is False.
@@ -462,7 +462,7 @@ def _save_metrics_and_queried_sample(
 def _load_next_day_data(
         next_day_features_file_name: str, is_separate_files: bool,
         is_queryable: bool, survey_name: str, ia_training_fraction: float,
-        is_save_samples: bool, feature_extraction_method: str='bazin'):
+        is_save_samples: bool, feature_extraction_method: str='Bazin'):
     """
     Loads features of next day
 
@@ -729,7 +729,7 @@ def process_next_day_loop(
         ia_training_fraction: float, id_key_name: str,
         light_curve_train_ids: np.ndarray, is_save_samples: bool,
         canonical_data: DataBase, strategy: str, 
-        feature_extraction_method: str='bazin') -> DataBase:
+        feature_extraction_method: str='Bazin') -> DataBase:
     """
     Runs next day active learning loop
 
@@ -766,8 +766,8 @@ def process_next_day_loop(
         "UncSamplingMargin", "QBDMI", "QBDEntropy", "RandomSampling"
     feature_extraction_method: str (optional)
         Feature extraction method. The current implementation only
-        accepts method=='bazin' or 'photometry'.
-        Default is 'bazin'.
+        accepts method=='Bazin' or 'photometry'.
+        Default is 'Bazin'.
     """
     next_day_data = _load_next_day_data(
         next_day_features_file_name, is_separate_files, is_queryable,
@@ -824,7 +824,7 @@ def run_time_domain_active_learning_loop(
         light_curve_train_ids: np.ndarray, canonical_data: DataBase,
         is_separate_files: bool, path_to_features_directory: str,
         fname_pattern: list, survey_name: str,  ia_training_fraction: float,
-        is_save_samples: bool, feature_extraction_method: str='bazin', **kwargs: dict):
+        is_save_samples: bool, feature_extraction_method: str='Bazin', **kwargs: dict):
     """
     Runs time domain active learning loop
 
@@ -887,8 +887,8 @@ def run_time_domain_active_learning_loop(
         Default is False.
     feature_extraction_method: str (optional)
         Feature extraction method. The current implementation only
-        accepts method=='bazin' or 'photometry'.
-        Default is 'bazin'.
+        accepts method=='Bazin' or 'photometry'.
+        Default is 'Bazin'.
     kwargs
        All keywords required by the classifier function.
 
@@ -944,7 +944,7 @@ def time_domain_loop(days: list, output_metrics_file: str,
                      query_thre: float = 1.0, save_samples: bool = False,
                      sep_files: bool = False, survey: str = 'LSST',
                      initial_training: str = 'original',
-                     feature_extraction_method: str = 'bazin',
+                     feature_extraction_method: str = 'Bazin',
                      save_full_query: bool = False, **kwargs):
     """
     Perform the active learning loop. All results are saved to file.
@@ -1024,8 +1024,8 @@ def time_domain_loop(days: list, output_metrics_file: str,
         Default is 'original'.
     feature_extraction_method: str (optional)
         Feature extraction method. The current implementation only
-        accepts method=='bazin' or 'photometry'.
-        Default is 'bazin'.
+        accepts method=='Bazin' or 'photometry'.
+        Default is 'Bazin'.
     """
 
     # load features for the first obs day
