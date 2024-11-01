@@ -1,6 +1,8 @@
-from dataclasses import dataclass, make_dataclass, asdict
+from dataclasses import dataclass, asdict
 import json
 from os import path
+
+from resspect import VALID_STRATEGIES
 
 @dataclass
 class LoopConfiguration:
@@ -141,19 +143,9 @@ class LoopConfiguration:
                 raise ValueError("cannot save predictions, no `pred_dir` was provided.")
             if not path.isdir(self.pred_dir):
                 raise ValueError("provided `pred_dir` does not exist/is not a directory.")
-        
-        # check strategy
-        self.valid_strategies = [
-            "UncSampling", 
-            "RandomSampling",
-            "UncSamplingEntropy",
-            "UncSamplingLeastConfident",
-            "UncSamplingMargin",
-            "QBDMI",
-            "QBDEntropy",
-        ]
 
-        if self.strategy not in self.valid_strategies:
+        # check strategy
+        if self.strategy not in VALID_STRATEGIES:
             raise ValueError(f"{self.strategy} is not a valid strategy.")
         if "QBD" in self.strategy and not self.classifier_bootstrap:
             raise ValueError("Bootstrap must be true when using disagreement strategy")
