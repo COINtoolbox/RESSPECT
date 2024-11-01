@@ -944,7 +944,7 @@ class DataBase:
 
         # if a pretrained model is available, load it, otherwise fit the model
         if pretrained_model_path is not None:
-            clf_instance.load(pretrained_model_path)
+            clf_instance.load_classifier(pretrained_model_path)
         else:
             clf_instance.fit(self.train_features, self.train_labels)
 

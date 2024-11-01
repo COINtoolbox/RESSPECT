@@ -141,7 +141,7 @@ class RandomForest(ResspectClassifier):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.n_estimators = kwargs.get('n_estimators', 100)
+        self.n_estimators = self.kwargs.pop('n_estimators', 100)
         self.classifier = RandomForestClassifier(n_estimators=self.n_estimators, **self.kwargs)
 
 
@@ -169,7 +169,7 @@ class SVM(ResspectClassifier):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.probability = kwargs.get('probability', True)
+        self.probability = self.kwargs.pop('probability', True)
         self.classifier = SVC(probability=self.probability, **self.kwargs)
 
 
