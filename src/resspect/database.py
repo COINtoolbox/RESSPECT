@@ -10,6 +10,7 @@
 # limitations under the License.
 
 import io
+import logging
 import os
 import pandas as pd
 import tarfile
@@ -28,6 +29,7 @@ from resspect.filter_sets import FILTER_SETS
 
 __all__ = ['DataBase']
 
+logger = logging.getLogger(__name__)
 
 class DataBase:
     """DataBase object, upon which the active learning loop is performed.
@@ -239,9 +241,9 @@ class DataBase:
             "Bump", or "Malanchev". Default is "Bazin".
         """
 
-        if survey not in ['DES', 'LSST']:
-            raise ValueError('Only "DES" and "LSST" filters are ' + \
-                             'implemented at this point!')
+        # if survey not in ['DES', 'LSST']:
+        #     raise ValueError('Only "DES" and "LSST" filters are ' + \
+        #                      'implemented at this point!')
 
         # read matrix with features
         if '.tar.gz' in path_to_features_file:
@@ -264,7 +266,9 @@ class DataBase:
         # Create the filter-feature names based on the survey.
         survey_filters = FILTER_SETS[survey]
         self.features_names = feature_extractor_class.get_features(survey_filters)
+        self.metadata_names = feature_extractor_class.get_metadata_header()
 
+        #! This section needs to be made dynamic between this line and the following comment
         self.metadata_names = ['id', 'redshift', 'type', 'code', 'orig_sample', 'queryable']
         if 'objid' in data.keys():
             self.metadata_names = ['objid', 'redshift', 'type', 'code', 'orig_sample', 'queryable']
@@ -275,6 +279,7 @@ class DataBase:
         for name in self.telescope_names:
             if 'cost_' + name in data.keys():
                 self.metadata_names = self.metadata_names + ['cost_' + name]
+        #! End of section that needs to be made dynamic
 
         if sample == None:
             self.features = data[self.features_names].values
@@ -414,14 +419,14 @@ class DataBase:
         if feature_extractor == "photometry":
             self.load_photometry_features(path_to_file, screen=screen,
                                           survey=survey, sample=sample)
-        elif feature_extractor in FEATURE_EXTRACTOR_REGISTRY:
+        else: # feature_extractor in FEATURE_EXTRACTOR_REGISTRY:
             self.load_features_from_file(
                 path_to_file, screen=screen, survey=survey,
                 sample=sample, feature_extractor=feature_extractor)
-        else:
-            feature_extractors = ', '.join(FEATURE_EXTRACTOR_REGISTRY.keys())
-            raise ValueError(f'Only {feature_extractors} or photometry features are implemented!'
-                             '\n Feel free to add other options.')
+        # else:
+        #     feature_extractors = ', '.join(FEATURE_EXTRACTOR_REGISTRY.keys())
+        #     raise ValueError(f'Only {feature_extractors} or photometry features are implemented!'
+        #                      '\n Feel free to add other options.')
 
     def load_plasticc_mjd(self, path_to_data_dir):
         """Return all MJDs from 1 file from PLAsTiCC simulations.
@@ -478,6 +483,9 @@ class DataBase:
             id_name = 'id'
         elif 'objid' in self.metadata_names:
             id_name = 'objid'
+        else:
+            logger.warning('No object identification found in metadata - using first column as object identification!')
+            id_name = self.metadata_names[0]
 
         return id_name
 

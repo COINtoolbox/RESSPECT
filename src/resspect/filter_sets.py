@@ -4,4 +4,5 @@ FILTER_SETS = {
     "SNPCC": ["g", "r", "i", "z"],
     "DES": ["g", "r", "i", "z"],
     "LSST": ["u", "g", "r", "i", "z", "Y"],
+    "ZTF": ["g", "r"],
 }

@@ -26,8 +26,9 @@ from resspect.lightcurves_utils import (
     read_plasticc_full_photometry_data,
 )
 from resspect.feature_extractors.feature_extractor_utils import (
-    create_filter_feature_names,
-    make_features_header,
+    make_filter_feature_names,
+    make_column_headers,
+    make_metadata_column_names,
 )
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -39,66 +40,64 @@ FEATURE_EXTRACTOR_REGISTRY = {}
 
 class LightCurve:
     """ Light Curve object, holding meta and photometric data.
-
-    Attributes
-    ----------
-    feature_names: list
-        Class attribute, a list of names of the feature extraction parameters.
-    features: list
-        List with the 5 best-fit feature extraction parameters in all filters.
-        Concatenated from blue to red.
-    dataset_name: str
-        Name of the survey or data set being analyzed.
-    exp_time: dict
-        Exposure time required to take a spectra.
-        Keywords indicate telescope e.g.['4m', '8m'].
-    filters: list
-        List of broad band filters.
-    full_photometry: pd.DataFrame
-        Photometry for a set of light curves read from file.
-    id: int
-        SN identification number.
-    id_name:
-        Column name of object identifier.
-    last_mag: float
-        r-band magnitude of last observed epoch.
-    photometry: pd.DataFrame
-        Photometry information.
-        Minimum keys --> [mjd, band, flux, fluxerr].
-    redshift: float
-        Redshift
-    sample: str
-        Original sample to which this light curve is assigned.
-    sim_peakmag: np.array
-        Simulated peak magnitude in each filter.
-    sim_pkmjd: float
-        Simulated day of maximum, observer frame.
-    sncode: int
-        Number identifying the SN model used in the simulation.
-    sntype: str
-        General classification, possibilities are: Ia, II or Ibc.
-    unique_ids: str or array
-        List of unique ids available in the photometry file.
-        Only used for PLAsTiCC data.
-
-    Methods
-    -------
-    calc_exp_time(telescope_diam: float, SNR: float, telescope_name: str)
-        Calculates time required to take a spectra in the last obs epoch.
-    check_queryable(mjd: float, r_lim: float)
-        Check if this light can be queried in a given day.
-    conv_flux_mag(flux: np.array)
-        Convert positive flux into magnitude.
-    load_snpcc_lc(path_to_data: str)
-        Reads header and photometric information for 1 light curve.
-    load_plasticc_lc(photo_file: str, snid: int)
-    	Load photometric information for 1 PLAsTiCC light curve.
-    load_resspect_lc(photo_file: str, snid: int)
-    	Load photometric information for 1 RESSPECT light curve.
-    plot_bump_fit(save: bool, show: bool, output_file: srt)
-        Plot photometric points and Bump fitted curve.
-
     """
+    # Attributes
+    # ----------
+    # feature_names: list
+    #     Class attribute, a list of names of the feature extraction parameters.
+    # features: list
+    #     List with the 5 best-fit feature extraction parameters in all filters.
+    #     Concatenated from blue to red.
+    # dataset_name: str
+    #     Name of the survey or data set being analyzed.
+    # exp_time: dict
+    #     Exposure time required to take a spectra.
+    #     Keywords indicate telescope e.g.['4m', '8m'].
+    # filters: list
+    #     List of broad band filters.
+    # full_photometry: pd.DataFrame
+    #     Photometry for a set of light curves read from file.
+    # id: int
+    #     SN identification number.
+    # id_name:
+    #     Column name of object identifier.
+    # last_mag: float
+    #     r-band magnitude of last observed epoch.
+    # photometry: pd.DataFrame
+    #     Photometry information.
+    #     Minimum keys --> [mjd, band, flux, fluxerr].
+    # redshift: float
+    #     Redshift
+    # sample: str
+    #     Original sample to which this light curve is assigned.
+    # sim_peakmag: np.array
+    #     Simulated peak magnitude in each filter.
+    # sim_pkmjd: float
+    #     Simulated day of maximum, observer frame.
+    # sncode: int
+    #     Number identifying the SN model used in the simulation.
+    # sntype: str
+    #     General classification, possibilities are: Ia, II or Ibc.
+    # unique_ids: str or array
+    #     List of unique ids available in the photometry file.
+    #     Only used for PLAsTiCC data.
+
+    # Methods
+    # -------
+    # calc_exp_time(telescope_diam: float, SNR: float, telescope_name: str)
+    #     Calculates time required to take a spectra in the last obs epoch.
+    # check_queryable(mjd: float, r_lim: float)
+    #     Check if this light can be queried in a given day.
+    # conv_flux_mag(flux: np.array)
+    #     Convert positive flux into magnitude.
+    # load_snpcc_lc(path_to_data: str)
+    #     Reads header and photometric information for 1 light curve.
+    # load_plasticc_lc(photo_file: str, snid: int)
+    # 	Load photometric information for 1 PLAsTiCC light curve.
+    # load_resspect_lc(photo_file: str, snid: int)
+    # 	Load photometric information for 1 RESSPECT light curve.
+    # plot_bump_fit(save: bool, show: bool, output_file: srt)
+    #     Plot photometric points and Bump fitted curve.
 
     feature_names = []
 
@@ -165,7 +164,24 @@ class LightCurve:
         -------
         list
         """
-        return create_filter_feature_names(filters, cls.feature_names)
+
+        if cls.feature_names is None:
+            raise ValueError("Feature names not defined for this class.")
+
+        return make_filter_feature_names(filters, cls.feature_names)
+
+    @classmethod
+    def get_metadata_header(cls, **kwargs) -> list[str]:
+        """
+        Returns the metadata columns for the feature extractor.
+        i.e. id, redshift, sntype, sncode, sample
+
+        Returns
+        -------
+        list
+        """
+
+        return make_metadata_column_names(**kwargs)
 
     @classmethod
     def get_feature_header(cls, filters: list, **kwargs) -> list[str]:
@@ -183,7 +199,10 @@ class LightCurve:
         list
         """
 
-        return make_features_header(filters, cls.feature_names, **kwargs)
+        if cls.feature_names is None:
+            raise ValueError("Feature names not defined for this class.")
+
+        return make_column_headers(filters, cls.feature_names, **kwargs)
 
     def _get_snpcc_photometry_raw_and_header(
             self, lc_data: np.ndarray,
