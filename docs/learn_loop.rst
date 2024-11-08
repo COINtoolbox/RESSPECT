@@ -82,6 +82,7 @@ In interactive mode, you must define the required variables and use the :py:mod:
    :linenos:
 
    >>> from resspect.learn_loop import  learn_loop
+   >>> from resspect import LoopConfiguration
 
    >>> nloops = 1000                                  # number of iterations
    >>> method = 'Bazin'                               # only option in v1.0
@@ -93,9 +94,9 @@ In interactive mode, you must define the required variables and use the :py:mod:
    >>> train = 'original'                             # initial training
    >>> batch = 1                                      # size of batch
 
-   >>> learn_loop(nloops=nloops, features_method=method, classifier=ml,
+   >>> learn_loop(LoopConfiguration(nloops=nloops, features_method=method, classifier=ml,
    >>>            strategy=strategy, path_to_features=input_file, output_metrics_file=metric, 
-   >>>            output_queried_file=queried, training=train, batch=batch)
+   >>>            output_queried_file=queried, training=train, batch=batch))
 
 Alternatively you can also run everything from the command line:
 
