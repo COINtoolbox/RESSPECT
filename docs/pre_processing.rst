@@ -250,7 +250,7 @@ For SNPCC using Bazin features:
    >>> features_file = 'results/Bazin.csv'                     # output file
    >>> feature_extractor = 'Bazin'
 
-   >>> fit_snpcc(path_to_data_dir=path_to_data_dir, features_file=features_file)
+   >>> fit_snpcc(path_to_data_dir=path_to_data_dir, features_file=features_file, feature_extractor=feature_extractor)
 
 For SNPCC using Malanchev features:
 ^^^^^^^^^^
@@ -265,7 +265,7 @@ For SNPCC using Malanchev features:
    >>> features_file = 'results/Malanchev.csv'                 # output file
    >>> feature_extractor = 'Malanchev'
 
-   >>> fit_snpcc(path_to_data_dir=path_to_data_dir, features_file=features_file)
+   >>> fit_snpcc(path_to_data_dir=path_to_data_dir, features_file=features_file, feature_extractor=feature_extractor)
 
 
 For PLAsTiCC:
