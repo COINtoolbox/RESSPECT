@@ -22,17 +22,14 @@ import numpy as np
 import pandas as pd
 import progressbar
 
-from resspect.lightcurves_utils import BAZIN_HEADERS
+from resspect.filter_sets import FILTER_SETS
 from resspect.lightcurves_utils import get_query_flags
 from resspect.lightcurves_utils import maybe_create_directory
 from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
 from resspect.lightcurves_utils import read_plasticc_full_photometry_data
 from resspect.plugin_utils import fetch_feature_extractor_class
 
-
-FEATURE_EXTRACTOR_HEADERS_MAPPING = {
-    "Bazin": BAZIN_HEADERS
-}
+SUPPORTED_FEATURE_EXTRACTORS = ["Bazin"]
 
 
 class PLAsTiCCPhotometry:
@@ -124,13 +121,17 @@ class PLAsTiCCPhotometry:
             Separate by 1 space.
             Default option uses header for Bazin features file.
         """
-        if feature_extractor not in FEATURE_EXTRACTOR_HEADERS_MAPPING:
-            raise ValueError('Only Bazin headers are supported')
-        self._header = FEATURE_EXTRACTOR_HEADERS_MAPPING[
-                feature_extractor]['plasticc_header']
-        if get_cost:
-            self._header = FEATURE_EXTRACTOR_HEADERS_MAPPING[
-                feature_extractor]['plasticc_header_with_cost']
+        if feature_extractor not in SUPPORTED_FEATURE_EXTRACTORS:
+            raise ValueError(f'Only the following feature extractors are supported: {", ".join(SUPPORTED_FEATURE_EXTRACTORS)}')
+
+        feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+        self._header = feature_extractor_class.get_feature_header(
+            filters=FILTER_SETS['LSST'],
+            with_cost=get_cost,
+            override_primary_columns=['id', 'redshift', 'type', 'code', 'sample'],
+            with_queryable=True,
+            with_last_rmag=True
+        )
 
     def create_daily_file(self, output_dir: str, day: int,
                           feature_extractor: str = 'Bazin', get_cost: bool = False):

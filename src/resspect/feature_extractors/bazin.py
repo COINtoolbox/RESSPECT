@@ -11,9 +11,12 @@ from resspect.feature_extractors.light_curve import LightCurve
 
 
 class Bazin(LightCurve):
+    feature_names = ['A', 'B', 't0', 'tfall', 'trise']
+
+
     def __init__(self):
         super().__init__()
-        self.features_names = ['A', 'B', 't0', 'tfall', 'trise']
+        self.num_features = len(Bazin.feature_names)
 
     def evaluate(self, time: np.array) -> dict:
         """
@@ -67,7 +70,7 @@ class Bazin(LightCurve):
 
         # build filter flag
         band_indices = self.photometry['band'] == band
-        if not sum(band_indices) > (len(self.features_names) - 1):
+        if not sum(band_indices) > (self.num_features - 1):
             return np.array([])
 
         # get info for this filter
@@ -85,11 +88,10 @@ class Bazin(LightCurve):
         Performs bazin fit for all filters independently and concatenate results.
         Populates the attributes: bazinfeatures.
         """
-        default_bazinfeatures = ['None'] * len(self.features_names)
+        default_bazinfeatures = ['None'] * self.num_features
 
         if self.photometry.shape[0] < 1:
-            self.features = ['None'] * len(
-                self.features_names) * len(self.filters)
+            self.features = ['None'] * self.num_features * len(self.filters)
 
         elif 'None' not in self.features:
             self.features = []

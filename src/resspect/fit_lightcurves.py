@@ -14,22 +14,18 @@ import logging
 import os
 from copy import copy
 from itertools import repeat
-from typing import IO
+from typing import IO, List, Union
 
 import numpy as np
 import pandas as pd
 
-from resspect.lightcurves_utils import get_resspect_header_data
-from resspect.lightcurves_utils import read_plasticc_full_photometry_data
-from resspect.lightcurves_utils import SNPCC_FEATURES_HEADER
-from resspect.lightcurves_utils import TOM_FEATURES_HEADER
-from resspect.lightcurves_utils import TOM_MALANCHEV_FEATURES_HEADER
-from resspect.lightcurves_utils import SNPCC_MALANCHEV_FEATURES_HEADER
-from resspect.lightcurves_utils import find_available_key_name_in_header
-from resspect.lightcurves_utils import PLASTICC_TARGET_TYPES
-from resspect.lightcurves_utils import PLASTICC_RESSPECT_FEATURES_HEADER
-from resspect.lightcurves_utils import BUMP_HEADERS
-from resspect.lightcurves_utils import make_features_header
+from resspect.lightcurves_utils import (
+    read_plasticc_full_photometry_data,
+    find_available_key_name_in_header,
+    PLASTICC_TARGET_TYPES,
+    PLASTICC_RESSPECT_FEATURES_HEADER,
+)
+from resspect.filter_sets import FILTER_SETS
 from resspect.plugin_utils import fetch_feature_extractor_class
 from resspect.tom_client import TomClient
 
@@ -119,12 +115,8 @@ def fit_snpcc(
      feature_extractor: str, default Bazin
         Function used for feature extraction.
     """
-    if feature_extractor == 'Bazin':
-        header = SNPCC_FEATURES_HEADER
-    elif feature_extractor == 'Malanchev':
-        header = SNPCC_MALANCHEV_FEATURES_HEADER
-    elif feature_extractor == 'Bump':
-        header = BUMP_HEADERS["snpcc_header"]
+    feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+    header = feature_extractor_class.get_feature_header(filters=FILTER_SETS['SNPCC'])
 
     files_list = os.listdir(path_to_data_dir)
     files_list = [each_file for each_file in files_list
@@ -262,7 +254,7 @@ def _TOM_sample_fit(
 
 def fit_TOM(data_dic: dict, output_features_file: str,
             number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
-            feature_extractor: str = 'bazin'):
+            feature_extractor: str = 'Bazin'):
     """
     Perform fit to all objects from the TOM data.
 
@@ -274,13 +266,12 @@ def fit_TOM(data_dic: dict, output_features_file: str,
          Path to output file where results should be stored.
      number_of_processors: int, default 1
         Number of cpu processes to use.
-     feature_extractor: str, default bazin
+     feature_extractor: str, default Bazin
         Function used for feature extraction.
     """
-    if feature_extractor == 'bazin':
-        header = TOM_FEATURES_HEADER
-    elif feature_extractor == 'malanchev':
-        header = TOM_MALANCHEV_FEATURES_HEADER
+
+    feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+    header = feature_extractor_class.get_feature_header(filters=FILTER_SETS['LSST'])
 
     multi_process = multiprocessing.Pool(number_of_processors)
     logging.info("Starting TOM " + feature_extractor + " fit...")
@@ -328,11 +319,16 @@ def _sample_fit(
     
     return light_curve_data
 
-def fit(data_dic: dict, output_features_file: str,
-            number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
-            feature_extractor: str = 'bazin', filters: list = ['SNPCC'], 
-            features: list = [], type: str = 'unspecified', one_code: list = [10],
-            additional_info: list = []):
+def fit(
+        data_dic: dict,
+        output_features_file: str,
+        number_of_processors: int = MAX_NUMBER_OF_PROCESSES,
+        feature_extractor: str = 'Bazin',
+        filters: Union[str, List[str]] = 'SNPCC',
+        type: str = 'unspecified',
+        one_code: list = [10],
+        additional_info: list = []
+    ):
     """
     Perform fit to all objects from a generalized dataset.
 
@@ -345,13 +341,10 @@ def fit(data_dic: dict, output_features_file: str,
          Path to output file where results should be stored.
      number_of_processors: int, default 1
         Number of cpu processes to use.
-     feature_extractor: str, default bazin
+     feature_extractor: str, default Bazin
         Function used for feature extraction.
     filters: list
-        List of filters to be used. Or SNPCC/LSST.
-    features: list
-        List of features to be used. Or default features with respect to
-        the feature extractor.
+        List of filters to be used, or a key in FILTER_SETS.
     type: str
         Type of data: train, test, validation, pool
     one_code: list
@@ -367,7 +360,7 @@ def fit(data_dic: dict, output_features_file: str,
             'objectid'
                 object id
             'photometry'
-                dictionary containing keys ''mjd', 'band', 'flux', 'fluxerr'. 
+                dictionary containing keys ''mjd', 'band', 'flux', 'fluxerr'.
                 each entry contains a list of mjd, band, flux, fluxerr for 
                 each observation
             'redshift'
@@ -381,34 +374,14 @@ def fit(data_dic: dict, output_features_file: str,
             'RA'
             'dec'
     """
-    if feature_extractor == 'bazin':
-        header = TOM_FEATURES_HEADER
-    elif feature_extractor == 'malanchev':
-        header = TOM_MALANCHEV_FEATURES_HEADER
-    
-    if 'SNPCC' in filters:
-        filters = ['g', 'r', 'i', 'z']
-    elif 'LSST' in filters:
-        filters = ['u', 'g', 'r', 'i', 'z', 'Y']
 
-    if feature_extractor == 'bazin':
-        features = ['A', 'B', 't0', 'tfall', 'trise']
-    elif feature_extractor == 'malanchev':
-        features = ['anderson_darling_normal',
-                                'inter_percentile_range_5',
-                                'chi2',
-                                'stetson_K',
-                                'weighted_mean',
-                                'duration',
-                                'otsu_mean_diff',
-                                'otsu_std_lower',
-                                'otsu_std_upper',
-                                'otsu_lower_to_all_ratio',
-                                'linear_fit_slope',
-                                'linear_fit_slope_sigma',
-                                'linear_fit_reduced_chi2']
-    
-    header = make_features_header(filters, features)
+    # if `filters` is a key in FILTER_SETS, then use the corresponding value
+    # otherwise, assume `filters` is a list of filter strings like `['g', 'r']`.
+    if isinstance(filters, str) and filters in FILTER_SETS:
+        filters = FILTER_SETS[filters]
+
+    feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+    header = feature_extractor_class.get_feature_header(filters)
 
     multi_process = multiprocessing.Pool(number_of_processors)
     if feature_extractor != None:

@@ -17,23 +17,28 @@ from resspect.feature_extractors.light_curve import LightCurve
 
 
 class Malanchev(LightCurve):
+    feature_names = [
+        'anderson_darling_normal',
+        'inter_percentile_range_5',
+        'chi2',
+        'stetson_K',
+        'weighted_mean',
+        'duration',
+        'otsu_mean_diff',
+        'otsu_std_lower',
+        'otsu_std_upper',
+        'otsu_lower_to_all_ratio',
+        'linear_fit_slope',
+        'linear_fit_slope_sigma',
+        'linear_fit_reduced_chi2'
+    ]
+
+
     def __init__(self):
         super().__init__()
-        self.features_names = ['anderson_darling_normal',
-                               'inter_percentile_range_5',
-                               'chi2',
-                               'stetson_K',
-                               'weighted_mean',
-                               'duration',
-                               'otsu_mean_diff',
-                               'otsu_std_lower',
-                               'otsu_std_upper',
-                               'otsu_lower_to_all_ratio',
-                               'linear_fit_slope',
-                               'linear_fit_slope_sigma',
-                               'linear_fit_reduced_chi2']
+        self.num_features = len(Malanchev.feature_names)
 
-        
+
     def fit(self, band: str) -> np.ndarray:
         """
         Extracts malanchev-light-curve features for one filter.
@@ -90,7 +95,6 @@ class Malanchev(LightCurve):
                                   check=False)
 
 
-
     def fit_all_points(self):
         """
         Extracts Malanchev's light_curve features for all data points in all filters together.
@@ -142,16 +146,16 @@ class Malanchev(LightCurve):
                              sorted = True, 
                              check = False)
 
+
     def fit_all(self):
         """
         Performs malanchev-light-curve feature extraction for all filters independently and concatenate results.
         Populates the attributes: mlcfeatures.
         """
-        default_mlcfeatures = ['None'] * len(self.features_names)
+        default_mlcfeatures = ['None'] * self.num_features
 
         if self.photometry.shape[0] < 1:
-            self.features = ['None'] * len(
-                self.features_names) * len(self.filters)
+            self.features = ['None'] * self.num_features * len(self.filters)
 
         elif 'None' not in self.features:
             self.features = []

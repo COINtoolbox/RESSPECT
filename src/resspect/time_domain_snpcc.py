@@ -14,8 +14,7 @@ import multiprocessing
 import os
 from itertools import repeat
 
-from resspect.lightcurves_utils import BAZIN_HEADERS
-from resspect.lightcurves_utils import MALANCHEV_HEADERS
+from resspect.filter_sets import FILTER_SETS
 from resspect.lightcurves_utils import get_files_list
 from resspect.lightcurves_utils import get_query_flags
 from resspect.lightcurves_utils import maybe_create_directory
@@ -26,10 +25,7 @@ logging.basicConfig(level=logging.INFO)
 __all__ = ['SNPCCPhotometry']
 
 
-FEATURE_EXTRACTOR_HEADERS_MAPPING = {
-    "Bazin": BAZIN_HEADERS,
-    "Malanchev": MALANCHEV_HEADERS
-}
+SUPPORTED_FEATURE_EXTRACTORS = ["Bazin", "Malanchev"]
 
 
 class SNPCCPhotometry:
@@ -100,15 +96,19 @@ class SNPCCPhotometry:
         self._features_file_name = os.path.join(
             output_dir, 'day_' + str(day) + '.csv')
         logging.info('Creating features file')
-        with open(self._features_file_name, 'w') as features_file:
-            if feature_extractor not in FEATURE_EXTRACTOR_HEADERS_MAPPING:
-                raise ValueError('Only Bazin and Malanchev headers are supported')
-            self._header = FEATURE_EXTRACTOR_HEADERS_MAPPING[
-                feature_extractor]['snpcc_header']
-            if get_cost:
-                self._header = FEATURE_EXTRACTOR_HEADERS_MAPPING[
-                    feature_extractor]['snpcc_header_with_cost']
 
+        if feature_extractor not in SUPPORTED_FEATURE_EXTRACTORS:
+            raise ValueError(f'Only the following feature extractors are supported: {", ".join(SUPPORTED_FEATURE_EXTRACTORS)}')
+
+        feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
+        self._header = feature_extractor_class.get_feature_header(
+            filters=FILTER_SETS['SNPCC'],
+            with_cost=get_cost,
+            with_queryable=True,
+            with_last_rmag=True
+        )
+
+        with open(self._features_file_name, 'w') as features_file:
             features_file.write(','.join(self._header) + '\n')
 
     def _verify_telescope_names(self, telescope_names: list, get_cost: bool):
