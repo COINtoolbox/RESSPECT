@@ -2,7 +2,7 @@ import os
 import pytest
 import tempfile
 
-from resspect import TimeDomainConfiguration
+from resspect import TimeDomainConfiguration, LoopConfiguration
 
 def test_create_time_domain_configuration():
     """test file path checks and other validation steps."""
@@ -137,3 +137,30 @@ def test_to_and_from_json():
         tdc2 = TimeDomainConfiguration.from_json(json_path)
 
         assert tdc1 == tdc2
+
+def test_incompatibility():
+    """Ensure that we fail gracefully if we try to generate another BaseConfiguration
+    class from a TimeDomainConfiguration json."""
+    with tempfile.TemporaryDirectory() as dir_name:
+        real_file_path = os.path.join(dir_name, "test.txt")
+        f = open(real_file_path, "w")
+        f.write("out of all the files that exist, this is one of them.")
+        f.close()
+        ini_files = {
+            "train": real_file_path
+        }
+
+        tdc = TimeDomainConfiguration(
+            days=[1],
+            strategy="RandomSampling",
+            path_to_features_dir=dir_name,
+            output_metrics_file=os.path.join(dir_name, "blah.txt"),
+            output_queried_file=os.path.join(dir_name, "blah2.txt"),
+            fname_pattern=["blah_", ".csv"],
+            path_to_ini_files=ini_files,
+        )
+        json_path = os.path.join(dir_name, "test.json")
+        tdc.to_json(json_path)
+
+        with pytest.raises(TypeError):
+            LoopConfiguration.from_json(json_path)

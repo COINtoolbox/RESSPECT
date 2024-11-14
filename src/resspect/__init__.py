@@ -24,6 +24,7 @@ VALID_STRATEGIES = [
     "QBDEntropy",
 ]
 
+from .base_configuration import *
 from .bazin import *
 from .build_plasticc_canonical import *
 from .build_plasticc_metadata import *
