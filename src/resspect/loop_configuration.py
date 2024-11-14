@@ -1,9 +1,10 @@
-from dataclasses import dataclass, make_dataclass, asdict
-import json
+from dataclasses import dataclass
 from os import path
 
+from resspect import VALID_STRATEGIES, BaseConfiguration
+
 @dataclass
-class LoopConfiguration:
+class LoopConfiguration(BaseConfiguration):
     """Configuration for the `resspect.learn_loop` function.
 
     Attributes
@@ -141,40 +142,9 @@ class LoopConfiguration:
                 raise ValueError("cannot save predictions, no `pred_dir` was provided.")
             if not path.isdir(self.pred_dir):
                 raise ValueError("provided `pred_dir` does not exist/is not a directory.")
-        
-        # check strategy
-        self.valid_strategies = [
-            "UncSampling", 
-            "RandomSampling",
-            "UncSamplingEntropy",
-            "UncSamplingLeastConfident",
-            "UncSamplingMargin",
-            "QBDMI",
-            "QBDEntropy",
-        ]
 
-        if self.strategy not in self.valid_strategies:
+        # check strategy
+        if self.strategy not in VALID_STRATEGIES:
             raise ValueError(f"{self.strategy} is not a valid strategy.")
         if "QBD" in self.strategy and not self.classifier_bootstrap:
             raise ValueError("Bootstrap must be true when using disagreement strategy")
-    
-    def to_dict(self):
-        """converts configurations elements into a dict."""
-        return asdict(self)
-    
-    @classmethod
-    def from_dict(cls, lc_dict):
-        """creates a `LoopConfiguration` instance from a dict."""
-        return cls(**lc_dict)
-    
-    def to_json(self, file_path):
-        """write out the `LoopConfiguration` as a json file."""
-        with open(file_path, 'w') as fp:
-            json.dump(self.to_dict(), fp)
-    
-    @classmethod
-    def from_json(cls, file_path):
-        """read a `LoopConfiguration` generated json file and instantiate."""
-        with open(file_path) as fp:
-            lc_dict = json.load(fp)
-            return cls(**lc_dict)
