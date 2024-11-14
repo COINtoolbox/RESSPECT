@@ -11,9 +11,12 @@ from resspect.feature_extractors.light_curve import LightCurve
 
 
 class Bump(LightCurve):
+    feature_names = ['p1', 'p2', 'p3', 'time_shift', 'max_flux']
+
+
     def __init__(self):
         super().__init__()
-        self.features_names = ['p1', 'p2', 'p3', 'time_shift', 'max_flux']
+        self.num_features = len(Bump.feature_names)
 
     def evaluate(self, time: np.array) -> dict:
         """
@@ -64,7 +67,7 @@ class Bump(LightCurve):
 
         # build filter flag
         band_indices = self.photometry['band'] == band
-        if not sum(band_indices) > (len(self.features_names) - 2):
+        if not sum(band_indices) > (self.num_features - 2):
             return np.array([])
 
         # get info for this filter
@@ -81,10 +84,10 @@ class Bump(LightCurve):
         Perform Bump fit for all filters independently and concatenate results.
         Populates the attributes: bump_features.
         """
-        default_bump_features = ['None'] * len(self.features_names)
+        default_bump_features = ['None'] * self.num_features
 
         if self.photometry.shape[0] < 1:
-            self.features = ['None'] * len(self.features_names) * len(self.filters)
+            self.features = ['None'] * self.num_features * len(self.filters)
 
         elif 'None' not in self.features:
             self.features = []

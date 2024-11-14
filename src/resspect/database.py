@@ -3,12 +3,6 @@
 #
 # created on 14 April 2020
 #
-# Licensed GNU General Public License v3.0;
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.gnu.org/licenses/gpl-3.0.en.html
-#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +19,12 @@ from resspect.feature_extractors.light_curve import FEATURE_EXTRACTOR_REGISTRY
 from resspect.query_strategies import *
 from resspect.query_budget_strategies import *
 from resspect.metrics import get_snpcc_metric
-from resspect.plugin_utils import fetch_classifier_class, fetch_query_strategy_class
+from resspect.plugin_utils import (
+    fetch_classifier_class,
+    fetch_feature_extractor_class,
+    fetch_query_strategy_class
+)
+from resspect.filter_sets import FILTER_SETS
 
 __all__ = ['DataBase']
 
@@ -240,6 +239,10 @@ class DataBase:
             "Bump", or "Malanchev". Default is "Bazin".
         """
 
+        if survey not in ['DES', 'LSST']:
+            raise ValueError('Only "DES" and "LSST" filters are ' + \
+                             'implemented at this point!')
+
         # read matrix with features
         if '.tar.gz' in path_to_features_file:
             tar = tarfile.open(path_to_features_file, 'r:gz')
@@ -255,109 +258,23 @@ class DataBase:
         if 'queryable' not in data.keys():
             data['queryable'] = [True for i in range(data.shape[0])]
 
+        # Get the list of feature names from the feature extractor class
+        feature_extractor_class = fetch_feature_extractor_class(feature_extractor)
 
-        #! Make this part work better with the different feature extractors
-        # list of features to use
-        if survey == 'DES':
-            if feature_extractor == "Bazin":
-                self.features_names = ['gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA',
-                                       'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB',
-                                       'it0', 'itfall', 'itrise', 'zA', 'zB', 'zt0',
-                                       'ztfall', 'ztrise']
-            elif feature_extractor == 'Bump':
-                self.features_names = ['gp1', 'gp2', 'gp3', 'gmax_flux', 
-                                       'rp1', 'rp2', 'rp3', 'rmax_flux', 
-                                       'ip1', 'ip2', 'ip3', 'imax_flux', 
-                                       'zp1', 'zp2', 'zp3', 'zmax_flux']
-            elif feature_extractor == 'Malanchev':
-                self.features_names = ['ganderson_darling_normal','ginter_percentile_range_5',
-                                       'gchi2','gstetson_K','gweighted_mean','gduration', 
-                                       'gotsu_mean_diff','gotsu_std_lower', 'gotsu_std_upper',
-                                       'gotsu_lower_to_all_ratio', 'glinear_fit_slope', 
-                                       'glinear_fit_slope_sigma','glinear_fit_reduced_chi2',
-                                       'randerson_darling_normal', 'rinter_percentile_range_5',
-                                       'rchi2', 'rstetson_K', 'rweighted_mean','rduration', 
-                                       'rotsu_mean_diff','rotsu_std_lower', 'rotsu_std_upper',
-                                       'rotsu_lower_to_all_ratio', 'rlinear_fit_slope', 
-                                       'rlinear_fit_slope_sigma','rlinear_fit_reduced_chi2',
-                                       'ianderson_darling_normal','iinter_percentile_range_5',
-                                       'ichi2', 'istetson_K', 'iweighted_mean','iduration', 
-                                       'iotsu_mean_diff','iotsu_std_lower', 'iotsu_std_upper',
-                                       'iotsu_lower_to_all_ratio', 'ilinear_fit_slope', 
-                                       'ilinear_fit_slope_sigma','ilinear_fit_reduced_chi2',
-                                       'zanderson_darling_normal','zinter_percentile_range_5',
-                                       'zchi2', 'zstetson_K', 'zweighted_mean','zduration', 
-                                       'zotsu_mean_diff','zotsu_std_lower', 'zotsu_std_upper',
-                                       'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 
-                                       'zlinear_fit_slope_sigma','zlinear_fit_reduced_chi2']
+        # Create the filter-feature names based on the survey.
+        survey_filters = FILTER_SETS[survey]
+        self.features_names = feature_extractor_class.get_features(survey_filters)
 
-            self.metadata_names = ['id', 'redshift', 'type', 'code',
-                                   'orig_sample', 'queryable']
+        self.metadata_names = ['id', 'redshift', 'type', 'code', 'orig_sample', 'queryable']
+        if 'objid' in data.keys():
+            self.metadata_names = ['objid', 'redshift', 'type', 'code', 'orig_sample', 'queryable']
 
-            if 'last_rmag' in data.keys():
+        if 'last_rmag' in data.keys():
                 self.metadata_names.append('last_rmag')
 
-            for name in self.telescope_names:
-                if 'cost_' + name in data.keys():
-                    self.metadata_names = self.metadata_names + ['cost_' + name]
-
-        elif survey == 'LSST':
-            if feature_extractor == "Bazin":
-                self.features_names = ['uA', 'uB', 'ut0', 'utfall', 'utrise',
-                                       'gA', 'gB', 'gt0', 'gtfall', 'gtrise',
-                                       'rA', 'rB', 'rt0', 'rtfall', 'rtrise',
-                                       'iA', 'iB', 'it0', 'itfall', 'itrise',
-                                       'zA', 'zB', 'zt0', 'ztfall', 'ztrise',
-                                       'YA', 'YB', 'Yt0', 'Ytfall', 'Ytrise']
-            elif feature_extractor == "Malanchev":
-                self.features_names = ['uanderson_darling_normal','uinter_percentile_range_5',
-                                       'uchi2','ustetson_K','uweighted_mean','uduration', 
-                                       'uotsu_mean_diff','uotsu_std_lower', 'uotsu_std_upper',
-                                       'uotsu_lower_to_all_ratio', 'ulinear_fit_slope', 
-                                       'ulinear_fit_slope_sigma','ulinear_fit_reduced_chi2',
-                                       'ganderson_darling_normal','ginter_percentile_range_5',
-                                       'gchi2','gstetson_K','gweighted_mean','gduration', 
-                                       'gotsu_mean_diff','gotsu_std_lower', 'gotsu_std_upper',
-                                       'gotsu_lower_to_all_ratio', 'glinear_fit_slope', 
-                                       'glinear_fit_slope_sigma','glinear_fit_reduced_chi2',
-                                       'randerson_darling_normal', 'rinter_percentile_range_5',
-                                       'rchi2', 'rstetson_K', 'rweighted_mean','rduration', 
-                                       'rotsu_mean_diff','rotsu_std_lower', 'rotsu_std_upper',
-                                       'rotsu_lower_to_all_ratio', 'rlinear_fit_slope', 
-                                       'rlinear_fit_slope_sigma','rlinear_fit_reduced_chi2',
-                                       'ianderson_darling_normal','iinter_percentile_range_5',
-                                       'ichi2', 'istetson_K', 'iweighted_mean','iduration', 
-                                       'iotsu_mean_diff','iotsu_std_lower', 'iotsu_std_upper',
-                                       'iotsu_lower_to_all_ratio', 'ilinear_fit_slope', 
-                                       'ilinear_fit_slope_sigma','ilinear_fit_reduced_chi2',
-                                       'zanderson_darling_normal','zinter_percentile_range_5',
-                                       'zchi2', 'zstetson_K', 'zweighted_mean','zduration', 
-                                       'zotsu_mean_diff','zotsu_std_lower', 'zotsu_std_upper',
-                                       'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 
-                                       'zlinear_fit_slope_sigma','zlinear_fit_reduced_chi2',
-                                       'Yanderson_darling_normal','Yinter_percentile_range_5',
-                                       'Ychi2', 'Ystetson_K', 'Yweighted_mean','Yduration', 
-                                       'Yotsu_mean_diff','Yotsu_std_lower', 'Yotsu_std_upper',
-                                       'Yotsu_lower_to_all_ratio', 'Ylinear_fit_slope', 
-                                       'Ylinear_fit_slope_sigma','Ylinear_fit_reduced_chi2']
-
-            if 'objid' in data.keys():
-                self.metadata_names = ['objid', 'redshift', 'type', 'code',
-                                       'orig_sample', 'queryable']
-            elif 'id' in data.keys():
-                self.metadata_names = ['id', 'redshift', 'type', 'code',
-                                       'orig_sample', 'queryable']
-                
-            if 'last_rmag' in data.keys():
-                self.metadata_names.append('last_rmag')
-
-            for name in self.telescope_names:
-                if 'cost_' + name in data.keys():
-                    self.metadata_names = self.metadata_names + ['cost_' + name]
-
-        else:
-            raise ValueError('Only "DES" and "LSST" filters are ' + \
-                             'implemented at this point!')
+        for name in self.telescope_names:
+            if 'cost_' + name in data.keys():
+                self.metadata_names = self.metadata_names + ['cost_' + name]
 
         if sample == None:
             self.features = data[self.features_names].values
@@ -950,7 +867,7 @@ class DataBase:
 
         # if a pretrained model is available, load it, otherwise fit the model
         if pretrained_model_path is not None:
-            clf_instance.load(pretrained_model_path)
+            clf_instance.load_classifier(pretrained_model_path)
         else:
             clf_instance.fit(self.train_features, self.train_labels)
 

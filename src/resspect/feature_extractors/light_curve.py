@@ -3,12 +3,6 @@
 #
 # created on 14 April 2020
 #
-# Licensed GNU General Public License v3.0;
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.gnu.org/licenses/gpl-3.0.en.html
-#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,13 +17,18 @@ import numpy as np
 import pandas as pd
 
 from resspect.exposure_time_calculator import ExpTimeCalc
-from resspect.lightcurves_utils import read_file
-from resspect.lightcurves_utils import load_snpcc_photometry_df
-from resspect.lightcurves_utils import get_photometry_with_id_name_and_snid
-from resspect.lightcurves_utils import read_plasticc_full_photometry_data
-from resspect.lightcurves_utils import load_plasticc_photometry_df
-from resspect.lightcurves_utils import get_snpcc_sntype
-
+from resspect.lightcurves_utils import (
+    get_photometry_with_id_name_and_snid,
+    get_snpcc_sntype,
+    load_plasticc_photometry_df,
+    load_snpcc_photometry_df,
+    read_file,
+    read_plasticc_full_photometry_data,
+)
+from resspect.feature_extractors.feature_extractor_utils import (
+    create_filter_feature_names,
+    make_features_header,
+)
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 logging.basicConfig(level=logging.INFO)
@@ -43,8 +42,8 @@ class LightCurve:
 
     Attributes
     ----------
-    features_names: list
-        List of names of the feature extraction parameters.
+    feature_names: list
+        Class attribute, a list of names of the feature extraction parameters.
     features: list
         List with the 5 best-fit feature extraction parameters in all filters.
         Concatenated from blue to red.
@@ -101,10 +100,11 @@ class LightCurve:
 
     """
 
+    feature_names = []
+
     def __init__(self):
         self.queryable = None
         self.features = []
-        #self.features_names = ['p1', 'p2', 'p3', 'time_shift', 'max_flux']
         self.dataset_name = ' '
         self.exp_time = {}
         self.filters = []
@@ -148,6 +148,42 @@ class LightCurve:
         Populates self.features.
         """
         raise NotImplementedError()
+
+
+    @classmethod
+    def get_features(cls, filters: list) -> list[str]:
+        """
+        Returns the header for the features extracted for all filters, excludes
+        non-feature columns (i.e. id, redshift, type, code, orig_sample, ...)
+
+        Parameters
+        ----------
+        filters: list
+            List of broad band filters.
+
+        Returns
+        -------
+        list
+        """
+        return create_filter_feature_names(filters, cls.feature_names)
+
+    @classmethod
+    def get_feature_header(cls, filters: list, **kwargs) -> list[str]:
+        """
+        Returns the header for the features extracted.
+
+        Parameters
+        ----------
+        filters: list
+            List of broad band filters.
+        kwargs: dict
+
+        Returns
+        -------
+        list
+        """
+
+        return make_features_header(filters, cls.feature_names, **kwargs)
 
     def _get_snpcc_photometry_raw_and_header(
             self, lc_data: np.ndarray,

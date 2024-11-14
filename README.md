@@ -80,6 +80,56 @@ Navigate to the repository folder and do
 
 You can now install this package with:  
 
-    (RESSPECT) >>> python setup.py install
+    (RESSPECT) >>> pip install -e .
 
-> You may choose to create your virtual environment within the folder of the repository. If you choose to do this, you must remember to exclude the virtual environment directory from version control using e.g., ``.gitignore``.   
+> You may choose to create your virtual environment within the folder of the repository. If you choose to do this, you must remember to exclude the virtual environment directory from version control using e.g., ``.gitignore``.  
+
+# Starting the docker environment
+
+The docker file in this repository can be run as a standalone environment for testing or developing RESSPECT, or in connection with tom. You will need to start by installing Docker Desktop for your chosen platform before you start. 
+
+Note: These workflows have only been tested on macs; however the standalone docker image is built on Linux in in Github Actions CI.
+
+## Using standalone
+
+To use the container standalone first go into the root of the source directory, and build the container with:
+```
+docker build .
+```
+
+You can run the container two ways. The first way will use the version of resspect from your local checkout, which is probably what you want for development. After the
+container is built run:
+```
+docker run -it --rm --mount type=bind,source=.,target=/resspect/resspect-src resspect
+```
+
+This will put you into a bash shell in the container with the venv for resspect already activated, and the current version of resspect in your source checkout installed.
+
+If you wish to use the version of resspect packaged at build time, simply omit `--mount type=bind,source=.,target=/resspect/resspect-src` from the command above.
+
+## Using with tom docker-compose setup
+
+First checkout tom and follow [TOM's docker compose setup instructions](https://github.com/LSSTDESC/tom_desc?tab=readme-ov-file#deploying-a-dev-environment-with-docker). You will need to load [ELAsTiCC2 data](https://github.com/LSSTDESC/tom_desc?tab=readme-ov-file#for-elasticc2) into your tom environment in order to work with RESSPECT.
+
+When you have finished that setup, go into the top level source directory and run these two commands:
+```
+docker compose build
+docker compose up -d
+```
+
+You will now have a docker container called `resspect` which you can run resspect from. The version of resspect in use will be that of your local git checkout. That same docker container will be on the network with your tom setup, so you can access
+the tom docker container on port 8080.
+
+You can enter the `resspect` docker container to run commands with
+```
+docker compose run resspect
+```
+
+From the resspect container you should be able to log into the tom server with:
+```
+(resspect-venv) root@cd647ac7eca5:/resspect# python3
+Python 3.12.3 (main, Sep 11 2024, 14:17:37) [GCC 13.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from resspect import tom_client as tc
+>>> tc = tc.TomClient(url="http://tom:8080", username='admin', password='<your tom password>')
+```

@@ -150,3 +150,6 @@ _html/
 .initialize_new_project.sh
 auxiliary_files/cosmo
 auxiliary_files/cosmo.hpp
+
+# Location for secrets used to log into TOM in a dev envornoment
+secrets/
