@@ -1,5 +1,4 @@
-from dataclasses import dataclass, asdict
-import json
+from dataclasses import dataclass
 from os import path
 
 from resspect import VALID_STRATEGIES, BaseConfiguration
