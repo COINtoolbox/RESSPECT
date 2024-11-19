@@ -9,6 +9,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+VALID_STRATEGIES = [
+    "UncSampling",
+    "RandomSampling",
+    "UncSamplingEntropy",
+    "UncSamplingLeastConfident",
+    "UncSamplingMargin",
+    "QBDMI",
+    "QBDEntropy",
+]
+
+from .base_configuration import *
 from .bazin import *
 from .build_plasticc_canonical import *
 from .build_plasticc_metadata import *
@@ -33,6 +44,7 @@ from .scripts.fit_dataset import fit_dataset as fit_dataset
 from .scripts.make_metrics_plots import make_metrics_plots as make_metrics_plots
 from .scripts.run_loop import run_loop as run_loop
 from .scripts.run_time_domain import run_time_domain as run_time_domain
+from .time_domain_configuration import *
 from .time_domain_plasticc import *
 from .time_domain_snpcc import *
 from .time_domain_loop import *

@@ -19,16 +19,11 @@ import progressbar
 
 from resspect import DataBase
 from resspect.tom_client import TomClient
+from resspect.time_domain_configuration import TimeDomainConfiguration
 
-
-def load_dataset(file_names_dict: dict, survey_name: str = 'DES',
-                 initial_training: Union[str, int] = 'original',
-                 ia_training_fraction: float = 0.5, is_queryable: bool = False,
-                 is_separate_files: bool = False, samples_list: list = [None],
-                 is_load_build_samples: bool = True,
-                 number_of_classes: int = 2,
-                 feature_extraction_method: str = 'Bazin',
-                 is_save_samples: bool = False) -> DataBase:
+def load_dataset(
+    file_names_dict: dict, config: TimeDomainConfiguration, samples_list: list = [None], is_load_build_samples: bool = True
+) -> DataBase:
     """
     Reads a data sample from file.
 
@@ -38,38 +33,12 @@ def load_dataset(file_names_dict: dict, survey_name: str = 'DES',
         Path to light curve features file.
         #if "sep_files == True", dictionary keywords must contain identify
         #different samples: ['train', 'test','validation', 'pool',  None]
-    ia_training_fraction: float in [0,1] (optional)
-        Fraction of Ia required in initial training sample.
-        Only used if "initial_training" is a number. Default is 0.5.
-    initial_training: str or int (optional)
-        Choice of initial training sample.
-        If 'original': begin from the train sample flagged in the file
-        elif int: choose the required number of samples at random,
-        ensuring that at least "ia_frac" are SN Ia.
-        Default is 'original'.
-    is_queryable: bool (optional)
-        If True, allow queries only on objects flagged as queryable.
-        Default is True.
-    is_separate_files: bool (optional)
-            If True, consider samples separately read
-            from independent files. Default is False.
-    survey_name: str (optional)
-        Name of survey to be analyzed. Accepts 'DES' or 'LSST'.
-        Default is DES.
+    config: TimeDomainConfiguration
+        The configuration blob.
     samples_list: list (optional)
         If None, sample is given by a column within the given file.
         else, read independent files for 'train' and 'test'.
         Default is None.
-    number_of_classes
-        Number of classes to consider in the classification
-        Currently only nclass == 2 is implemented.
-    feature_extraction_method: str (optional)
-        Feature extraction method. The current implementation only
-        accepts method=='Bazin', 'photometry', or 'Malanchev'.
-        Default is 'Bazin'.
-    is_save_samples: bool (optional)
-        If True, save training and test samples to file.
-        Default is False.
     is_load_build_samples
         if database.build_samples method should be called
     """
@@ -78,25 +47,26 @@ def load_dataset(file_names_dict: dict, survey_name: str = 'DES',
     database_class = DataBase()
     for sample in samples_list:
         database_class.load_features(
-            file_names_dict[sample], survey=survey_name, sample=sample,
-            feature_extractor=feature_extraction_method)
+            file_names_dict[sample],
+            survey=config.survey,
+            sample=sample,
+            feature_extractor=config.feature_extraction_method
+        )
     if is_load_build_samples:
         database_class.build_samples(
-            initial_training=initial_training, nclass=number_of_classes,
-            Ia_frac=ia_training_fraction, queryable=is_queryable,
-            save_samples=is_save_samples, sep_files=is_separate_files,
-            survey=survey_name)
+            initial_training=config.initial_training,
+            nclass=config.nclass,
+            Ia_frac=config.ia_frac,
+            queryable=config.queryable,
+            save_samples=config.save_samples,
+            sep_files=config.sep_files,
+            survey=config.survey
+        )
     return database_class
 
 
 def _load_first_loop_and_full_data(
-        first_loop_file_name: str, initial_light_curve_file_name: dict,
-        survey_name: str = 'DES',
-        initial_training: Union[str, int] = 'original',
-        ia_training_fraction: float = 0.5, is_queryable: bool = False,
-        is_separate_files: bool = False, number_of_classes: int = 2,
-        feature_extraction_method: str = 'Bazin',
-        is_save_samples: bool = False) -> Tuple[DataBase, DataBase]:
+        first_loop_file_name: str, config: TimeDomainConfiguration) -> Tuple[DataBase, DataBase]:
     """
     Loads first loop and initial light curve training data
 
@@ -106,70 +76,34 @@ def _load_first_loop_and_full_data(
         Path to light curve features file.
         #if "sep_files == True", dictionary keywords must contain identify
         #different samples: ['train', 'test','validation', 'pool']
-    initial_light_curve_file_name
-        Path to initial full light curve files.
-        Possible keywords are: "train", "test" and "validation".
-        At least "train" is mandatory.
-    survey_name
-        Name of survey to be analyzed. Accepts 'DES' or 'LSST'.
-        Default is LSST.
-    initial_training
-        Choice of initial training sample.
-        If 'original': begin from the train sample flagged in the file
-        eilf 'previous': read training and queried from previous run.
-        If int: choose the required number of samples at random,
-        ensuring that at least half are SN Ia
-        Default is 'original'.
-    ia_training_fraction
-        Fraction of Ia required in initial training sample.
-        Default is 0.5.
-    is_queryable
-        If True, allow queries only on objects flagged as queryable.
-        Default is True.
-    is_separate_files
-        If True, consider samples separately read
-        from independent files. Default is False.
-    number_of_classes
-        Number of classes to consider in the classification
-        Currently only number_of_classes == 2 is implemented.
-    feature_extraction_method: str (optional)
-        Feature extraction method. The current implementation only
-        accepts method=='Bazin', 'photometry', or 'Malanchev'.
-        Default is 'Bazin'.
-    is_save_samples
-        If True, save training and test samples to file.
-        Default is False.
+    config
+        The `TimeDomainConfiguration` dataclass that
+        contains all the runtime configuration options.
     """
-    if not is_separate_files:
+    if not config.sep_files:
         first_loop_file_name = {None: first_loop_file_name}
         first_loop_data = load_dataset(
             file_names_dict=first_loop_file_name,
-            survey_name=survey_name, is_separate_files=is_separate_files,
-            initial_training=0, ia_training_fraction=ia_training_fraction,
-            is_queryable=is_queryable, 
-            feature_extraction_method=feature_extraction_method)
-        light_curve_file_name = {None: initial_light_curve_file_name['train']}
+            config=config,
+        )
+        light_curve_file_name = {None: config.path_to_ini_files['train']}
         light_curve_data = load_dataset(
             file_names_dict=light_curve_file_name,
-            survey_name=survey_name, is_separate_files=is_separate_files,
-            initial_training=initial_training,
-            ia_training_fraction=ia_training_fraction,
-            is_queryable=is_queryable, 
-            feature_extraction_method=feature_extraction_method)
+            config=config,
+        )
     else:
         first_loop_file_name = {'pool': first_loop_file_name}
         first_loop_data = load_dataset(
             file_names_dict=first_loop_file_name,
-            survey_name=survey_name, samples_list=['pool'],
-            number_of_classes=number_of_classes,
-            feature_extraction_method=feature_extraction_method,
-            is_save_samples=is_save_samples, is_queryable=is_queryable,
-            is_separate_files=is_separate_files)
+            config=config,
+            samples_list=['pool'],
+        )
         light_curve_data = load_dataset(
-            file_names_dict=initial_light_curve_file_name,
+            file_names_dict=config.path_to_ini_files,
+            config=config,
             samples_list=['train', 'test', 'validation'],
-            feature_extraction_method=feature_extraction_method,
-            survey_name=survey_name, is_load_build_samples=False)
+            is_load_build_samples=False,
+        )
     return first_loop_data, light_curve_data
 
 
@@ -356,8 +290,7 @@ def _run_classification_and_evaluation(
 
 
 def _get_indices_of_objects_to_be_queried(
-        database_class: DataBase, strategy: str, budgets: tuple,
-        is_queryable: bool, query_threshold: float, batch: int) -> list:
+        database_class: DataBase,budgets: tuple, config: TimeDomainConfiguration) -> list:
     """
     Finds indices of objects to be queried
 
@@ -365,32 +298,23 @@ def _get_indices_of_objects_to_be_queried(
     ----------
     database_class
         An instance of DataBase class
-    strategy
-        Query strategy. Options are (all can be run with budget):
-        "UncSampling",
-        "UncSamplingEntropy",
-        "UncSamplingLeastConfident",
-        "UncSamplingMargin",
-        "QBDMI",
-        "QBDEntropy",
-        "RandomSampling",
     budgets
         Budgets for each of the telescopes
-    is_queryable
-        If True, allow queries only on objects flagged as queryable.
-        Default is True.
-    query_threshold
-        Percentile threshold for query. Default is 1.
-    batch
-        Size of batch to be queried in each loop. Default is 1.
+    config
+        The `TimeDomainConfiguration` dataclass that
+        contains all the runtime configuration options.
     """
     if budgets:
         object_indices = database_class.make_query_budget(
-            budgets=budgets, strategy=strategy)
+            budgets=budgets, strategy=config.strategy
+        )
     else:
         object_indices = database_class.make_query(
-            strategy=strategy, batch=batch, queryable=is_queryable,
-            query_threshold=query_threshold)
+            strategy=config.strategy,
+            batch=config.batch,
+            queryable=config.queryable,
+            query_thre=config.query_thre,
+        )
     return list(object_indices)
 
 
@@ -454,9 +378,7 @@ def _save_metrics_and_queried_sample(
 
 
 def _load_next_day_data(
-        next_day_features_file_name: str, is_separate_files: bool,
-        is_queryable: bool, survey_name: str, ia_training_fraction: float,
-        is_save_samples: bool, feature_extraction_method: str='Bazin'):
+        next_day_features_file_name: str, config: TimeDomainConfiguration):
     """
     Loads features of next day
 
@@ -480,19 +402,14 @@ def _load_next_day_data(
         If True, save training and test samples to file.
         Default is False.
     """
-    if is_separate_files:
+    if config.sep_files:
         next_day_features_file_name = {'pool': next_day_features_file_name}
         next_day_data = load_dataset(
-            next_day_features_file_name, survey_name, samples_list=['pool'],
-            is_separate_files=is_separate_files, is_queryable=is_queryable,
-            is_save_samples=is_save_samples,
-            feature_extraction_method=feature_extraction_method)
+            next_day_features_file_name, config, samples_list=['pool'],
+        )
     else:
         next_day_features_file_name = {None: next_day_features_file_name}
-        next_day_data = load_dataset(
-            next_day_features_file_name, survey_name, is_queryable=is_queryable,
-            initial_training=0, ia_training_fraction=ia_training_fraction,
-            feature_extraction_method=feature_extraction_method)
+        next_day_data = load_dataset(next_day_features_file_name, config)
     return next_day_data
 
 
@@ -718,12 +635,13 @@ def _update_light_curve_data_for_next_epoch(
 
 # TODO: Too many arguments. Refactor and update docs
 def process_next_day_loop(
-        light_curve_data: DataBase, next_day_features_file_name: str,
-        is_separate_files: bool, is_queryable: bool, survey_name: str,
-        ia_training_fraction: float, id_key_name: str,
-        light_curve_train_ids: np.ndarray, is_save_samples: bool,
-        canonical_data: DataBase, strategy: str, 
-        feature_extraction_method: str='Bazin') -> DataBase:
+    light_curve_data: DataBase,
+    next_day_features_file_name: str,
+    id_key_name: str,
+    light_curve_train_ids: np.ndarray,
+    canonical_data: DataBase,
+    config: TimeDomainConfiguration,
+) -> DataBase:
     """
     Runs next day active learning loop
 
@@ -733,64 +651,58 @@ def process_next_day_loop(
         next day light curve data
     next_day_features_file_name
         path to next day features file name
-    is_separate_files
-        If True, consider samples separately read
-        from independent files. Default is False.
-    is_queryable
-        If True, allow queries only on objects flagged as queryable.
-        Default is True.
-    survey_name
-        Name of survey to be analyzed. Accepts 'DES' or 'LSST'.
-        Default is LSST.
-    ia_training_fraction
-        Fraction of Ia required in initial training sample.
-        Default is 0.5.
     id_key_name
         object identification key name
     light_curve_train_ids
         light curve data metadata values
-    is_save_samples
-        If True, save training and test samples to file.
-        Default is False.
     canonical_data
         canonical strategy light curve data
-    strategy
-        Query strategy. Options are (all can be run with budget):
-        "UncSampling", "UncSamplingEntropy", "UncSamplingLeastConfident",
-        "UncSamplingMargin", "QBDMI", "QBDEntropy", "RandomSampling"
-    feature_extraction_method: str (optional)
-        Feature extraction method. The current implementation only
-        accepts method=='Bazin' or 'photometry'.
-        Default is 'Bazin'.
+    config
+        The `TimeDomainConfiguration` dataclass that
+        contains all the runtime configuration options.
     """
-    next_day_data = _load_next_day_data(
-        next_day_features_file_name, is_separate_files, is_queryable,
-        survey_name, ia_training_fraction, is_save_samples,
-        feature_extraction_method=feature_extraction_method)
+    next_day_data = _load_next_day_data(next_day_features_file_name, config)
     for metadata_value in light_curve_data.train_metadata[id_key_name].values:
         next_day_pool_metadata = next_day_data.pool_metadata[id_key_name].values
         if metadata_value in next_day_pool_metadata:
-            next_day_pool_metadata_indices = list(
-                next_day_pool_metadata).index(metadata_value)
+            next_day_pool_metadata_indices = list(next_day_pool_metadata).index(metadata_value)
             if metadata_value not in light_curve_train_ids:
-                light_curve_train_metadata = light_curve_data.train_metadata[
-                    id_key_name].values
+                light_curve_train_metadata = light_curve_data.train_metadata[id_key_name].values
                 light_curve_data = _remove_old_training_features(
-                    light_curve_data, light_curve_train_metadata,
-                    metadata_value)
+                    light_curve_data,
+                    light_curve_train_metadata,
+                    metadata_value
+                )
                 if light_curve_data.queryable_ids.shape[0] > 0:
                     light_curve_data = _update_queried_sample(
-                        light_curve_data, next_day_data, id_key_name,
-                        metadata_value)
+                        light_curve_data,
+                        next_day_data,
+                        id_key_name,
+                        metadata_value
+                    )
                 light_curve_data = _update_training_data_with_new_features(
-                    light_curve_data, next_day_data, metadata_value, id_key_name)
+                    light_curve_data,
+                    next_day_data,
+                    metadata_value,
+                    id_key_name
+                )
             next_day_data = _update_next_day_pool_data(
-                next_day_data, next_day_pool_metadata_indices)
+                next_day_data,
+                next_day_pool_metadata_indices
+            )
         next_day_data = _update_next_day_val_and_test_data(
-            next_day_data, metadata_value, id_key_name)
+            next_day_data,
+            metadata_value,
+            id_key_name
+        )
     light_curve_data = _update_light_curve_data_for_next_epoch(
-        light_curve_data, next_day_data, canonical_data, is_queryable, strategy,
-        is_separate_files)
+        light_curve_data,
+        next_day_data,
+        canonical_data,
+        config.queryable,
+        config.strategy,
+        config.sep_files
+    )
     return light_curve_data
 
 
@@ -810,15 +722,13 @@ def submit_queries_to_TOM(username, passwordfile, objectids: list, priorities: l
 
 # TODO: Too many arguments. Refactor and update docs
 def run_time_domain_active_learning_loop(
-        light_curve_data: DataBase, learning_days: list,
-        classifier: str, is_classifier_bootstrap: bool, strategy: str,
-        budgets: tuple, is_queryable: bool, query_threshold: float, batch: int,
-        output_metric_file_name: str, output_queried_file_name: str,
-        is_save_full_query: bool, id_key_name: str,
-        light_curve_train_ids: np.ndarray, canonical_data: DataBase,
-        is_separate_files: bool, path_to_features_directory: str,
-        fname_pattern: list, survey_name: str,  ia_training_fraction: float,
-        is_save_samples: bool, feature_extraction_method: str='Bazin', **kwargs: dict):
+    light_curve_data: DataBase,
+    id_key_name: str,
+    light_curve_train_ids: np.ndarray,
+    canonical_data: DataBase,
+    config: TimeDomainConfiguration,
+    **kwargs: dict
+):
     """
     Runs time domain active learning loop
 
@@ -826,63 +736,15 @@ def run_time_domain_active_learning_loop(
     ----------
     light_curve_data
         light curve learning data
-    learning_days
-        List of 2 elements. First and last day of observations since the
-        beginning of the survey.
-    classifier
-        Machine Learning algorithm.
-        Currently 'RandomForest', 'GradientBoostedTrees',
-        'KNN', 'MLP', 'SVM' and 'NB' are implemented.
-        Default is 'RandomForest'.
-    is_classifier_bootstrap
-        If true build a boostrap ensemble of the classifier.
-    strategy
-        Query strategy. Options are (all can be run with budget):
-        "UncSampling", "UncSamplingEntropy", "UncSamplingLeastConfident",
-        "UncSamplingMargin", "QBDMI", "QBDEntropy", "RandomSampling"
-    budgets
-        Budgets for each of the telescopes
-    is_queryable
-        If True, allow queries only on objects flagged as queryable.
-        Default is True.
-    query_threshold
-        Percentile threshold for query. Default is 1.
-    batch
-        Size of batch to be queried in each loop. Default is 1.
-    output_metric_file_name
-        Full path to output file to store metrics for each loop.
-    output_queried_file_name
-        Full path to output file to store the queried sample.
-    is_save_full_query
-        If True, save complete queried sample to file.
-        Otherwise, save only first element. Default is False.
     id_key_name
         object identification key name
     light_curve_train_ids
         light curve data metadata values
     canonical_data
         canonical strategy light curve data
-    is_separate_files
-        If True, consider samples separately read
-        from independent files. Default is False.
-    path_to_features_directory
-        Complete path to directory holding features files for all days.
-    fname_pattern
-        List of strings. Set the pattern for filename, except day of
-        survey. If file name is 'day_1_vx.csv' -> ['day_', '_vx.csv']
-    survey_name
-        Name of survey to be analyzed. Accepts 'DES' or 'LSST'.
-        Default is LSST.
-    ia_training_fraction
-        Fraction of Ia required in initial training sample.
-        Default is 0.5.
-    is_save_samples
-       If True, save training and test samples to file.
-        Default is False.
-    feature_extraction_method: str (optional)
-        Feature extraction method. The current implementation only
-        accepts method=='Bazin' or 'photometry'.
-        Default is 'Bazin'.
+    config
+        The `TimeDomainConfiguration` dataclass that
+        contains all the runtime configuration options.
     kwargs
        All keywords required by the classifier function.
 
@@ -890,170 +752,106 @@ def run_time_domain_active_learning_loop(
     -------
 
     """
-    learning_days = [int(each_day) for each_day in learning_days]
+    learning_days = [int(each_day) for each_day in config.days]
     
     # create dictionary with budgets
-    if budgets is not None and len(budgets) not in [2, len(np.arange(learning_days[0], learning_days[1]))]:
+    if config.budgets is not None and len(config.budgets) not in [2, len(np.arange(config.days[0], config.days[1]))]:
         raise ValueError('There must be 1 budget per telescope or ' + \
                             '1 budget per telescope per night!')
 
     budgets_dict = {}
-    for epoch in range(learning_days[0], learning_days[-1] - 1):
-        budgets_dict[epoch] = budgets
+    for epoch in range(config.days[0], config.days[-1] - 1):
+        budgets_dict[epoch] = config.budgets
     
     for epoch in progressbar.progressbar(
             range(learning_days[0], learning_days[-1] - 1)):
         if light_curve_data.pool_features.shape[0] > 0:
             light_curve_data = _run_classification_and_evaluation(
-                light_curve_data, classifier, is_classifier_bootstrap, **kwargs)
+                light_curve_data, config.classifier, config.clf_bootstrap, **kwargs
+            )
             if light_curve_data.queryable_ids.shape[0] > 0:
                 object_indices = _get_indices_of_objects_to_be_queried(
-                    light_curve_data, strategy, budgets_dict[epoch], is_queryable,
-                    query_threshold, batch)
+                    light_curve_data,
+                    budgets_dict[epoch],
+                    config,
+                )
                 light_curve_data = _update_samples_with_object_indices(
-                    light_curve_data, object_indices, is_queryable, epoch)
+                    light_curve_data, object_indices, config.queryable, epoch
+                )
         _save_metrics_and_queried_sample(
-                light_curve_data, epoch - learning_days[0],
-                output_metric_file_name, output_queried_file_name, len(object_indices), epoch,
-                 is_save_full_query)
-        next_day_features_file_name = (
-                path_to_features_directory + fname_pattern[0] + str(epoch + 1)
-                + fname_pattern[1])
+            light_curve_data, epoch - learning_days[0],
+            config.output_metrics_file,
+            config.output_queried_file,
+            len(object_indices),
+            epoch,
+            config. save_full_query,
+        )
+        next_day_features_file_name = f"{config.fname_pattern[0]}{epoch + 1}{config.fname_pattern[1]}"
+        next_day_features_file_path = os.path.join(config.path_to_features_dir, next_day_features_file_name)
         light_curve_data = process_next_day_loop(
-            light_curve_data, next_day_features_file_name, is_separate_files,
-            is_queryable, survey_name,  ia_training_fraction, id_key_name,
-            light_curve_train_ids, is_save_samples, canonical_data, strategy,
-            feature_extraction_method=feature_extraction_method)
+            light_curve_data,
+            next_day_features_file_path,
+            id_key_name,
+            light_curve_train_ids,
+            canonical_data,
+            config,
+        )
 
 
 # TODO: Too many arguments. Refactor and update docs
-def time_domain_loop(days: list, output_metrics_file: str,
-                     output_queried_file: str, path_to_features_dir: str,
-                     strategy: str, fname_pattern: list,
-                     path_to_ini_files: dict, batch: int = 1,
-                     canonical: bool = False, classifier: str = 'RandomForest',
-                     clf_bootstrap: bool = False, budgets: tuple = None,
-                     nclass: int = 2, ia_frac: float = 0.5,
-                     path_to_canonical: str = "", queryable: bool = True,
-                     query_thre: float = 1.0, save_samples: bool = False,
-                     sep_files: bool = False, survey: str = 'LSST',
-                     initial_training: str = 'original',
-                     feature_extraction_method: str = 'Bazin',
-                     save_full_query: bool = False, **kwargs):
+def time_domain_loop(config, **kwargs):
     """
     Perform the active learning loop. All results are saved to file.
 
     Parameters
     ----------
-    days: list
-        List of 2 elements. First and last day of observations since the
-        beginning of the survey.
-    output_metrics_file: str
-        Full path to output file to store metrics for each loop.
-    output_queried_file: str
-        Full path to output file to store the queried sample.
-    path_to_features_dir: str
-        Complete path to directory holding features files for all days.
-    strategy: str
-        Query strategy. Options are (all can be run with budget):
-        "UncSampling",
-        "UncSamplingEntropy",
-        "UncSamplingLeastConfident",
-        "UncSamplingMargin",
-        "QBDMI",
-        "QBDEntropy",
-        "RandomSampling",
-    fname_pattern: str
-        List of strings. Set the pattern for filename, except day of
-        survey. If file name is 'day_1_vx.csv' -> ['day_', '_vx.csv'].
-    path_to_ini_files: dict (optional)
-        Path to initial full light curve files.
-        Possible keywords are: "train", "test" and "validation".
-        At least "train" is mandatory.
-    batch: int (optional)
-        Size of batch to be queried in each loop. Default is 1.
-    canonical: bool (optional)
-        If True, restrict the search to the canonical sample.
-    classifier: str (optional)
-        Machine Learning algorithm.
-        Currently 'RandomForest', 'GradientBoostedTrees',
-        'KNN', 'MLP', 'SVM' and 'NB' are implemented.
-        Default is 'RandomForest'.
-    clf_bootstrap: bool (default: False)
-        If true build a boostrap ensemble of the classifier.
-    budgets: tuple of floats (default: None)
-        Budgets for each of the telescopes
-    ia_frac: float in [0,1] (optional)
-        Fraction of Ia required in initial training sample.
-        Default is 0.5.
-    nclass
-        Number of classes to consider in the classification
-        Currently only nclass == 2 is implemented.
-    path_to_canonical: str (optional)
-        Path to canonical sample features files.
-        It is only used if "strategy==canonical".
-    queryable: bool (optional)
-        If True, allow queries only on objects flagged as queryable.
-        Default is True.
-    query_thre: float (optional)
-        Percentile threshold for query. Default is 1.
-    save_samples: bool (optional)
-        If True, save training and test samples to file.
-        Default is False.
-    save_full_query: bool (optional)
-        If True, save complete queried sample to file.
-        Otherwise, save only first element. Default is False.
-    sep_files: bool (optional)
-        If True, consider samples separately read
-        from independent files. Default is False.
-    survey: str (optional)
-        Name of survey to be analyzed. Accepts 'DES' or 'LSST'.
-        Default is LSST.
-    initial_training: str or int (optional)
-        Choice of initial training sample.
-        If 'original': begin from the train sample flagged in the file
-        eilf 'previous': read training and queried from previous run.
-        If int: choose the required number of samples at random,
-        ensuring that at least half are SN Ia
-        Default is 'original'.
-    feature_extraction_method: str (optional)
-        Feature extraction method. The current implementation only
-        accepts method=='Bazin' or 'photometry'.
-        Default is 'Bazin'.
+    config
+        The `TimeDomainConfiguration` dataclass that
+        contains all the runtime configuration options.
     """
 
     # load features for the first obs day
-    first_loop_file_name = os.path.join(
-        path_to_features_dir,
-        fname_pattern[0] + str(days[0]) + fname_pattern[1])
+    first_loop_file_name = f"{config.fname_pattern[0]}{config.days[0]}{config.fname_pattern[1]}"
+    first_loop_file_path = os.path.join(
+        config.path_to_features_dir,
+        first_loop_file_name
+    )
 
     first_loop_data, light_curve_data = _load_first_loop_and_full_data(
-        first_loop_file_name, path_to_ini_files, survey, initial_training,
-        ia_frac, queryable, sep_files, nclass, is_save_samples=save_samples,
-        feature_extraction_method = feature_extraction_method)
+        first_loop_file_path, config
+    )
 
     # get keyword for obj identification
     id_key_name = light_curve_data.identify_keywords()
     light_curve_train_ids = light_curve_data.train_metadata[id_key_name].values
 
     first_loop_data, light_curve_data = _update_data_by_remove_repeated_ids(
-        first_loop_data, light_curve_data, id_key_name)
+        first_loop_data, light_curve_data, id_key_name
+    )
     light_curve_data = _update_light_curve_data_val_and_test_data(
-        light_curve_data, first_loop_data, sep_files, initial_training,
-        queryable)
+        light_curve_data,
+        first_loop_data,
+        config.sep_files,
+        config.initial_training,
+        config.queryable
+    )
     light_curve_data = _update_queryable_ids(
-        light_curve_data, id_key_name, queryable)
+        light_curve_data, id_key_name, config.queryable
+    )
     light_curve_data, canonical_data = _update_canonical_ids(
-        light_curve_data, path_to_canonical, canonical)
+        light_curve_data, config.path_to_canonical, config.canonical
+    )
     light_curve_data = _update_initial_train_meta_data_header(
-        first_loop_data, light_curve_data)
+        first_loop_data, light_curve_data
+    )
     run_time_domain_active_learning_loop(
-        light_curve_data, days, classifier, clf_bootstrap,
-        strategy, budgets, queryable, query_thre, batch, output_metrics_file,
-        output_queried_file, save_full_query, id_key_name,
-        light_curve_train_ids, canonical_data, sep_files, path_to_features_dir,
-        fname_pattern, survey, ia_frac, save_samples,
-        feature_extraction_method=feature_extraction_method, **kwargs)
+        light_curve_data,
+        id_key_name,
+        light_curve_train_ids,
+        canonical_data,
+        config,
+        **kwargs
+    )
 
 def main():
     return None
