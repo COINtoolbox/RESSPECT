@@ -253,10 +253,18 @@ class DataBase:
         else:
             data = pd.read_csv(path_to_features_file, index_col=False)
 
-        # check if queryable is there
         metadata_flags = {'with_queryable' : True}
         if 'queryable' not in data.keys():
             data['queryable'] = [True for i in range(data.shape[0])]
+
+        if 'last_rmag' in data.keys():
+            metadata_flags['with_last_rmag'] = True
+
+        cost_flags = []
+        for name in self.telescope_names:
+            if 'cost_' + name in data.keys():
+                cost_flags.append('cost_' + name)
+        metadata_flags['with_cost'] = cost_flags
 
         # Create the filter-feature names based on the survey.
         survey_filters = FILTER_SETS[survey]

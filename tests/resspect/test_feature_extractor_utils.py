@@ -18,7 +18,7 @@ def test_make_features_header():
 def test_make_features_header_with_cost():
     filters = ['g', 'r', 'i', 'z']
     features = ['A', 'B']
-    assert make_column_headers(filters, features, with_cost=True) == ['id', 'redshift', 'type', 'code', 'orig_sample', 'cost_4m', 'cost_8m', 'gA', 'gB', 'rA', 'rB', 'iA', 'iB', 'zA', 'zB']
+    assert make_column_headers(filters, features, with_cost=['cost_4m', 'cost_8m']) == ['id', 'redshift', 'type', 'code', 'orig_sample', 'cost_4m', 'cost_8m', 'gA', 'gB', 'rA', 'rB', 'iA', 'iB', 'zA', 'zB']
 
 def test_make_features_header_with_queryable():
     filters = ['g', 'r', 'i', 'z']
@@ -49,7 +49,7 @@ def test_make_features_header_with_all_flags():
     result = make_column_headers(
         filters,
         features,
-        with_cost=True,
+        with_cost=['cost_4m', 'cost_8m'],
         with_queryable=True,
         with_last_rmag=True,
         override_primary_columns=['new_id', 'new_redshift', 'new_type', 'new_code', 'new_orig_sample']

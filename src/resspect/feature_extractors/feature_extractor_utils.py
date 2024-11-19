@@ -72,9 +72,8 @@ def make_metadata_column_names(**kwargs) -> List[str]:
     if kwargs.get('with_last_rmag', False):
         metadata_columns.append('last_rmag')
 
-    #TODO: find where the 'with_cost' flag is used to make sure we apply there
-    if kwargs.get('with_cost', False):
-        metadata_columns.extend(['cost_4m', 'cost_8m'])
+    if len(kwargs.get('with_cost', [])):
+        metadata_columns.extend(kwargs.get('with_cost'))
 
     return metadata_columns
 
