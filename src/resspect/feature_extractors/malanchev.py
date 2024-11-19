@@ -33,6 +33,10 @@ class Malanchev(LightCurve):
         'linear_fit_reduced_chi2'
     ]
 
+    #! What should these values be???
+    id_column = "id"
+    label_column = "type"
+    non_anomaly_classes = ["Ia"]
 
     def __init__(self):
         super().__init__()

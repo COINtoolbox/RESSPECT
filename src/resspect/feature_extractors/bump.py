@@ -13,6 +13,10 @@ from resspect.feature_extractors.light_curve import LightCurve
 class Bump(LightCurve):
     feature_names = ['p1', 'p2', 'p3', 'time_shift', 'max_flux']
 
+    #! What should these values be???
+    id_column = "id"
+    label_column = "type"
+    non_anomaly_classes = ["Ia"]
 
     def __init__(self):
         super().__init__()
