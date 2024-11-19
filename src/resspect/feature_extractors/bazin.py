@@ -13,6 +13,9 @@ from resspect.feature_extractors.light_curve import LightCurve
 class Bazin(LightCurve):
     feature_names = ['A', 'B', 't0', 'tfall', 'trise']
 
+    id_column = 'id'
+    label_column = 'type'
+    non_anomaly_classes = ['Ia']
 
     def __init__(self):
         super().__init__()
