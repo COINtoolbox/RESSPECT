@@ -312,9 +312,9 @@ def _sample_fit(
     else:
         light_curve_data.sntype = 'other'
     light_curve_data.sample = type
-    light_curve_data.additional_info = []
+    light_curve_data.additional_info = {}
     for info in additional_info:
-        light_curve_data.additional_info.append(obj_dic[info])
+        light_curve_data.additional_info[info] = obj_dic[info]
     light_curve_data.fit_all()
     
     return light_curve_data
