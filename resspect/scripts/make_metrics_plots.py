@@ -19,10 +19,10 @@ import argparse
 
 from resspect.plot_results import Canvas
 
-__all__ = ['main']
+__all__ = ['make_metrics_plots']
 
 
-def main(user_input):
+def make_metrics_plots(user_input):
     """Generate metric plots.
 
     Parameters
@@ -65,7 +65,7 @@ def main(user_input):
                         lim_queries=user_input.lim_queries)
 
 
-if __name__ == '__main__':
+def main():
 
     # get input directory and output file name from user
     parser = argparse.ArgumentParser(description='resspect - '
@@ -88,7 +88,8 @@ if __name__ == '__main__':
 
     from_user = parser.parse_args()
 
-    main(from_user)
+    make_metrics_plots(from_user)
 
 
-
+if __name__ == '__main__':
+    main()

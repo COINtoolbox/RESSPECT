@@ -22,9 +22,9 @@ from resspect.cosmo_metric_utils import compare_two_fishers
 from resspect.cosmo_metric_utils import fisher_results
 from resspect.cosmo_metric_utils import update_matrix
 
-__all__ = ['main']
+__all__ = ['calculate_cosmology_metric']
 
-def main(args):
+def calculate_cosmology_metric(args):
     """Calculate Fisher matrix-based cosmology metric.
 
     Parameters
@@ -112,7 +112,7 @@ def main(args):
         except:
             print('Something went wrong...')
 
-if __name__ == '__main__':
+def main():
 
     usage = "usage: [%prog] [options]"
 
@@ -155,6 +155,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args)
+    calculate_cosmology_metric(args)
 
-
+if __name__ == '__main__':
+    main()

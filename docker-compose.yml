@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  resspect:
+    tty: true
+    container_name: resspect
+    build: ./
+    ports:
+      - "8081:8081"
+    depends_on:
+      - "db"
+    volumes:
+      - type: bind
+        source: ./resspect
+        target: /resspect
+      - type: bind
+        source: ./secrets
+        target: /secrets
+    environment:
+      - DB_USER=admin
+      - DB_PASS=verysecurepassword
+      - DB_HOST=resspectdb
+      - DB_PORT=5432
+      - DB_NAME=resspectdb
+    networks:
+      - tom_desc_default
+  db:
+    container_name: resspectdb
+    image: postgres
+    networks: 
+      - tom_desc_default
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=verysecurepassword
+      - POSTGRES_DB=resspectdb
+      - POSTGRES_DATA_DIR=/docker-entrypoint-initdb.d
+    volumes:
+      - ./resspectdb.sql:/docker-entrypoint-initdb.d/resspectdb.sql
+      - type: bind
+        source: ./resspect
+        target: /resspect
+
+
+networks:
+  tom_desc_default:
+    external: true
+

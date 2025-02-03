@@ -19,10 +19,10 @@ import argparse
 
 from resspect.time_domain_snpcc import SNPCCPhotometry
 
-__all__ = ['main']
+__all__ = ['build_time_domain_snpcc']
 
 
-def main(user_choice):
+def build_time_domain_snpcc(user_choice):
     """Generates features files for a list of days of the survey.
 
     Parameters
@@ -49,13 +49,15 @@ def main(user_choice):
     -t: sequence (optional)
         Primary mirrors diameters of potential spectroscopic telescopes.
         Only used if "get_cost == True". Default is [4, 8].
+    -nc: int (optional)
+        Number of cores used in calculation. Default is 1.
 
     Examples
     -------
     Use it directly from the command line.
 
     >>> build_time_domain.py -d 20 21 22 23 -p <path to raw data dir> 
-    >>>      -o <path to output time domain dir> -q 2 -c True
+    >>>      -o <path to output time domain dir> -q 2 -c True -nc 10
     """
     path_to_data = user_choice.raw_data_dir
     output_dir = user_choice.output
@@ -67,20 +69,22 @@ def main(user_choice):
     tel_sizes = user_choice.tel_sizes
     tel_names = user_choice.tel_names
     spec_SNR = user_choice.spec_SNR
+    number_of_processors = user_choice.n_cores
 
     for item in day:
         data = SNPCCPhotometry()
         data.create_daily_file(output_dir=output_dir, day=item, get_cost=get_cost)
         data.build_one_epoch(raw_data_dir=path_to_data, day_of_survey=int(item),
                              time_domain_dir=output_dir,
-                             feature_method=feature_method, 
+                             feature_extractor=feature_method, 
                              days_since_obs=days_since_obs,
                              queryable_criteria=queryable_criteria, 
                              get_cost=get_cost, tel_sizes=tel_sizes,
-                             tel_names=tel_names, spec_SNR=spec_SNR)
+                             tel_names=tel_names, spec_SNR=spec_SNR,
+                             number_of_processors=number_of_processors)
 
 
-if __name__ == '__main__':
+def main():
     # get input directory and output file name from user
     parser = argparse.ArgumentParser(description='resspect - '
                                                  'Prepare Time Domain module')
@@ -99,12 +103,11 @@ if __name__ == '__main__':
                         'the last observed point. Default is 1.')
     parser.add_argument('-o', '--output', dest='output', required=True,
                         type=str, help='Path to output time domain directory.')
-    parser.add_argument('-c', '--calculate-cost', dest='get_cost', required=False,
-                        type=bool, default=False, 
+    parser.add_argument('-c', '--calculate-cost', dest='get_cost', default=False, 
                         help='Calculate cost of spectra in each day.')
     parser.add_argument('-f', '--feature-method', dest='feature_method', type=str,
-                        required=False, default='Bazin', help='Feature extraction method. ' + \
-                        'Only "Bazin" is accepted at the moment.')
+                        required=False, default='bazin', help='Feature extraction method. ' + \
+                        'Only "bazin" is accepted at the moment.')
     parser.add_argument('-g', '--days-since-obs', dest='days_since_obs', required=False,
                         type=int, default=2, help='Gap in days since last observation ' + \
                         'when the measured magnitude can be used for spectroscopic ' + \
@@ -119,8 +122,15 @@ if __name__ == '__main__':
     parser.add_argument('-snr', '--spec-SNR', dest='spec_SNR', required=False,
                         default=10, help='SNR required for spectroscopic follow-up. ' + \
                         'Default is 10.')
+    parser.add_argument('-nc', '--n-cores', dest='n_cores', required=False,
+                        default=1, help='Number of cores used. ' + \
+                        'Default is 1.', type=int)
 
     # get input directory and output file name from user
     from_user = parser.parse_args()
 
-    main(from_user)
+    build_time_domain_snpcc(from_user)
+
+
+if __name__ == '__main__':
+    main()

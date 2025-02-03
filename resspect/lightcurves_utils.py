@@ -11,6 +11,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+
 from resspect.snana_fits_to_pd import read_fits
 
 
@@ -39,6 +40,13 @@ BAZIN_HEADERS = {
         'itfall', 'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztrise']
 }
 
+BUMP_HEADERS = {
+    'snpcc_header': ['gp1', 'gp2', 'gp3', 'gtime_shift', 'gmax_flux', 
+                     'rp1', 'rp2', 'rp3', 'rtime_shift', 'rmax_flux', 
+                     'ip1', 'ip2', 'ip3', 'itime_shift', 'imax_flux', 
+                     'zp1', 'zp2', 'zp3', 'ztime_shift', 'zmax_flux']
+}
+
 
 SNPCC_LC_MAPPINGS = {
     "snii": {2, 3, 4, 12, 15, 17, 19, 20, 21, 24, 25,
@@ -53,6 +61,22 @@ SNPCC_FEATURES_HEADER = [
     'gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA', 'rB',
     'rt0', 'rtfall', 'rtrise', 'iA', 'iB', 'it0', 'itfall',
     'itrise', 'zA', 'zB', 'zt0', 'ztfall', 'ztrise'
+]
+
+SNPCC_MALANCHEV_FEATURES_HEADER = [
+    'id', 'redshift', 'type', 'code', 'orig_sample',
+    'ganderson_darling_normal','ginter_percentile_range_5',
+    'gchi2','gstetson_K','gweighted_mean','gduration', 'gotsu_mean_diff','gotsu_std_lower', 'gotsu_std_upper',
+    'gotsu_lower_to_all_ratio', 'glinear_fit_slope', 'glinear_fit_slope_sigma','glinear_fit_reduced_chi2',
+    'randerson_darling_normal', 'rinter_percentile_range_5',
+    'rchi2', 'rstetson_K', 'rweighted_mean','rduration', 'rotsu_mean_diff','rotsu_std_lower', 'rotsu_std_upper',
+    'rotsu_lower_to_all_ratio', 'rlinear_fit_slope', 'rlinear_fit_slope_sigma','rlinear_fit_reduced_chi2',
+    'ianderson_darling_normal','iinter_percentile_range_5',
+    'ichi2', 'istetson_K', 'iweighted_mean','iduration', 'iotsu_mean_diff','iotsu_std_lower', 'iotsu_std_upper',
+    'iotsu_lower_to_all_ratio', 'ilinear_fit_slope', 'ilinear_fit_slope_sigma','ilinear_fit_reduced_chi2',
+    'zanderson_darling_normal','zinter_percentile_range_5',
+    'zchi2', 'zstetson_K', 'zweighted_mean','zduration', 'zotsu_mean_diff','zotsu_std_lower', 'zotsu_std_upper',
+    'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 'zlinear_fit_slope_sigma','zlinear_fit_reduced_chi2'
 ]
 
 PLASTICC_RESSPECT_FEATURES_HEADER = [
@@ -75,6 +99,36 @@ SNPCC_META_HEADER = ['snid', 'orig_sample', 'sntype', 'z', 'g_pkmag',
 
 SNPCC_CANONICAL_FEATURES = ['z', 'g_pkmag', 'r_pkmag', 'i_pkmag',
                             'z_pkmag', 'g_SNR', 'r_SNR', 'i_SNR', 'z_SNR']
+
+MALANCHEV_HEADERS = {
+    'snpcc_header': ['id', 'redshift', 'type', 'code', 'orig_sample', 'queryable', 'last_rmag',
+        'ganderson_darling_normal', 'ginter_percentile_range_5',
+        'gchi2', 'gstetson_K', 'gweighted_mean', 'gduration', 'gotsu_mean_diff', 'gotsu_std_lower', 'gotsu_std_upper',
+        'gotsu_lower_to_all_ratio', 'glinear_fit_slope', 'glinear_fit_slope_sigma', 'glinear_fit_reduced_chi2',
+        'randerson_darling_normal', 'rinter_percentile_range_5',
+        'rchi2', 'rstetson_K', 'rweighted_mean', 'rduration', 'rotsu_mean_diff', 'rotsu_std_lower', 'rotsu_std_upper',
+        'rotsu_lower_to_all_ratio', 'rlinear_fit_slope', 'rlinear_fit_slope_sigma', 'rlinear_fit_reduced_chi2',
+        'ianderson_darling_normal', 'iinter_percentile_range_5',
+        'ichi2', 'istetson_K', 'iweighted_mean', 'iduration', 'iotsu_mean_diff', 'iotsu_std_lower', 'iotsu_std_upper',
+        'iotsu_lower_to_all_ratio', 'ilinear_fit_slope', 'ilinear_fit_slope_sigma', 'ilinear_fit_reduced_chi2',
+        'zanderson_darling_normal', 'zinter_percentile_range_5',
+        'zchi2', 'zstetson_K', 'zweighted_mean', 'zduration', 'zotsu_mean_diff', 'zotsu_std_lower', 'zotsu_std_upper',
+        'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 'zlinear_fit_slope_sigma', 'zlinear_fit_reduced_chi2'],
+    'snpcc_header_with_cost': ['id', 'redshift', 'type', 'code', 'orig_sample', 'queryable', 'last_rmag',
+        'cost_4m', 'cost_8m',
+        'ganderson_darling_normal', 'ginter_percentile_range_5',
+        'gchi2', 'gstetson_K', 'gweighted_mean', 'gduration', 'gotsu_mean_diff', 'gotsu_std_lower', 'gotsu_std_upper',
+        'gotsu_lower_to_all_ratio', 'glinear_fit_slope', 'glinear_fit_slope_sigma', 'glinear_fit_reduced_chi2',
+        'randerson_darling_normal', 'rinter_percentile_range_5',
+        'rchi2', 'rstetson_K', 'rweighted_mean', 'rduration', 'rotsu_mean_diff', 'rotsu_std_lower', 'rotsu_std_upper',
+        'rotsu_lower_to_all_ratio', 'rlinear_fit_slope', 'rlinear_fit_slope_sigma', 'rlinear_fit_reduced_chi2',
+        'ianderson_darling_normal', 'iinter_percentile_range_5',
+        'ichi2', 'istetson_K', 'iweighted_mean', 'iduration', 'iotsu_mean_diff', 'iotsu_std_lower', 'iotsu_std_upper',
+        'iotsu_lower_to_all_ratio', 'ilinear_fit_slope', 'ilinear_fit_slope_sigma', 'ilinear_fit_reduced_chi2',
+        'zanderson_darling_normal', 'zinter_percentile_range_5',
+        'zchi2', 'zstetson_K', 'zweighted_mean', 'zduration', 'zotsu_mean_diff', 'zotsu_std_lower', 'zotsu_std_upper',
+        'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 'zlinear_fit_slope_sigma', 'zlinear_fit_reduced_chi2']
+}
 
 
 def read_file(file_path: str) -> list:
@@ -307,7 +361,7 @@ def read_plasticc_full_photometry_data(file_path: str) -> pd.DataFrame:
 
     if file_path.endswith(('.csv', '.csv.gz')):
         full_photometry = pd.read_csv(file_path, index_col=False)
-        if ' ' in full_photometry.keys()[0]:
+        if ' ' in full_photometry.keys()[0] and 'Unnamed:' not in full_photometry.keys()[0]:
             full_photometry = pd.read_csv(file_path, sep=' ', index_col=False)
         return full_photometry
 
@@ -495,3 +549,20 @@ def get_query_flags(light_curve_data, telescope_names: list,
         else:
             query_flags.append(False)
     return query_flags
+
+
+def get_files_list(path_to_data_dir: str,
+                    file_prefix: str) -> list:
+    """
+    loads file names available in the folder
+    Parameters
+    ----------
+    path_to_data_dir
+        folder path
+    file_prefix
+        files start name
+    """
+    files_list = os.listdir(path_to_data_dir)
+    files_list = [each_file for each_file in files_list
+                  if each_file.startswith(file_prefix)]
+    return files_list

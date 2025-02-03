@@ -15,14 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ['learn_loop', 'main']
+__all__ = ['learn_loop', 'run_loop']
 
 from resspect.learn_loop import learn_loop
 
 import argparse
 
 
-def main(args):
+def run_loop(args):
     """Command line interface to run the active learning loop.
 
     Parameters
@@ -44,7 +44,7 @@ def main(args):
         Currently 'RandomForest','GradientBoostedTrees','KNN' 
         and 'MLPclassifier' are implemented.
     -mt: str (optional)
-        Feature extraction method. Currently only 'Bazin' is implemented.
+        Feature extraction method. Currently only 'bazin' is implemented.
     -t: str or int (optional)
        Choice of initial training sample.
        If 'original': begin from the train sample flagged in the file
@@ -81,7 +81,7 @@ def main(args):
                training=train, batch=args.batch)
 
 
-if __name__ == '__main__':
+def main():
 
     # get input directory and output file name from user
     parser = argparse.ArgumentParser(description='resspect - '
@@ -102,8 +102,8 @@ if __name__ == '__main__':
                         help='Path to features file.', required=True, type=str)
     parser.add_argument('-mt', '--method', dest='method',
                         help='Feature extraction method. '
-                             'Only "Bazin" is implemented.', required=False,
-                        default='Bazin', type=str)
+                             'Only "bazin" is implemented.', required=False,
+                        default='bazin', type=str)
     parser.add_argument('-n', '--nquery', dest='nquery', required=True,
                         help='Number of query loops to run.', type=int)
     parser.add_argument('-q', '--queried', dest='queried', type=str,
@@ -118,4 +118,8 @@ if __name__ == '__main__':
 
     from_user = parser.parse_args()
 
-    main(from_user)
+    run_loop(from_user)
+
+
+if __name__ == '__main__':
+    main()

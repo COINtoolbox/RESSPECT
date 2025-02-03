@@ -17,14 +17,13 @@
 
 import argparse
 
-from resspect.fit_lightcurves import fit_snpcc_bazin
-from resspect.fit_lightcurves import fit_resspect_bazin
-from resspect.fit_lightcurves import fit_plasticc_bazin
+from resspect.fit_lightcurves import fit_snpcc
+from resspect.fit_lightcurves import fit_plasticc
 
-__all__ = ['main']
+__all__ = ['fit_dataset']
 
 
-def main(user_choices):
+def fit_dataset(user_choices):
     """Fit the entire sample with the Bazin function.
 
     All results are saved to file.
@@ -39,16 +38,19 @@ def main(user_choices):
         Path to directory containing raw data.
         Only used for SNPCC simulations.
     -hd: str (optional)
-        Path to header file. Only used for RESSPECT simulations.
+        Path to header file. Only used for PLASTICC simulations.
     -p: str (optional)
-        Path to photometry file. Only used for RESSPECT simulations.
+        Path to photometry file. Only used for PLASTICC simulations.
     -sp: str or None (optional)
         Sample to be fitted. Options are 'train', 'test' or None.
         Default is None.
     -n: int or None (optional)
         Number of cores to be used. If None all cores are used. 
         Default is 1.
-
+    -f: str (optional)
+        Function used for feature extraction. Options are "bazin" and "bump".
+        Default is "bazin". Only used for SNPCC for now.
+        
     Examples
     --------
 
@@ -56,7 +58,7 @@ def main(user_choices):
 
     >>> fit_dataset.py -s SNPCC -dd <path_to_data_dir> -o <output_file>
 
-    For RESSPECT or PLAsTiCC:
+    For PLAsTiCC:
 
     >>> fit_dataset.py -s <dataset_name> -p <path_to_photo_file> 
              -hd <path_to_header_file> -o <output_file> 
@@ -67,28 +69,22 @@ def main(user_choices):
     features_file = user_choices.output
     ncores = user_choices.ncores
 
-    if user_choices.sim_name == 'SNPCC':
+    if user_choices.sim_name in ['SNPCC', 'snpcc']:
         # fit the entire sample
-        fit_snpcc_bazin(path_to_data_dir=data_dir, features_file=features_file,
-                       number_of_processors=ncores)
-    
-    elif user_choices.sim_name == 'RESSPECT':
-        fit_resspect_bazin(path_photo_file=user_choices.photo_file,
-                           path_header_file=user_choices.header_file,
-                           output_file=features_file, sample=user_choices.sample,
-                          number_of_processors=ncores)
+        fit_snpcc(path_to_data_dir=data_dir, features_file=features_file,
+                  number_of_processors=ncores, feature_extractor=user_choices.function)
 
-    elif user_choices.sim_name == 'PLAsTiCC':
-        fit_plasticc_bazin(path_photo_file=user_choices.photo_file, 
-                           path_header_file=user_choices.header_file,
-                           output_file=features_file,
-                           sample=user_choices.sample,
-                           number_of_processors=ncores)
+    elif user_choices.sim_name in ['PLAsTiCC', 'PLASTICC', 'plasticc']:
+        fit_plasticc(path_photo_file=user_choices.photo_file,
+                    path_header_file=user_choices.header_file,
+                    output_file=features_file,
+                    sample=user_choices.sample,
+                    number_of_processors=ncores)
 
     return None
 
 
-if __name__ == '__main__':
+def main():
 
     # get input directory and output file name from user
     parser = argparse.ArgumentParser(description='resspect - Fit Light curves module')
@@ -97,16 +93,16 @@ if __name__ == '__main__':
                         help='Path to directory holding raw data. Only used for SNPCC',
                         required=False, default=' ')
     parser.add_argument('-hd', '--header', dest='header_file', 
-                        help='Path to header file. Only used for RESSPECT.',
+                        help='Path to header file. Only used for PLASTICC.',
                         required=False, default=' ')
     parser.add_argument('-o', '--output', dest='output', help='Path to output file.', 
                         required=True)
     parser.add_argument('-p', '--photo', dest='photo_file',
-                        help='Path to photometry file. Only used for RESSPECT.',
+                        help='Path to photometry file. Only used for PLASTICC.',
                         required=False, default=' ')
     parser.add_argument('-s', '--simulation', dest='sim_name', 
                         help='Name of simulation (data set). ' + \
-                             'Options are "SNPCC", "RESSPECT" or "PLAsTiCC".',
+                             'Options are "SNPCC" or "PLAsTiCC".',
                         required=True)
     parser.add_argument('-sp', '--sample', dest='sample',
                         help='Sample to be fitted. Options are "train", ' + \
@@ -115,7 +111,14 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--number-of-processors', dest='ncores', 
                        help='Number of processors. Default is 1.',
                        required=False, default=1)
+    parser.add_argument('-f', '--function', dest='function', 
+                       help='Function used for feature extraction.',
+                       required=False, default="bazin")
 
     user_input = parser.parse_args()
 
-    main(user_input)
+    fit_dataset(user_input)
+
+
+if __name__ == '__main__':
+    main()

@@ -16,19 +16,27 @@
 # limitations under the License.
 
 import io
-import numpy as np
 import os
 import pandas as pd
 import tarfile
 
 from resspect.classifiers import *
-
+from resspect.feature_extractors.bazin import BazinFeatureExtractor
+from resspect.feature_extractors.bump import BumpFeatureExtractor
+from resspect.feature_extractors.malanchev import MalanchevFeatureExtractor
 from resspect.query_strategies import *
 from resspect.query_budget_strategies import *
-from resspect.metrics import efficiency, purity, fom, accuracy, get_snpcc_metric
+from resspect.metrics import get_snpcc_metric
 
 
 __all__ = ['DataBase']
+
+
+FEATURE_EXTRACTOR_MAPPING = {
+    "bazin": BazinFeatureExtractor,
+    "bump": BumpFeatureExtractor,
+    "malanchev": MalanchevFeatureExtractor
+}
 
 
 class DataBase:
@@ -111,14 +119,16 @@ class DataBase:
         Evaluate results from classification.
     identify_keywords()
         Break degenerescency between keywords with equal meaning.
-    load_bazin_features(path_to_bazin_file: str)
-        Load Bazin features from file
+    load_extracted_features(path_to_features_file: str)
+        Load features from file
     load_photometry_features(path_to_photometry_file:str)
         Load photometric light curves from file
     load_plasticc_mjd(path_to_data_dir: str)
         Get min and max mjds for PLAsTiCC data
-    load_features(path_to_file: str, method: str)
+    load_features_from_file(path_to_file: str, method: str)
         Load features according to the chosen feature extraction method.
+    load_features(path_to_file: str, method: str)
+        Load features or photometry according to the chosen feature extraction method.
     make_query(strategy: str, batch: int) -> list
         Identify new object to be added to the training sample.
     output_photo_Ia(threshold: float)
@@ -142,7 +152,7 @@ class DataBase:
 
     Initiate the DataBase object and load the data.
     >>> data = DataBase()
-    >>> data.load_features(path_to_bazin_file, method='Bazin')
+    >>> data.load_features(path_to_bazin_file, method='bazin')
 
     Separate training and test samples and classify
 
@@ -212,17 +222,18 @@ class DataBase:
         self.validation_metadata = pd.DataFrame()
         self.validation_prob = np.array([])
 
-    def load_bazin_features(self, path_to_bazin_file: str, screen=False,
-                            survey='DES', sample=None):
-        """Load Bazin features from file.
+    def load_features_from_file(self, path_to_features_file: str, screen=False,
+                      survey='DES', sample=None, feature_extractor: str='bazin'):
+
+        """Load features from file.
 
         Populate properties: features, feature_names, metadata
         and metadata_names.
 
         Parameters
         ----------
-        path_to_bazin_file: str
-            Complete path to Bazin features file.
+        path_to_features_file: str
+            Complete path to features file.
         screen: bool (optional)
             If True, print on screen number of light curves processed.
             Default is False.
@@ -233,20 +244,21 @@ class DataBase:
             If None, sample is given by a column within the given file.
             else, read independent files for 'train' and 'test'.
             Default is None.
+        feature_extractor: str (optional)
+            Function used for feature extraction. Options are "bazin", 
+            "bump", or "malanchev". Default is "bump".
         """
 
-        # read matrix with Bazin features
-        if '.tar.gz' in path_to_bazin_file:
-            tar = tarfile.open(path_to_bazin_file, 'r:gz')
+        # read matrix with features
+        if '.tar.gz' in path_to_features_file:
+            tar = tarfile.open(path_to_features_file, 'r:gz')
             fname = tar.getmembers()[0]
             content = tar.extractfile(fname).read()
             data = pd.read_csv(io.BytesIO(content))
             tar.close()
 
         else:
-            data = pd.read_csv(path_to_bazin_file, index_col=False)
-            if 'redshift' not in data.keys():
-                data = pd.read_csv(path_to_bazin_file, sep=' ', index_col=False)
+            data = pd.read_csv(path_to_features_file, index_col=False)
 
         # check if queryable is there
         if 'queryable' not in data.keys():
@@ -254,10 +266,38 @@ class DataBase:
 
         # list of features to use
         if survey == 'DES':
-            self.features_names = ['gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA',
-                                   'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB',
-                                   'it0', 'itfall', 'itrise', 'zA', 'zB', 'zt0',
-                                   'ztfall', 'ztrise']
+            if feature_extractor == "bazin":
+                self.features_names = ['gA', 'gB', 'gt0', 'gtfall', 'gtrise', 'rA',
+                                       'rB', 'rt0', 'rtfall', 'rtrise', 'iA', 'iB',
+                                       'it0', 'itfall', 'itrise', 'zA', 'zB', 'zt0',
+                                       'ztfall', 'ztrise']
+            elif feature_extractor == 'bump':
+                self.features_names = ['gp1', 'gp2', 'gp3', 'gmax_flux', 
+                                       'rp1', 'rp2', 'rp3', 'rmax_flux', 
+                                       'ip1', 'ip2', 'ip3', 'imax_flux', 
+                                       'zp1', 'zp2', 'zp3', 'zmax_flux']
+                
+            elif feature_extractor == 'malanchev':
+                self.features_names = ['ganderson_darling_normal','ginter_percentile_range_5',
+                                       'gchi2','gstetson_K','gweighted_mean','gduration', 
+                                       'gotsu_mean_diff','gotsu_std_lower', 'gotsu_std_upper',
+                                       'gotsu_lower_to_all_ratio', 'glinear_fit_slope', 
+                                       'glinear_fit_slope_sigma','glinear_fit_reduced_chi2',
+                                       'randerson_darling_normal', 'rinter_percentile_range_5',
+                                       'rchi2', 'rstetson_K', 'rweighted_mean','rduration', 
+                                       'rotsu_mean_diff','rotsu_std_lower', 'rotsu_std_upper',
+                                       'rotsu_lower_to_all_ratio', 'rlinear_fit_slope', 
+                                       'rlinear_fit_slope_sigma','rlinear_fit_reduced_chi2',
+                                       'ianderson_darling_normal','iinter_percentile_range_5',
+                                       'ichi2', 'istetson_K', 'iweighted_mean','iduration', 
+                                       'iotsu_mean_diff','iotsu_std_lower', 'iotsu_std_upper',
+                                       'iotsu_lower_to_all_ratio', 'ilinear_fit_slope', 
+                                       'ilinear_fit_slope_sigma','ilinear_fit_reduced_chi2',
+                                       'zanderson_darling_normal','zinter_percentile_range_5',
+                                       'zchi2', 'zstetson_K', 'zweighted_mean','zduration', 
+                                       'zotsu_mean_diff','zotsu_std_lower', 'zotsu_std_upper',
+                                       'zotsu_lower_to_all_ratio', 'zlinear_fit_slope', 
+                                       'zlinear_fit_slope_sigma','zlinear_fit_reduced_chi2']
 
             self.metadata_names = ['id', 'redshift', 'type', 'code',
                                    'orig_sample', 'queryable']
@@ -334,7 +374,6 @@ class DataBase:
                 print('Loaded ', self.pool_metadata.shape[0], ' ' + \
                       sample +  ' samples!')
 
-
     def load_photometry_features(self, path_to_photometry_file: str,
                                  screen=False, sample=None):
         """Load photometry features from file.
@@ -404,8 +443,8 @@ class DataBase:
                 print('\n Loaded ', self.test_metadata.shape[0],
                       ' samples! \n')
 
-    def load_features(self, path_to_file: str, method='Bazin', screen=False,
-                      survey='DES', sample=None ):
+    def load_features(self, path_to_file: str, feature_extractor: str ='bazin',
+                      screen=False, survey='DES', sample=None ):
         """Load features according to the chosen feature extraction method.
 
         Populates properties: data, features, feature_list, header
@@ -415,10 +454,10 @@ class DataBase:
         ----------
         path_to_file: str
             Complete path to features file.
-        method: str (optional)
+        feature_extractor: str (optional)
             Feature extraction method. The current implementation only
-            accepts method=='Bazin' or 'photometry'.
-            Default is 'Bazin'.
+            accepts =='bazin', 'bump', 'malanchev', or 'photometry'.
+            Default is 'bazin'.
         screen: bool (optional)
             If True, print on screen number of light curves processed.
             Default is False.
@@ -431,16 +470,15 @@ class DataBase:
             else, read independent files for 'train' and 'test'.
             Default is None.
         """
-
-        if method == 'Bazin':
-            self.load_bazin_features(path_to_file, screen=screen,
-                                     survey=survey, sample=sample)
-
-        elif method == 'photometry':
+        if feature_extractor == "photometry":
             self.load_photometry_features(path_to_file, screen=screen,
                                           survey=survey, sample=sample)
+        elif feature_extractor in FEATURE_EXTRACTOR_MAPPING:
+            self.load_features_from_file(
+                path_to_file, screen=screen, survey=survey,
+                sample=sample, feature_extractor=feature_extractor)
         else:
-            raise ValueError('Only Bazin and photometry features are implemented!'
+            raise ValueError('Only bazin, bump, malanchev, or photometry features are implemented!'
                              '\n Feel free to add other options.')
 
     def load_plasticc_mjd(self, path_to_data_dir):
@@ -767,7 +805,7 @@ class DataBase:
     def build_samples(self, initial_training='original', nclass=2,
                       screen=False, Ia_frac=0.5,
                       queryable=False, save_samples=False, sep_files=False,
-                      survey='DES', output_fname=' '):
+                      survey='DES', output_fname=None):
         """Separate train, test and validation samples.
 
         Populate properties: train_features, train_header, test_features,
@@ -828,19 +866,19 @@ class DataBase:
                 print('   From which queryable: ',
                       self.queryable_ids.shape[0], '\n')
 
-        if save_samples:
+        if isinstance(initial_training, int) and output_fname is not None:
 
             full_header = self.metadata_names + self.features_names
             wsample = open(output_fname, 'w')
             for item in full_header:
-                wsample.write(item + ' ')
+                wsample.write(item + ',')
             wsample.write('\n')
 
             for j in range(self.train_metadata.shape[0]):
                 for name in self.metadata_names:
-                    wsample.write(str(self.train_metadata[name].iloc[j]) + ' ')
+                    wsample.write(str(self.train_metadata[name].iloc[j]) + ',')
                 for k in range(self.train_features.shape[1] - 1):
-                    wsample.write(str(self.train_features[j][k]) + ' ')
+                    wsample.write(str(self.train_features[j][k]) + ',')
                 wsample.write(str(self.train_features[j][-1]) + '\n')
             wsample.close()
 
@@ -918,9 +956,9 @@ class DataBase:
             id_name = self.identify_keywords()
 
             if self.alt_label:
-                out_fname = 'predict_loop_' + str(loop) + '_alt_label.dat'
+                out_fname = 'predict_loop_' + str(loop) + '_alt_label.csv'
             else:
-                out_fname = 'predict_loop_' + str(loop) + '.dat'
+                out_fname = 'predict_loop_' + str(loop) + '.csv'
             op = open(pred_dir + '/' + out_fname, 'w')
             op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
             for i in range(self.validation_metadata.shape[0]):
@@ -1002,7 +1040,7 @@ class DataBase:
         if save_predictions:
             id_name = self.identify_keywords()
 
-            out_fname = 'predict_loop_' + str(loop) + '.dat'
+            out_fname = 'predict_loop_' + str(loop) + '.csv'
             op = open(pred_dir + '/' + out_fname, 'w')
             op.write(id_name + ',' + 'prob_nIa, prob_Ia,pred_class\n')
             for i in range(self.validation_metadata.shape[0]):
@@ -1544,11 +1582,11 @@ class DataBase:
         # add header to metrics file
         if not os.path.exists(output_metrics_file) or loop == 0:
             with open(output_metrics_file, 'w') as metrics:
-                metrics.write('loop ')
+                metrics.write('loop,')
                 for name in self.metrics_list_names:
-                    metrics.write(name + ' ')
+                    metrics.write(name + ',')
                 for j in range(batch - 1):
-                    metrics.write('query_id' + str(j + 1) + ' ')
+                    metrics.write('query_id' + str(j + 1) + ',')
                 metrics.write('query_id' + str(batch) + '\n')
 
         # write to file)
@@ -1557,11 +1595,11 @@ class DataBase:
 
         if sum(flag) > 0:
             with open(output_metrics_file, 'a') as metrics:
-                metrics.write(str(epoch) + ' ')
+                metrics.write(str(epoch) + ',')
                 for value in self.metrics_list_values:
-                    metrics.write(str(value) + ' ')
+                    metrics.write(str(value) + ',')
                 for j in range(sum(flag) - 1):
-                    metrics.write(str(queried_sample[flag][j][1]) + ' ')
+                    metrics.write(str(queried_sample[flag][j][1]) + ',')
                 metrics.write(str(queried_sample[flag][sum(flag) - 1][1]) + '\n')
 
 
@@ -1586,7 +1624,7 @@ class DataBase:
         if full_sample and len(self.queried_sample) > 0:
             full_header = ['epoch'] + self.metadata_names + self.features_names
             query_sample = pd.DataFrame(self.queried_sample, columns=full_header)
-            query_sample.to_csv(queried_sample_file, sep=' ', index=False)
+            query_sample.sort_values(by='epoch').to_csv(queried_sample_file, index=False)
 
         elif isinstance(loop, int):
             queried_sample = np.array(self.queried_sample)
@@ -1596,16 +1634,16 @@ class DataBase:
                     # add header to query sample file
                     full_header = self.metadata_names + self.features_names
                     with open(queried_sample_file, 'w') as query:
-                        query.write('day ')
+                        query.write('day,')
                         for item in full_header:
-                            query.write(item + ' ')
+                            query.write(item + ',')
                         query.write('\n')
 
                 # save query sample to file
                 with open(queried_sample_file, 'a') as query:
                     for batch in range(batch):
                         for elem in queried_sample[flag][batch]:
-                            query.write(str(elem) + ' ')
+                            query.write(str(elem) + ',')
                         query.write('\n')
 
 

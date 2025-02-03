@@ -19,9 +19,9 @@ import argparse
 
 from resspect.build_snpcc_canonical import *
 
-__all__ = ['main']
+__all__ = ['build_canonical']
 
-def main(user_choices):
+def build_canonical(user_choices):
     """Build canonical sample for SNPCC data set fitted with Bazin features.
 
     Parameters
@@ -59,8 +59,6 @@ def main(user_choices):
 
     """
 
-    print(user_choices.compute)
-
     sample = build_snpcc_canonical(path_to_raw_data=user_choices.raw_data_dir,
                                    path_to_features=user_choices.features,
                                    compute=user_choices.compute,
@@ -75,21 +73,20 @@ def main(user_choices):
 def str2bool(v):
     if isinstance(v, bool):
         return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+    if v.lower() in ('yes', 'true', 't', 'y', '1', 'True', 'TRUE'):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif v.lower() in ('no', 'false', 'f', 'n', '0', 'False', 'FALSE'):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-if __name__ == '__main__':
-
+def main():
     # get input directory and output file name from user
     parser = argparse.ArgumentParser(description='resspect - '
                                                  'Build Canonical module')
 
-    parser.add_argument('-c', '--compute', required=True, type=str2bool,
+    parser.add_argument('-c', '--compute', type=str2bool,
                         dest='compute', help='If True, compute metadata '
                                              'on SNR and peak mag.')
     parser.add_argument('-d', '--raw-data-dir', dest='raw_data_dir',
@@ -124,4 +121,8 @@ if __name__ == '__main__':
     # get input directory and output file name from user
     from_user = parser.parse_args()
 
-    main(from_user)
+    build_canonical(from_user)
+
+
+if __name__ == '__main__':
+    main()

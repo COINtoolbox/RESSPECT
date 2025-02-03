@@ -17,7 +17,7 @@
 
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from xgboost.sklearn import XGBClassifier
+#from xgboost.sklearn import XGBClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
@@ -25,8 +25,10 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.utils import resample
 from sklearn.utils.validation import check_is_fitted
 
-__all__ = ['random_forest','gradient_boosted_trees','knn',
-           'mlp','svm','nbg', 'bootstrap_clf']
+__all__ = ['random_forest',#'gradient_boosted_trees',
+           'knn',
+           'mlp','svm','nbg', 'bootstrap_clf'
+          ]
 
 
 def bootstrap_clf(clf_function, n_ensembles, train_features,
@@ -118,10 +120,12 @@ def random_forest(train_features:  np.array, train_labels: np.array,
 
     return predictions, prob, clf
   
+#######################################################################
+######  we need to find a non-bugged version of xgboost ##############
 
-def gradient_boosted_trees(train_features: np.array,
-                           train_labels: np.array,
-                           test_features: np.array, **kwargs):
+#def gradient_boosted_trees(train_features: np.array,
+#                           train_labels: np.array,
+#                           test_features: np.array, **kwargs):
     """Gradient Boosted Trees classifier.
 
     Parameters
@@ -144,13 +148,14 @@ def gradient_boosted_trees(train_features: np.array,
     """
 
     #create classifier instance
-    clf = XGBClassifier(**kwargs)
+#    clf = XGBClassifier(**kwargs)
 
-    clf.fit(train_features, train_labels)             # train
-    predictions = clf.predict(test_features)          # predict
-    prob = clf.predict_proba(test_features)           # get probabilities
+#    clf.fit(train_features, train_labels)             # train
+#    predictions = clf.predict(test_features)          # predict
+#    prob = clf.predict_proba(test_features)           # get probabilities
 
-    return predictions, prob, clf
+#    return predictions, prob, clf
+#########################################################################
 
 def knn(train_features: np.array, train_labels: np.array,
         test_features: np.array, **kwargs):

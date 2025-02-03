@@ -25,22 +25,30 @@ from .exposure_time_calculator import *
 from .fit_lightcurves import *
 from .learn_loop import *
 from .metrics import *
-from .query_strategies import *
 from .plot_results import *
+from .query_strategies import *
+from .samples_utils import *
 from .snana_fits_to_pd import *
-from .scripts.build_canonical import main as build_canonical
-from .scripts.build_time_domain_snpcc import main as build_time_domain_snpcc
-from .scripts.build_time_domain_plasticc import main as build_time_domain_plasticc
-from .scripts.calculate_cosmology_metric import main as calculate_cosmology_metric
-from .scripts.fit_dataset import main as fit_dataset
-from .scripts.make_metrics_plots import main as make_metrics_plots
-from .scripts.run_loop import main as run_loop
-from .scripts.run_time_domain import main as run_time_domain
+from .scripts.build_canonical import build_canonical as build_canonical
+from .scripts.build_time_domain_snpcc import build_time_domain_snpcc as build_time_domain_snpcc
+from .scripts.build_time_domain_plasticc import build_time_domain_plasticc as build_time_domain_plasticc
+from .scripts.calculate_cosmology_metric import calculate_cosmology_metric as calculate_cosmology_metric
+from .scripts.fit_dataset import fit_dataset as fit_dataset
+from .scripts.make_metrics_plots import make_metrics_plots as make_metrics_plots
+from .scripts.run_loop import run_loop as run_loop
+from .scripts.run_time_domain import run_time_domain as run_time_domain
 from .time_domain_plasticc import *
 from .time_domain_snpcc import *
 from .time_domain_loop import *
 from .batch_functions import *
 from .query_budget_strategies import *
+from .bump import *
+from .feature_extractors.malanchev import *
+
+import importlib.metadata
+
+__version__ = importlib.metadata.version("resspect")
+
 
 __all__ = ['accuracy',
            'assign_cosmo',
@@ -49,6 +57,7 @@ __all__ = ['accuracy',
            'build_plasticc_canonical',
            'build_plasticc_metadata',
            'build_snpcc_canonical',
+           'bump',
            'calculate_SNR',
            'Canonical',
            'CanonicalPLAsTiCC',
@@ -64,15 +73,14 @@ __all__ = ['accuracy',
            'fisher_results',
            'find_most_useful',
            'fit_dataset',
+           'fit_bump',
            'fit_scipy',
-           'fit_snpcc_bazin',
-           'fit_plasticc_bazin',
-           'fit_resspect_bazin',
+           'fit_snpcc',
+           'fit_plasticc',
            'fom',
            'get_cosmo_metric',
            'get_snpcc_metric',
            'get_SNR_headers',
-           'gradient_boosted_trees',
            'knn',
            'learn_loop',
            'load_dataset',
@@ -82,12 +90,16 @@ __all__ = ['accuracy',
            'PLAsTiCCPhotometry',
            'make_metrics_plots',
            'plot_snpcc_train_canonical',
+           'protected_exponent',
+           'protected_sig',
            'purity',
-           'random_forest',           
+           'random_forest',
            'random_sampling',
+           'read_features_fullLC_samples',
            'read_fits',
            'run_loop',
            'run_time_domain',
+           'sep_samples',
            'SNPCCPhotometry',
            'svm',
            'time_domain_loop',

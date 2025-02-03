@@ -32,7 +32,7 @@ def load_features(database_class: DataBase,
                   survey: str, features_method: str, number_of_classes: int,
                   training_method: str, is_queryable: bool,
                   separate_files: bool = False, 
-                  save_samples: bool = False) -> DataBase:
+                  initial_training_samples_file: str = None) -> DataBase:
     """
     Load features according to feature extraction method
 
@@ -49,7 +49,7 @@ def load_features(database_class: DataBase,
        'DES' or 'LSST'. Default is 'DES'.
         Name of the survey which characterizes filter set.
     features_method
-        Feature extraction method. Currently only 'Bazin' is implemented.
+        Feature extraction method. Currently only 'bazin' and "bump" are implemented.
     number_of_classes
         Number of classes to consider in the classification
         Currently only nclass == 2 is implemented.
@@ -65,20 +65,20 @@ def load_features(database_class: DataBase,
     separate_files: bool (optional)
         If True, consider train and test samples separately read
         from independent files. Default is False.
-    save_samples: bool (optional)
-        If True, save training and test samples to file.
-        Default is False.
+    initial_training_samples_file
+        File name to save initial training samples.
+        File will be saved if "training"!="original"
     """
     if isinstance(path_to_features, str):
         database_class.load_features(
-            path_to_file=path_to_features, method=features_method,
+            path_to_file=path_to_features, feature_extractor=features_method,
             survey=survey)
     else:
         features_set_names = ['train', 'test', 'validation', 'pool']
         for sample_name in features_set_names:
             if sample_name in path_to_features.keys():
                 database_class.load_features(
-                    path_to_features[sample_name], method=features_method,
+                    path_to_features[sample_name], feature_extractor=features_method,
                     survey=survey, sample=sample_name)
             else:
                 logging.warning(f'Path to {sample_name} not given.'
@@ -87,7 +87,7 @@ def load_features(database_class: DataBase,
     database_class.build_samples(
         initial_training=training_method, nclass=number_of_classes,
         queryable=is_queryable, sep_files=separate_files, 
-        save_samples=save_samples)
+        output_fname=initial_training_samples_file)
     
     return database_class
 
@@ -320,7 +320,7 @@ def update_alternative_label(database_class_alternative: DataBase,
 # TODO: too many arguments! refactor further and update docs
 def learn_loop(nloops: int, strategy: str, path_to_features: str,
                output_metrics_file: str, output_queried_file: str,
-               features_method: str ='Bazin', classifier: str = 'RandomForest',
+               features_method: str = 'bazin', classifier: str = 'RandomForest',
                training: str = 'original', batch: int =1, survey: str = 'DES',
                nclass: int = 2, photo_class_thr: float = 0.5,
                photo_ids_to_file: bool = False, photo_ids_froot: str =' ',
@@ -328,7 +328,8 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
                bool = False, sep_files=False, pred_dir: str = None,
                queryable: bool = False, metric_label: str = 'snpcc',
                save_alt_class: bool = False, SNANA_types: bool = False,
-               metadata_fname: str = None, bar: bool = True, **kwargs):
+               metadata_fname: str = None, bar: bool = True,
+               initial_training_samples_file: str = None, **kwargs):
     """
     Perform the active learning loop. All results are saved to file.
 
@@ -350,7 +351,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     output_queried_file: str
         Full path to output file to store the queried sample.
     features_method: str (optional)
-        Feature extraction method. Currently only 'Bazin' is implemented.
+        Feature extraction method. Currently only 'bazin' and 'Bump' are implemented.
     classifier: str (optional)
         Machine Learning algorithm.
         Currently implemented options are 'RandomForest', 'GradientBoostedTrees',
@@ -408,7 +409,10 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
         ensuring that at least half are SN Ia
         Default is 'original'.
     bar: bool (optional)
-        If True, display progress bar.     
+        If True, display progress bar.
+    initial_training_samples_file
+        File name to save initial training samples.
+        File will be saved if "training"!="original"  
     kwargs: extra parameters
         All keywords required by the classifier function.
     """
@@ -421,7 +425,7 @@ def learn_loop(nloops: int, strategy: str, path_to_features: str,
     logging.info('Loading features')
     database_class = load_features(database_class, path_to_features, survey,
                                    features_method, nclass, training, queryable,
-                                   sep_files)
+                                   sep_files, initial_training_samples_file)
     
     logging.info('Running active learning loop')
     
