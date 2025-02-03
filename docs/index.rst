@@ -122,7 +122,7 @@ If you are only interested in testing your installation you should work with the
 
 .. code-block:: bash
 
-   >>> fit_dataset.py -s SNPCC -dd <path_to_data_dir> -o <output_file>
+   >>> fit_dataset -s SNPCC -dd <path_to_data_dir> -o <output_file>
 
 Once the data has been processed you can apply the full Active Learning loop according to your needs.
 A detail description on how to use this tool is provided in the :ref:`Learning Loop page <learnloop>`.
@@ -131,8 +131,8 @@ The command line option require a few more inputs than the feature extraction st
 
 .. code-block:: bash
 
-   >>> run_loop.py -i <input features file> -b <batch size> -n <number of loops>
-   >>>             -d <output metrics file> -q <output queried sample file>
+   >>> run_loop -i <input features file> -b <batch size> -n <number of loops>
+   >>>             -m <output metrics file> -q <output queried sample file>
    >>>             -s <learning strategy> -t <choice of initial training>
 
 
