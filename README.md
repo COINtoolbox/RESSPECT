@@ -5,7 +5,7 @@
 
 ## Recommendation System for Spectroscopic follow-up 
 
-This repository holds the pipeline of the RESSPECT project, built as part of the inter-collaboration activities developed by the Cosmostatistics Initiative ([COIN](cosmostatistics-initiative.org)) and the LSST Dark Energy Science Collaboration ([DESC](https://lsstdesc.org/)).
+This repository holds the pipeline of the RESSPECT project, built as part of the inter-collaboration activities developed by the Cosmostatistics Initiative ([COIN](https://cosmostatistics-initiative.org/)) and the LSST Dark Energy Science Collaboration ([DESC](https://lsstdesc.org/)).
 
 This work grew from activities developed within the [COIN Residence Program #4](https://iaacoin.wixsite.com/crp2017), using as a starting point their [ActSNClass](https://github.com/COINtoolbox/ActSNClass) software. 
 
