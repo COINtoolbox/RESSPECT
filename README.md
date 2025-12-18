@@ -7,7 +7,7 @@
 
 This repository holds the pipeline of the RESSPECT project, built as part of the inter-collaboration activities developed by the Cosmostatistics Initiative ([COIN](cosmostatistics-initiative.org)) and the LSST Dark Energy Science Collaboration ([DESC](https://lsstdesc.org/)).
 
-This work grew from activities developed within the [COIN Residence Program #4](http://iaacoin.wix.com/crp2017), using as a starting point their [ActSNClass](https://github.com/COINtoolbox/ActSNClass) software. 
+This work grew from activities developed within the [COIN Residence Program #4](https://iaacoin.wixsite.com/crp2017), using as a starting point their [ActSNClass](https://github.com/COINtoolbox/ActSNClass) software. 
 
 The active learning and telescope resources pipeline is described in [Kennamer et al, 2020](https://cosmostatistics-initiative.org/portfolio-item/resspect1/). The pre-processed data set used to obtain the results shown in the paper is available through zenodo at [de Souza et al., 2020](https://zenodo.org/record/4399109#.X-sL21lKhNg).
 
